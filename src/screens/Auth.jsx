@@ -3,7 +3,7 @@ import { GraduationCap, KeyRound, Mail, UserRound } from 'lucide-react';
 import { firebaseEnabled, getFriendlyFirebaseError, loginWithEmail, resetPassword, signupWithEmail } from '../firebase';
 import { Button, Card } from '../components/ui';
 
-export default function Auth({ notify, onDemoLogin }) {
+export default function Auth({ notify }) {
   const [mode, setMode] = useState('login');
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [loading, setLoading] = useState(false);
@@ -11,7 +11,7 @@ export default function Auth({ notify, onDemoLogin }) {
   async function submit(event) {
     event.preventDefault();
     if (!firebaseEnabled) {
-      notify('Firebase is not configured yet. Use demo mode or add your .env credentials.');
+      notify('Firebase is not configured yet. Add your .env credentials.');
       return;
     }
 
@@ -46,7 +46,7 @@ export default function Auth({ notify, onDemoLogin }) {
         </div>
         <h1 className="mt-5 text-3xl font-black tracking-tight text-slate-950 dark:text-white">EliteStudy</h1>
         <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
-          Private-style prep space for daily MCQs, notes, streaks, rankings, and exam focus.
+          Private-style prep space for MCQs, notes, rankings, and exam focus.
         </p>
 
         <form onSubmit={submit} className="mt-6 space-y-3">
@@ -68,12 +68,6 @@ export default function Auth({ notify, onDemoLogin }) {
           </button>
           <button className="text-slate-500 dark:text-slate-400" onClick={() => setMode(mode === 'forgot' ? 'login' : 'forgot')}>
             {mode === 'forgot' ? 'Back to login' : 'Forgot password?'}
-          </button>
-          <button className="rounded-xl bg-slate-100 px-4 py-3 text-slate-700 dark:bg-white/10 dark:text-slate-200" onClick={() => onDemoLogin('student')}>
-            Continue as student demo
-          </button>
-          <button className="rounded-xl bg-slate-950 px-4 py-3 text-white dark:bg-white dark:text-slate-950" onClick={() => onDemoLogin('admin')}>
-            Continue as admin demo
           </button>
         </div>
       </Card>

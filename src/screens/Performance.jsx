@@ -10,9 +10,9 @@ export default function Performance() {
         <h2 className="text-2xl font-black text-slate-950 dark:text-white">Performance overview</h2>
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
-        <Card><BarChart3 className="text-blue-600" /><p className="mt-3 text-2xl font-black">42</p><p className="text-sm text-slate-500">Quizzes attempted</p></Card>
-        <Card><TrendingUp className="text-emerald-600" /><p className="mt-3 text-2xl font-black">84%</p><p className="text-sm text-slate-500">Average accuracy</p></Card>
-        <Card><TrendingDown className="text-rose-600" /><p className="mt-3 text-2xl font-black">Stats</p><p className="text-sm text-slate-500">Weakest subject</p></Card>
+        <Card><BarChart3 className="text-blue-600" /><p className="mt-3 text-2xl font-black">0</p><p className="text-sm text-slate-500">Quizzes attempted</p></Card>
+        <Card><TrendingUp className="text-emerald-600" /><p className="mt-3 text-2xl font-black">0%</p><p className="text-sm text-slate-500">Average accuracy</p></Card>
+        <Card><TrendingDown className="text-rose-600" /><p className="mt-3 text-2xl font-black">-</p><p className="text-sm text-slate-500">Weakest subject</p></Card>
       </div>
       <Card>
         <h3 className="font-black text-slate-950 dark:text-white">Subject strengths</h3>
@@ -31,9 +31,9 @@ export default function Performance() {
       <Card>
         <h3 className="font-black text-slate-950 dark:text-white">Weekly progress</h3>
         <div className="mt-4 flex h-48 items-end gap-2">
-          {[42, 55, 38, 70, 82, 76, 91].map((height, index) => (
+          {[0, 0, 0, 0, 0, 0, 0].map((height, index) => (
             <div key={index} className="flex flex-1 flex-col items-center gap-2">
-              <div className="w-full rounded-t-2xl bg-blue-600" style={{ height: `${height}%` }} />
+              <div className="w-full rounded-t-2xl bg-blue-600" style={{ height: `${Math.max(height, 2)}%` }} />
               <span className="text-xs font-bold text-slate-400">{['M', 'T', 'W', 'T', 'F', 'S', 'S'][index]}</span>
             </div>
           ))}

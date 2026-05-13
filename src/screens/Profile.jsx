@@ -11,17 +11,17 @@ export default function Profile({ user, notify }) {
             <UserRound size={30} />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-slate-950 dark:text-white">{user?.displayName || 'Elite learner'}</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{user?.email || 'demo@elitestudy.app'}</p>
+            <h2 className="text-2xl font-black text-slate-950 dark:text-white">{user?.displayName || user?.name || 'New member'}</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{user?.email || 'No email available'}</p>
           </div>
         </div>
       </Card>
       <Card>
         <h3 className="font-black text-slate-950 dark:text-white">Profile stats</h3>
         <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-          <Stat value="12" label="Streak" />
-          <Stat value="42" label="Quizzes" />
-          <Stat value="#3" label="Rank" />
+          <Stat value={user?.streak || 0} label="Streak" />
+          <Stat value="0" label="Quizzes" />
+          <Stat value="-" label="Rank" />
         </div>
       </Card>
       <Card>

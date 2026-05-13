@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { BottomNav, Sidebar } from './components/navigation';
-import { Button, Card, Toast, TopBar } from './components/ui';
+import { Button, Card, EmptyState, Toast, TopBar } from './components/ui';
 import { notifications } from './data/mockData';
 import { watchAuth } from './firebase';
 import Admin from './screens/Admin';
@@ -14,17 +14,9 @@ import Profile from './screens/Profile';
 import Quizzes from './screens/Quizzes';
 import Resources from './screens/Resources';
 
-const demoUser = {
-  displayName: 'Elite learner',
-  email: 'demo@elitestudy.app',
-  role: 'student',
-};
-
 export default function App() {
   const [active, setActive] = useState('dashboard');
   const [user, setUser] = useState(null);
-  const [demo, setDemo] = useState(false);
-  const [demoRole, setDemoRole] = useState('student');
   const [dark, setDark] = useState(() => localStorage.getItem('elitestudy-theme') === 'dark');
   const [toast, setToast] = useState('');
   const [drawer, setDrawer] = useState(false);
@@ -39,7 +31,7 @@ export default function App() {
     localStorage.setItem('elitestudy-theme', dark ? 'dark' : 'light');
   }, [dark]);
 
-  const authedUser = useMemo(() => user || (demo ? { ...demoUser, role: demoRole } : null), [demo, demoRole, user]);
+  const authedUser = user;
   const isAdmin = authedUser?.role === 'admin';
   const safeActive = active === 'admin' && !isAdmin ? 'dashboard' : active;
 
@@ -63,15 +55,7 @@ export default function App() {
   }, [safeActive, authedUser, isAdmin]);
 
   if (!authedUser) {
-    return (
-      <Auth
-        notify={notify}
-        onDemoLogin={(role) => {
-          setDemoRole(role);
-          setDemo(true);
-        }}
-      />
-    );
+    return <Auth notify={notify} />;
   }
 
   return (
@@ -120,15 +104,21 @@ export default function App() {
                   <X size={18} />
                 </Button>
               </div>
-              <div className="mt-4 space-y-3">
-                {notifications.map((item) => (
-                  <Card key={item.title} className="p-4">
-                    <p className="font-black text-slate-950 dark:text-white">{item.title}</p>
-                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{item.body}</p>
-                    <p className="mt-3 text-xs font-bold text-blue-600">{item.time}</p>
-                  </Card>
-                ))}
-              </div>
+              {notifications.length ? (
+                <div className="mt-4 space-y-3">
+                  {notifications.map((item) => (
+                    <Card key={item.title} className="p-4">
+                      <p className="font-black text-slate-950 dark:text-white">{item.title}</p>
+                      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{item.body}</p>
+                      <p className="mt-3 text-xs font-bold text-blue-600">{item.time}</p>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-4">
+                  <EmptyState title="No notifications" body="Announcements will appear here when they are published." />
+                </div>
+              )}
             </motion.div>
           </motion.aside>
         ) : null}

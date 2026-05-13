@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { CalendarClock, Flame, Play, Quote, TrendingUp, Trophy } from 'lucide-react';
 import { activities, leaderboard, subjects } from '../data/mockData';
 import { daysUntilExam, formatPercent } from '../utils';
-import { Button, Card, ProgressBar } from '../components/ui';
+import { Button, Card, EmptyState, ProgressBar } from '../components/ui';
 
 export default function Dashboard({ setActive, user }) {
   return (
@@ -29,10 +29,10 @@ export default function Dashboard({ setActive, user }) {
       </motion.section>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Metric icon={Flame} label="Streak" value="12 days" />
+        <Metric icon={Flame} label="Streak" value={`${user?.streak || 0} days`} />
         <Metric icon={CalendarClock} label="Exam in" value={`${daysUntilExam()} days`} />
-        <Metric icon={TrendingUp} label="Accuracy" value="84%" />
-        <Metric icon={Trophy} label="Rank" value="#3" />
+        <Metric icon={TrendingUp} label="Accuracy" value="0%" />
+        <Metric icon={Trophy} label="Rank" value="-" />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
@@ -85,32 +85,44 @@ export default function Dashboard({ setActive, user }) {
           </Card>
           <Card>
             <h3 className="font-black text-slate-950 dark:text-white">Leaderboard preview</h3>
-            <div className="mt-3 space-y-3">
-              {leaderboard.slice(0, 3).map((person) => (
-                <div key={person.rank} className="flex items-center justify-between rounded-2xl bg-slate-50 p-3 dark:bg-white/5">
-                  <div className="flex items-center gap-3">
-                    <span className="grid h-8 w-8 place-items-center rounded-xl bg-white text-xs font-black shadow-sm dark:bg-slate-900">
-                      #{person.rank}
-                    </span>
-                    <span className="font-bold text-slate-900 dark:text-white">{person.name}</span>
+            {leaderboard.length ? (
+              <div className="mt-3 space-y-3">
+                {leaderboard.slice(0, 3).map((person) => (
+                  <div key={person.rank} className="flex items-center justify-between rounded-2xl bg-slate-50 p-3 dark:bg-white/5">
+                    <div className="flex items-center gap-3">
+                      <span className="grid h-8 w-8 place-items-center rounded-xl bg-white text-xs font-black shadow-sm dark:bg-slate-900">
+                        #{person.rank}
+                      </span>
+                      <span className="font-bold text-slate-900 dark:text-white">{person.name}</span>
+                    </div>
+                    <span className="text-sm font-black text-blue-600">{person.score}</span>
                   </div>
-                  <span className="text-sm font-black text-blue-600">{person.score}</span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-3">
+                <EmptyState title="No rankings yet" body="Rankings will appear after members complete quizzes." />
+              </div>
+            )}
           </Card>
         </div>
       </div>
 
       <Card>
         <h3 className="font-black text-slate-950 dark:text-white">Recent activity</h3>
-        <div className="mt-3 grid gap-2 sm:grid-cols-2">
-          {activities.map((activity) => (
-            <div key={activity} className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600 dark:bg-white/5 dark:text-slate-300">
-              {activity}
-            </div>
-          ))}
-        </div>
+        {activities.length ? (
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {activities.map((activity) => (
+              <div key={activity} className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600 dark:bg-white/5 dark:text-slate-300">
+                {activity}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-3">
+            <EmptyState title="No activity yet" body="New activity will appear here after this member starts using the app." />
+          </div>
+        )}
       </Card>
     </div>
   );
