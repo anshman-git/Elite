@@ -1,0 +1,186 @@
+import { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { CheckCircle2, Clock, RotateCcw, SlidersHorizontal } from 'lucide-react';
+import { mcqs, quizzes, subjects } from '../data/mockData';
+import { Button, Card, EmptyState } from '../components/ui';
+import { classNames } from '../utils';
+
+export default function Quizzes({ notify }) {
+  const [subject, setSubject] = useState('All');
+  const [activeQuiz, setActiveQuiz] = useState(null);
+  const [answers, setAnswers] = useState({});
+  const [seconds, setSeconds] = useState(25 * 60);
+  const [submitted, setSubmitted] = useState(false);
+
+  const filtered = useMemo(
+    () => (subject === 'All' ? quizzes : quizzes.filter((quiz) => quiz.subject === subject)),
+    [subject],
+  );
+
+  useEffect(() => {
+    if (!activeQuiz || submitted) return undefined;
+    const timer = window.setInterval(() => {
+      setSeconds((value) => {
+        if (value <= 1) {
+          setSubmitted(true);
+          notify('Timer ended. Quiz submitted automatically.');
+          return 0;
+        }
+        return value - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [activeQuiz, submitted, notify]);
+
+  const score = mcqs.reduce((total, item) => total + (answers[item.id] === item.answer ? 1 : 0), 0);
+
+  if (activeQuiz) {
+    return (
+      <div className="space-y-4">
+        <Card className="sticky top-[84px] z-20">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">{activeQuiz.subject}</p>
+              <h2 className="text-xl font-black text-slate-950 dark:text-white">{activeQuiz.title}</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-slate-100 px-3 text-sm font-black dark:bg-white/10">
+                <Clock size={17} /> {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}
+              </span>
+              <Button variant="secondary" onClick={() => setActiveQuiz(null)}>Exit</Button>
+            </div>
+          </div>
+        </Card>
+
+        <AnimatePresence mode="wait">
+          {submitted ? (
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+              <Card>
+                <CheckCircle2 className="text-blue-600" size={34} />
+                <h3 className="mt-3 text-2xl font-black text-slate-950 dark:text-white">Score: {score}/{mcqs.length}</h3>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                  Time taken: {25 * 60 - seconds}s. Review the correct answers below.
+                </p>
+                <div className="mt-4 flex gap-2">
+                  <Button onClick={() => setActiveQuiz(null)}>Back to quizzes</Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setAnswers({});
+                      setSeconds(25 * 60);
+                      setSubmitted(false);
+                    }}
+                  >
+                    <RotateCcw size={17} /> Retake
+                  </Button>
+                </div>
+              </Card>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+
+        <div className="space-y-3">
+          {mcqs.map((item, index) => (
+            <Card key={item.id}>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Question {index + 1}</p>
+              <h3 className="mt-2 font-black text-slate-950 dark:text-white">{item.question}</h3>
+              <div className="mt-4 grid gap-2">
+                {item.options.map((option) => {
+                  const picked = answers[item.id] === option;
+                  const revealCorrect = submitted && option === item.answer;
+                  const revealWrong = submitted && picked && option !== item.answer;
+                  return (
+                    <button
+                      key={option}
+                      disabled={submitted}
+                      onClick={() => setAnswers((current) => ({ ...current, [item.id]: option }))}
+                      className={classNames(
+                        'min-h-12 rounded-2xl border px-4 text-left text-sm font-bold transition',
+                        picked ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-500/10' : 'border-slate-200 dark:border-white/10',
+                        revealCorrect && 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10',
+                        revealWrong && 'border-rose-500 bg-rose-50 text-rose-700 dark:bg-rose-500/10',
+                      )}
+                    >
+                      {option}
+                    </button>
+                  );
+                })}
+              </div>
+            </Card>
+          ))}
+        </div>
+        {!submitted ? (
+          <Button variant="accent" onClick={() => setSubmitted(true)} className="w-full">
+            Submit quiz
+          </Button>
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">Quiz arena</p>
+          <h2 className="text-2xl font-black text-slate-950 dark:text-white">Subject-wise sprints</h2>
+        </div>
+        <SlidersHorizontal className="text-slate-400" />
+      </div>
+
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {['All', ...subjects.map((item) => item.name)].map((item) => (
+          <button
+            key={item}
+            onClick={() => setSubject(item)}
+            className={classNames(
+              'min-h-10 shrink-0 rounded-xl px-4 text-sm font-bold transition',
+              subject === item ? 'bg-slate-950 text-white dark:bg-white dark:text-slate-950' : 'bg-white text-slate-600 dark:bg-slate-900 dark:text-slate-300',
+            )}
+          >
+            {item}
+          </button>
+        ))}
+      </div>
+
+      {filtered.length ? (
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {filtered.map((quiz) => (
+            <Card key={quiz.id} interactive>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-600">{quiz.subject}</p>
+              <h3 className="mt-2 text-lg font-black text-slate-950 dark:text-white">{quiz.title}</h3>
+              <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                <Badge label="MCQs" value={quiz.questions} />
+                <Badge label="Timer" value={`${quiz.duration}m`} />
+                <Badge label="Runs" value={quiz.attempts} />
+              </div>
+              <Button
+                variant="accent"
+                className="mt-4 w-full"
+                onClick={() => {
+                  setActiveQuiz(quiz);
+                  setAnswers({});
+                  setSeconds(quiz.duration * 60);
+                  setSubmitted(false);
+                }}
+              >
+                Start quiz
+              </Button>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <EmptyState title="No quizzes found" body="Try another subject filter." />
+      )}
+    </div>
+  );
+}
+
+function Badge({ label, value }) {
+  return (
+    <div className="rounded-2xl bg-slate-50 p-3 dark:bg-white/5">
+      <p className="text-xs font-bold text-slate-400">{label}</p>
+      <p className="mt-1 font-black text-slate-950 dark:text-white">{value}</p>
+    </div>
+  );
+}
