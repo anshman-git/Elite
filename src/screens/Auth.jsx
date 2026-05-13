@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { GraduationCap, KeyRound, Mail, UserRound } from 'lucide-react';
-import { firebaseEnabled, loginWithEmail, resetPassword, signupWithEmail } from '../firebase';
+import { firebaseEnabled, getFriendlyFirebaseError, loginWithEmail, resetPassword, signupWithEmail } from '../firebase';
 import { Button, Card } from '../components/ui';
 
 export default function Auth({ notify, onDemoLogin }) {
@@ -21,14 +21,18 @@ export default function Auth({ notify, onDemoLogin }) {
         await resetPassword(form.email);
         notify('Password reset email sent.');
       } else if (mode === 'signup') {
-        await signupWithEmail(form);
-        notify('Account created. Welcome to EliteStudy.');
+        const result = await signupWithEmail(form);
+        notify(
+          result.profileCreated
+            ? 'Account created. Welcome to EliteStudy.'
+            : 'Account created. Profile setup needs Firestore rules checked.',
+        );
       } else {
         await loginWithEmail(form.email, form.password);
         notify('Signed in successfully.');
       }
     } catch (error) {
-      notify(error.message || 'Login failed. Check your email and password.');
+      notify(getFriendlyFirebaseError(error));
     } finally {
       setLoading(false);
     }

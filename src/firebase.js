@@ -58,7 +58,20 @@ export function watchAuth(callback) {
 
     try {
       const profile = await getDoc(doc(db, 'users', sessionUser.uid));
-      callback({ ...sessionUser, ...(profile.exists() ? profile.data() : {}) });
+      let profileData = profile.exists() ? profile.data() : null;
+      if (!profile.exists()) {
+        profileData = {
+          name: sessionUser.displayName || 'Elite learner',
+          email: sessionUser.email || '',
+          role: 'student',
+          streak: 1,
+          points: 0,
+          createdAt: serverTimestamp(),
+          lastActiveAt: serverTimestamp(),
+        };
+        await setDoc(doc(db, 'users', sessionUser.uid), profileData);
+      }
+      callback({ ...sessionUser, ...profileData });
     } catch {
       callback(sessionUser);
     }
@@ -72,17 +85,45 @@ export async function loginWithEmail(email, password) {
 
 export async function signupWithEmail({ name, email, password }) {
   if (!auth) throw new Error('Firebase is not configured yet.');
-  const credential = await createUserWithEmailAndPassword(auth, email, password);
-  await updateProfile(credential.user, { displayName: name });
-  await setDoc(doc(db, 'users', credential.user.uid), {
-    name,
-    email,
-    role: 'student',
-    streak: 1,
-    points: 0,
-    createdAt: serverTimestamp(),
-  });
-  return credential;
+  const cleanName = name.trim();
+  const cleanEmail = email.trim();
+
+  if (!cleanName) throw new Error('Enter your full name.');
+  if (password.length < 6) throw new Error('Password must be at least 6 characters.');
+
+  const credential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
+  await updateProfile(credential.user, { displayName: cleanName });
+
+  try {
+    await setDoc(doc(db, 'users', credential.user.uid), {
+      name: cleanName,
+      email: cleanEmail,
+      role: 'student',
+      streak: 1,
+      points: 0,
+      createdAt: serverTimestamp(),
+      lastActiveAt: serverTimestamp(),
+    });
+  } catch (error) {
+    return { credential, profileCreated: false, profileError: error };
+  }
+
+  return { credential, profileCreated: true };
+}
+
+export function getFriendlyFirebaseError(error) {
+  const code = error?.code || '';
+  const messages = {
+    'auth/email-already-in-use': 'This email already has an account. Try logging in instead.',
+    'auth/invalid-email': 'Enter a valid email address.',
+    'auth/weak-password': 'Password must be at least 6 characters.',
+    'auth/operation-not-allowed': 'Enable Email/Password sign-in in Firebase Authentication.',
+    'auth/unauthorized-domain': 'Add this domain in Firebase Authentication authorized domains.',
+    'auth/network-request-failed': 'Network error. Check your connection and try again.',
+    'permission-denied': 'Account was created, but Firestore rules blocked profile setup.',
+  };
+
+  return messages[code] || error?.message || 'Something went wrong. Please try again.';
 }
 
 export async function resetPassword(email) {
