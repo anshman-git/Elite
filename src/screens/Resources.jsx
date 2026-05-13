@@ -1,13 +1,20 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Download, Eye, FileText, Image, Upload } from 'lucide-react';
-import { resources, subjects } from '../data/mockData';
-import { uploadResource } from '../firebase';
+import { subjects } from '../data/subjects';
+import { uploadResource, watchCollection } from '../firebase';
 import { Button, Card, EmptyState, SearchInput } from '../components/ui';
 
 export default function Resources({ notify }) {
+  const [resources, setResources] = useState([]);
   const [query, setQuery] = useState('');
   const [type, setType] = useState('All');
   const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    return watchCollection('resources', setResources, {
+      onError: () => notify('Could not load resources from Firestore.'),
+    });
+  }, [notify]);
 
   const filtered = useMemo(
     () =>
@@ -15,7 +22,7 @@ export default function Resources({ notify }) {
         const text = `${item.title} ${item.subject} ${item.type}`.toLowerCase();
         return text.includes(query.toLowerCase()) && (type === 'All' || item.type === type);
       }),
-    [query, type],
+    [query, resources, type],
   );
 
   async function handleUpload(event) {
@@ -81,17 +88,21 @@ export default function Resources({ notify }) {
             <Card key={item.id} interactive>
               <div className="flex items-start gap-3">
                 <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-500/10">
-                  {item.format === 'Image' ? <Image size={22} /> : <FileText size={22} />}
+                  {item.fileType?.startsWith('image/') ? <Image size={22} /> : <FileText size={22} />}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{item.type} - {item.subject}</p>
                   <h3 className="mt-1 truncate font-black text-slate-950 dark:text-white">{item.title}</h3>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Uploaded {item.date} - {item.format}</p>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Uploaded {formatDate(item.createdAt)} - {formatFileType(item.fileType)}</p>
                 </div>
               </div>
               <div className="mt-4 grid grid-cols-2 gap-2">
-                <Button variant="secondary"><Eye size={17} /> Preview</Button>
-                <Button><Download size={17} /> Download</Button>
+                <Button variant="secondary" onClick={() => window.open(item.url, '_blank', 'noopener,noreferrer')} disabled={!item.url}>
+                  <Eye size={17} /> Preview
+                </Button>
+                <Button onClick={() => window.open(item.url, '_blank', 'noopener,noreferrer')} disabled={!item.url}>
+                  <Download size={17} /> Download
+                </Button>
               </div>
             </Card>
           ))}
@@ -101,4 +112,13 @@ export default function Resources({ notify }) {
       )}
     </div>
   );
+}
+
+function formatDate(value) {
+  const date = value?.toDate?.() || null;
+  return date ? date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'just now';
+}
+
+function formatFileType(fileType = '') {
+  return fileType.startsWith('image/') ? 'Image' : 'PDF';
 }

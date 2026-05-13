@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { BottomNav, Sidebar } from './components/navigation';
 import { Button, Card, EmptyState, Toast, TopBar } from './components/ui';
-import { notifications } from './data/mockData';
-import { watchAuth } from './firebase';
+import { watchAuth, watchCollection } from './firebase';
 import Admin from './screens/Admin';
 import Auth from './screens/Auth';
 import Dashboard from './screens/Dashboard';
@@ -20,6 +19,7 @@ export default function App() {
   const [dark, setDark] = useState(() => localStorage.getItem('elitestudy-theme') === 'dark');
   const [toast, setToast] = useState('');
   const [drawer, setDrawer] = useState(false);
+  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
     const unsubscribe = watchAuth((sessionUser) => setUser(sessionUser));
@@ -35,11 +35,21 @@ export default function App() {
   const isAdmin = authedUser?.role === 'admin';
   const safeActive = active === 'admin' && !isAdmin ? 'dashboard' : active;
 
-  function notify(message) {
+  const notify = useCallback((message) => {
     setToast(message);
     window.clearTimeout(window.eliteStudyToastTimer);
     window.eliteStudyToastTimer = window.setTimeout(() => setToast(''), 3200);
-  }
+  }, []);
+
+  useEffect(() => {
+    if (!authedUser) {
+      setNotifications([]);
+      return undefined;
+    }
+    return watchCollection('announcements', setNotifications, {
+      onError: () => notify('Could not load announcements from Firestore.'),
+    });
+  }, [authedUser, notify]);
 
   const page = useMemo(() => {
     const props = { setActive, user: authedUser, notify };
@@ -52,7 +62,7 @@ export default function App() {
       profile: <Profile {...props} />,
       admin: isAdmin ? <Admin {...props} /> : <Dashboard {...props} />,
     }[safeActive];
-  }, [safeActive, authedUser, isAdmin]);
+  }, [safeActive, authedUser, isAdmin, notify]);
 
   if (!authedUser) {
     return <Auth notify={notify} />;
@@ -107,10 +117,10 @@ export default function App() {
               {notifications.length ? (
                 <div className="mt-4 space-y-3">
                   {notifications.map((item) => (
-                    <Card key={item.title} className="p-4">
+                    <Card key={item.id} className="p-4">
                       <p className="font-black text-slate-950 dark:text-white">{item.title}</p>
                       <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{item.body}</p>
-                      <p className="mt-3 text-xs font-bold text-blue-600">{item.time}</p>
+                      <p className="mt-3 text-xs font-bold text-blue-600">{formatDate(item.createdAt)}</p>
                     </Card>
                   ))}
                 </div>
@@ -125,4 +135,9 @@ export default function App() {
       </AnimatePresence>
     </div>
   );
+}
+
+function formatDate(value) {
+  const date = value?.toDate?.() || null;
+  return date ? date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'just now';
 }

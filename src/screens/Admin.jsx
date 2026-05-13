@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FilePlus2, Megaphone, Plus, Send, Upload, UsersRound } from 'lucide-react';
 import { createAnnouncement, createQuiz, uploadResource } from '../firebase';
-import { subjects } from '../data/mockData';
+import { subjects } from '../data/subjects';
 import { Button, Card } from '../components/ui';
 
 const blankQuestion = {

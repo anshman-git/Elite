@@ -5,15 +5,3 @@ export const subjects = [
   { id: 'statistics', name: 'Statistics', tone: 'bg-indigo-500', progress: 0, strength: 'Not started' },
   { id: 'cybersecurity', name: 'Cybersecurity', tone: 'bg-cyan-600', progress: 0, strength: 'Not started' },
 ];
-
-export const mcqs = [];
-
-export const quizzes = [];
-
-export const leaderboard = [];
-
-export const resources = [];
-
-export const activities = [];
-
-export const notifications = [];

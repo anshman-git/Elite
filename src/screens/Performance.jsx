@@ -1,8 +1,41 @@
+import { useEffect, useMemo, useState } from 'react';
 import { BarChart3, TrendingDown, TrendingUp } from 'lucide-react';
-import { subjects } from '../data/mockData';
+import { subjects } from '../data/subjects';
+import { watchCollection } from '../firebase';
 import { Card, ProgressBar } from '../components/ui';
 
-export default function Performance() {
+export default function Performance({ notify, user }) {
+  const [attempts, setAttempts] = useState([]);
+
+  useEffect(() => {
+    return watchCollection('attempts', setAttempts, {
+      sortField: 'completedAt',
+      take: 100,
+      onError: () => notify('Could not load attempts from Firestore.'),
+    });
+  }, [notify]);
+
+  const userAttempts = useMemo(
+    () => attempts.filter((attempt) => !user?.uid || attempt.userId === user.uid),
+    [attempts, user?.uid],
+  );
+
+  const averageAccuracy = userAttempts.length
+    ? Math.round(userAttempts.reduce((sum, attempt) => sum + (attempt.accuracy || 0), 0) / userAttempts.length)
+    : 0;
+
+  const subjectStats = subjects.map((subject) => {
+    const subjectAttempts = userAttempts.filter((attempt) => attempt.subject === subject.name);
+    const progress = subjectAttempts.length
+      ? Math.round(subjectAttempts.reduce((sum, attempt) => sum + (attempt.accuracy || 0), 0) / subjectAttempts.length)
+      : 0;
+    return { ...subject, progress };
+  });
+
+  const weakestSubject = subjectStats
+    .filter((subject) => subject.progress > 0)
+    .sort((a, b) => a.progress - b.progress)[0]?.name || '-';
+
   return (
     <div className="space-y-4">
       <div>
@@ -10,14 +43,14 @@ export default function Performance() {
         <h2 className="text-2xl font-black text-slate-950 dark:text-white">Performance overview</h2>
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
-        <Card><BarChart3 className="text-blue-600" /><p className="mt-3 text-2xl font-black">0</p><p className="text-sm text-slate-500">Quizzes attempted</p></Card>
-        <Card><TrendingUp className="text-emerald-600" /><p className="mt-3 text-2xl font-black">0%</p><p className="text-sm text-slate-500">Average accuracy</p></Card>
-        <Card><TrendingDown className="text-rose-600" /><p className="mt-3 text-2xl font-black">-</p><p className="text-sm text-slate-500">Weakest subject</p></Card>
+        <Card><BarChart3 className="text-blue-600" /><p className="mt-3 text-2xl font-black">{userAttempts.length}</p><p className="text-sm text-slate-500">Quizzes attempted</p></Card>
+        <Card><TrendingUp className="text-emerald-600" /><p className="mt-3 text-2xl font-black">{averageAccuracy}%</p><p className="text-sm text-slate-500">Average accuracy</p></Card>
+        <Card><TrendingDown className="text-rose-600" /><p className="mt-3 text-2xl font-black">{weakestSubject}</p><p className="text-sm text-slate-500">Weakest subject</p></Card>
       </div>
       <Card>
         <h3 className="font-black text-slate-950 dark:text-white">Subject strengths</h3>
         <div className="mt-4 space-y-4">
-          {subjects.map((subject) => (
+          {subjectStats.map((subject) => (
             <div key={subject.id}>
               <div className="mb-2 flex justify-between text-sm font-bold">
                 <span>{subject.name}</span>
@@ -31,7 +64,7 @@ export default function Performance() {
       <Card>
         <h3 className="font-black text-slate-950 dark:text-white">Weekly progress</h3>
         <div className="mt-4 flex h-48 items-end gap-2">
-          {[0, 0, 0, 0, 0, 0, 0].map((height, index) => (
+          {getWeeklyBars(userAttempts).map((height, index) => (
             <div key={index} className="flex flex-1 flex-col items-center gap-2">
               <div className="w-full rounded-t-2xl bg-blue-600" style={{ height: `${Math.max(height, 2)}%` }} />
               <span className="text-xs font-bold text-slate-400">{['M', 'T', 'W', 'T', 'F', 'S', 'S'][index]}</span>
@@ -41,4 +74,15 @@ export default function Performance() {
       </Card>
     </div>
   );
+}
+
+function getWeeklyBars(attempts) {
+  const buckets = [0, 0, 0, 0, 0, 0, 0];
+  attempts.forEach((attempt) => {
+    const date = attempt.completedAt?.toDate?.();
+    if (!date) return;
+    const index = (date.getDay() + 6) % 7;
+    buckets[index] = Math.min(100, buckets[index] + 20);
+  });
+  return buckets;
 }

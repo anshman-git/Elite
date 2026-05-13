@@ -1,10 +1,31 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { CalendarClock, Flame, Play, Quote, TrendingUp, Trophy } from 'lucide-react';
-import { activities, leaderboard, subjects } from '../data/mockData';
+import { subjects } from '../data/subjects';
+import { watchCollection } from '../firebase';
 import { daysUntilExam, formatPercent } from '../utils';
 import { Button, Card, EmptyState, ProgressBar } from '../components/ui';
 
-export default function Dashboard({ setActive, user }) {
+export default function Dashboard({ setActive, user, notify }) {
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const rank = leaderboard.findIndex((person) => person.id === user?.uid) + 1;
+
+  useEffect(() => {
+    return watchCollection('users', setLeaderboard, {
+      sortField: 'points',
+      take: 5,
+      onError: () => notify('Could not load leaderboard from Firestore.'),
+    });
+  }, [notify]);
+
+  useEffect(() => {
+    return watchCollection('announcements', setActivities, {
+      take: 4,
+      onError: () => notify('Could not load recent activity from Firestore.'),
+    });
+  }, [notify]);
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <motion.section
@@ -31,8 +52,8 @@ export default function Dashboard({ setActive, user }) {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Metric icon={Flame} label="Streak" value={`${user?.streak || 0} days`} />
         <Metric icon={CalendarClock} label="Exam in" value={`${daysUntilExam()} days`} />
-        <Metric icon={TrendingUp} label="Accuracy" value="0%" />
-        <Metric icon={Trophy} label="Rank" value="-" />
+        <Metric icon={TrendingUp} label="Points" value={user?.points || 0} />
+        <Metric icon={Trophy} label="Rank" value={rank || '-'} />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
@@ -87,15 +108,15 @@ export default function Dashboard({ setActive, user }) {
             <h3 className="font-black text-slate-950 dark:text-white">Leaderboard preview</h3>
             {leaderboard.length ? (
               <div className="mt-3 space-y-3">
-                {leaderboard.slice(0, 3).map((person) => (
-                  <div key={person.rank} className="flex items-center justify-between rounded-2xl bg-slate-50 p-3 dark:bg-white/5">
+                {leaderboard.slice(0, 3).map((person, index) => (
+                  <div key={person.id} className="flex items-center justify-between rounded-2xl bg-slate-50 p-3 dark:bg-white/5">
                     <div className="flex items-center gap-3">
                       <span className="grid h-8 w-8 place-items-center rounded-xl bg-white text-xs font-black shadow-sm dark:bg-slate-900">
-                        #{person.rank}
+                        #{index + 1}
                       </span>
-                      <span className="font-bold text-slate-900 dark:text-white">{person.name}</span>
+                      <span className="font-bold text-slate-900 dark:text-white">{person.name || person.displayName || person.email || 'Elite learner'}</span>
                     </div>
-                    <span className="text-sm font-black text-blue-600">{person.score}</span>
+                    <span className="text-sm font-black text-blue-600">{person.points || 0}</span>
                   </div>
                 ))}
               </div>
@@ -113,8 +134,8 @@ export default function Dashboard({ setActive, user }) {
         {activities.length ? (
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             {activities.map((activity) => (
-              <div key={activity} className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600 dark:bg-white/5 dark:text-slate-300">
-                {activity}
+              <div key={activity.id} className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600 dark:bg-white/5 dark:text-slate-300">
+                {activity.title}
               </div>
             ))}
           </div>

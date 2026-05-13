@@ -18,6 +18,7 @@ import {
   getDocs,
   getFirestore,
   limit,
+  onSnapshot,
   orderBy,
   query,
   serverTimestamp,
@@ -140,6 +141,26 @@ export async function fetchCollection(name, sortField = 'createdAt', take = 30) 
   if (!db) return [];
   const snapshot = await getDocs(query(collection(db, name), orderBy(sortField, 'desc'), limit(take)));
   return snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+}
+
+export function watchCollection(name, callback, options = {}) {
+  const { sortField = 'createdAt', sortDirection = 'desc', take = 30, onError } = options;
+  if (!db) {
+    callback([]);
+    return () => {};
+  }
+
+  const collectionQuery = query(collection(db, name), orderBy(sortField, sortDirection), limit(take));
+  return onSnapshot(
+    collectionQuery,
+    (snapshot) => {
+      callback(snapshot.docs.map((item) => ({ id: item.id, ...item.data() })));
+    },
+    (error) => {
+      callback([]);
+      onError?.(error);
+    },
+  );
 }
 
 export async function createQuiz(payload) {
