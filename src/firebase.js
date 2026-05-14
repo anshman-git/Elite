@@ -23,8 +23,11 @@ import {
   query,
   serverTimestamp,
   setDoc,
+  where,
+  increment,
+  updateDoc,
 } from 'firebase/firestore';
-import { getDownloadURL, getStorage, ref, uploadBytes } from 'firebase/storage';
+import { getDownloadURL, getStorage, ref, uploadBytes, deleteObject } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -58,23 +61,32 @@ export function watchAuth(callback) {
     }
 
     try {
+      // Get the ID token to access custom claims
+      const idTokenResult = await sessionUser.getIdTokenResult();
+      const isAdmin = idTokenResult.claims.admin === true;
+
       const profile = await getDoc(doc(db, 'users', sessionUser.uid));
       let profileData = profile.exists() ? profile.data() : null;
       if (!profile.exists()) {
         profileData = {
           name: sessionUser.displayName || 'Elite learner',
           email: sessionUser.email || '',
-          role: 'student',
+          role: isAdmin ? 'admin' : 'student',
           streak: 0,
           points: 0,
           createdAt: serverTimestamp(),
           lastActiveAt: serverTimestamp(),
         };
         await setDoc(doc(db, 'users', sessionUser.uid), profileData);
+      } else if (isAdmin && profileData.role !== 'admin') {
+        // Update role if user became admin
+        await updateDoc(doc(db, 'users', sessionUser.uid), { role: 'admin' });
+        profileData.role = 'admin';
       }
       callback({ ...sessionUser, ...profileData });
-    } catch {
-      callback(sessionUser);
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+      callback(sessionUser); // Fallback to basic user data
     }
   });
 }
@@ -106,6 +118,7 @@ export async function signupWithEmail({ name, email, password }) {
       lastActiveAt: serverTimestamp(),
     });
   } catch (error) {
+    console.error('Failed to create user profile:', error);
     return { credential, profileCreated: false, profileError: error };
   }
 
@@ -145,22 +158,112 @@ export async function fetchCollection(name, sortField = 'createdAt', take = 30) 
 
 export function watchCollection(name, callback, options = {}) {
   const { sortField = 'createdAt', sortDirection = 'desc', take = 30, onError } = options;
+
   if (!db) {
     callback([]);
     return () => {};
   }
 
-  const collectionQuery = query(collection(db, name), orderBy(sortField, sortDirection), limit(take));
+  let unsubscribe;
+  try {
+    const collectionQuery = query(
+      collection(db, name),
+      orderBy(sortField, sortDirection),
+      limit(take)
+    );
+
+    unsubscribe = onSnapshot(
+      collectionQuery,
+      (snapshot) => {
+        try {
+          const data = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+          callback(data);
+        } catch (error) {
+          console.error(`Error mapping ${name} documents:`, error);
+          onError?.(new Error(`Failed to process ${name} data`));
+        }
+      },
+      (error) => {
+        console.error(`Error watching ${name}:`, error);
+        callback([]); // Empty state for UI
+        onError?.(error); // Notify user
+      }
+    );
+  } catch (error) {
+    console.error(`Error setting up watch for ${name}:`, error);
+    onError?.(error);
+  }
+
+  return () => unsubscribe?.();
+}
+
+export function watchUserAttempts(userId, callback, options = {}) {
+  const { take = 50, onError } = options;
+
+  if (!db || !userId) {
+    callback([]);
+    return () => {};
+  }
+
+  const userAttemptsQuery = query(
+    collection(db, 'attempts'),
+    where('userId', '==', userId),
+    orderBy('completedAt', 'desc'),
+    limit(take)
+  );
+
   return onSnapshot(
-    collectionQuery,
+    userAttemptsQuery,
     (snapshot) => {
-      callback(snapshot.docs.map((item) => ({ id: item.id, ...item.data() })));
+      callback(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
     },
     (error) => {
+      console.error('Error watching user attempts:', error);
       callback([]);
       onError?.(error);
-    },
+    }
   );
+}
+
+export async function submitAttempt(userId, quizId, quizData, answers) {
+  if (!db) throw new Error('Firebase not configured');
+
+  const questions = quizData.questions || [];
+
+  // Calculate score
+  const score = questions.reduce((total, item, index) => {
+    const questionId = item.id || item.question || `question-${index}`;
+    return total + (answers[questionId] === item.answer ? 1 : 0);
+  }, 0);
+
+  const accuracy = questions.length > 0 ? (score / questions.length) * 100 : 0;
+
+  // Create attempt document
+  const attemptRef = await addDoc(collection(db, 'attempts'), {
+    userId,
+    quizId,
+    subject: quizData.subject,
+    score,
+    total: questions.length,
+    accuracy: Math.round(accuracy),
+    timeTaken: quizData.duration * 60, // Will be updated with actual time
+    answers: Object.keys(answers).length > 0 ? answers : {},
+    completedAt: serverTimestamp(),
+  });
+
+  // Update user points and last active
+  try {
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+      points: increment(Math.min(100, score * 10)),
+      lastActiveAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error('Failed to update user points:', error);
+    // Don't throw - attempt is saved even if points update fails
+  }
+
+  return attemptRef;
 }
 
 export async function createQuiz(payload) {
@@ -170,20 +273,52 @@ export async function createQuiz(payload) {
 
 export async function uploadResource({ file, subject, type, title, createdBy }) {
   if (!storage || !db) throw new Error('Firebase is not configured yet.');
-  const allowed = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp'];
-  if (!allowed.includes(file.type)) throw new Error('Only PDF and image files are supported.');
+
+  // Validate file
+  const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+  const ALLOWED_TYPES = [
+    'application/pdf',
+    'image/png',
+    'image/jpeg',
+    'image/webp',
+    'image/gif',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'text/plain',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+  ];
+
+  if (file.size > MAX_FILE_SIZE) {
+    throw new Error(`File too large. Maximum size: 50MB. Your file: ${(file.size / 1024 / 1024).toFixed(1)}MB`);
+  }
+
+  if (!ALLOWED_TYPES.includes(file.type)) {
+    throw new Error(`Invalid file type. Allowed: PDF, Word documents, Excel, PowerPoint, images, and text files.`);
+  }
+
   const fileRef = ref(storage, `resources/${subject}/${Date.now()}-${file.name}`);
-  await uploadBytes(fileRef, file);
-  const url = await getDownloadURL(fileRef);
-  return addDoc(collection(db, 'resources'), {
-    title,
-    subject,
-    type,
-    fileType: file.type,
-    url,
-    createdBy: createdBy || null,
-    createdAt: serverTimestamp(),
-  });
+
+  try {
+    await uploadBytes(fileRef, file);
+    const url = await getDownloadURL(fileRef);
+    return addDoc(collection(db, 'resources'), {
+      title,
+      subject,
+      type,
+      fileType: file.type,
+      fileSize: file.size,
+      url,
+      createdBy: createdBy || null,
+      createdAt: serverTimestamp(),
+    });
+  } catch (error) {
+    // Clean up failed upload
+    await deleteObject(fileRef).catch(() => {}); // Ignore cleanup errors
+    throw error;
+  }
 }
 
 export async function createAnnouncement(payload) {

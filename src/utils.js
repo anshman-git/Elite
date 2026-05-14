@@ -1,6 +1,6 @@
 export const classNames = (...values) => values.filter(Boolean).join(' ');
 
-export function daysUntilExam(target = '2026-05-30') {
+export function daysUntilExam(target = import.meta.env.VITE_EXAM_DATE || '2026-05-30') {
   const end = new Date(`${target}T00:00:00`);
   const now = new Date();
   const diff = end.getTime() - now.getTime();

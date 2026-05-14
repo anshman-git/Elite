@@ -2,17 +2,20 @@ import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, Clock, RotateCcw, SlidersHorizontal } from 'lucide-react';
 import { subjects } from '../data/subjects';
-import { watchCollection } from '../firebase';
+import { watchCollection, submitAttempt } from '../firebase';
+import { useApp } from '../context/AppContext';
 import { Button, Card, EmptyState } from '../components/ui';
 import { classNames } from '../utils';
 
 export default function Quizzes({ notify }) {
+  const { user, notify: globalNotify } = useApp();
   const [quizzes, setQuizzes] = useState([]);
   const [subject, setSubject] = useState('All');
   const [activeQuiz, setActiveQuiz] = useState(null);
   const [answers, setAnswers] = useState({});
   const [seconds, setSeconds] = useState(25 * 60);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const filtered = useMemo(
     () => (subject === 'All' ? quizzes : quizzes.filter((quiz) => quiz.subject === subject)),
@@ -32,15 +35,30 @@ export default function Quizzes({ notify }) {
     const timer = window.setInterval(() => {
       setSeconds((value) => {
         if (value <= 1) {
-          setSubmitted(true);
-          notify('Timer ended. Quiz submitted automatically.');
+          handleSubmit(); // Auto-submit when time runs out
           return 0;
         }
         return value - 1;
       });
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [activeQuiz, submitted, notify]);
+  }, [activeQuiz, submitted, handleSubmit]);
+
+  const handleSubmit = async () => {
+    if (!user || !activeQuiz) return;
+
+    setSubmitting(true);
+    try {
+      await submitAttempt(user.uid, activeQuiz.id, activeQuiz, answers);
+      setSubmitted(true);
+      globalNotify('Quiz submitted successfully!');
+    } catch (error) {
+      console.error('Failed to submit quiz:', error);
+      globalNotify('Failed to submit quiz. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const score = questions.reduce((total, item, index) => total + (answers[getQuestionId(item, index)] === item.answer ? 1 : 0), 0);
 
@@ -123,8 +141,8 @@ export default function Quizzes({ notify }) {
           })}
         </div>
         {!submitted ? (
-          <Button variant="accent" onClick={() => setSubmitted(true)} className="w-full">
-            Submit quiz
+          <Button variant="accent" onClick={handleSubmit} disabled={submitting} className="w-full">
+            {submitting ? 'Submitting...' : 'Submit quiz'}
           </Button>
         ) : null}
       </div>

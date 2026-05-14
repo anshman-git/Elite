@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FilePlus2, Megaphone, Plus, Send, Upload, UsersRound } from 'lucide-react';
-import { createAnnouncement, createQuiz, uploadResource } from '../firebase';
+import { createAnnouncement, createQuiz, uploadResource, watchCollection } from '../firebase';
 import { subjects } from '../data/subjects';
 import { Button, Card } from '../components/ui';
 
@@ -25,8 +25,24 @@ export default function Admin({ notify, user }) {
     isDaily: true,
     questions: [blankQuestion],
   });
-  const [announcement, setAnnouncement] = useState({ title: '', body: '', target: 'all' });
-  const [busy, setBusy] = useState('');
+  const [quizFile, setQuizFile] = useState(null);
+  const [existingQuizzes, setExistingQuizzes] = useState([]);
+  const [existingResources, setExistingResources] = useState([]);
+
+  useEffect(() => {
+    const unsubscribeQuizzes = watchCollection('quizzes', setExistingQuizzes, {
+      take: 20,
+      onError: (error) => console.error('Failed to load quizzes:', error),
+    });
+    const unsubscribeResources = watchCollection('resources', setExistingResources, {
+      take: 20,
+      onError: (error) => console.error('Failed to load resources:', error),
+    });
+    return () => {
+      unsubscribeQuizzes();
+      unsubscribeResources();
+    };
+  }, []);
 
   async function submitResource(event) {
     event.preventDefault();
@@ -105,6 +121,63 @@ export default function Admin({ notify, user }) {
     }
   }
 
+  async function submitQuizFile(event) {
+    event.preventDefault();
+    if (!quizFile) {
+      notify('Choose a JSON file containing quiz data.');
+      return;
+    }
+
+    setBusy('quizFile');
+    try {
+      const text = await quizFile.text();
+      const quizData = JSON.parse(text);
+
+      // Validate the structure
+      if (!Array.isArray(quizData)) {
+        throw new Error('Quiz file must contain an array of quizzes.');
+      }
+
+      let uploadedCount = 0;
+      for (const quiz of quizData) {
+        if (!quiz.title || !Array.isArray(quiz.questions) || quiz.questions.length === 0) {
+          console.warn('Skipping invalid quiz:', quiz);
+          continue;
+        }
+
+        const cleanQuestions = quiz.questions
+          .map((item) => ({
+            ...item,
+            options: item.options?.map((option) => option?.trim()).filter(Boolean) || [],
+            question: item.question?.trim() || '',
+            answer: item.answer?.trim() || '',
+            explanation: item.explanation?.trim() || '',
+          }))
+          .filter((item) => item.question && item.answer && item.options.length >= 2);
+
+        if (cleanQuestions.length === 0) continue;
+
+        await createQuiz({
+          title: quiz.title.trim(),
+          subject: quiz.subject || 'General',
+          duration: Number(quiz.duration) || 25,
+          isDaily: quiz.isDaily || false,
+          questions: cleanQuestions,
+          createdBy: user?.uid || null,
+        });
+        uploadedCount++;
+      }
+
+      notify(`Successfully uploaded ${uploadedCount} quiz(es).`);
+      setQuizFile(null);
+      event.currentTarget.reset();
+    } catch (error) {
+      notify(error.message || 'Failed to upload quiz file. Check the JSON format.');
+    } finally {
+      setBusy('');
+    }
+  }
+
   function updateQuestion(index, patch) {
     setQuiz((current) => ({
       ...current,
@@ -163,10 +236,10 @@ export default function Admin({ notify, user }) {
               </Select>
             </div>
             <label className="grid gap-2 text-sm font-bold text-slate-700 dark:text-slate-200">
-              PDF or image file
+              Document file (PDF, Word, Images, etc.)
               <input
                 type="file"
-                accept="application/pdf,image/*"
+                accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,image/*"
                 onChange={(event) => setResource({ ...resource, file: event.target.files?.[0] || null })}
                 className="min-h-12 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold dark:border-white/10 dark:bg-slate-950"
               />
@@ -256,6 +329,30 @@ export default function Admin({ notify, user }) {
 
       <Card>
         <div className="flex items-center gap-3">
+          <Upload className="text-blue-600" />
+          <h3 className="font-black text-slate-950 dark:text-white">Bulk upload quizzes</h3>
+        </div>
+        <form onSubmit={submitQuizFile} className="mt-4 grid gap-3">
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            Upload a JSON file containing multiple quizzes. Each quiz should have title, subject, duration, isDaily, and questions array.
+          </p>
+          <label className="grid gap-2 text-sm font-bold text-slate-700 dark:text-slate-200">
+            Quiz JSON file
+            <input
+              type="file"
+              accept="application/json"
+              onChange={(event) => setQuizFile(event.target.files?.[0] || null)}
+              className="min-h-12 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold dark:border-white/10 dark:bg-slate-950"
+            />
+          </label>
+          <Button variant="accent" disabled={busy === 'quizFile'} className="w-full">
+            <Upload size={17} /> {busy === 'quizFile' ? 'Uploading...' : 'Upload quizzes'}
+          </Button>
+        </form>
+      </Card>
+
+      <Card>
+        <div className="flex items-center gap-3">
           <Megaphone className="text-blue-600" />
           <h3 className="font-black text-slate-950 dark:text-white">Send announcement</h3>
         </div>
@@ -288,11 +385,53 @@ export default function Admin({ notify, user }) {
       <Card>
         <h3 className="font-black text-slate-950 dark:text-white">Analytics snapshot</h3>
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <Metric value={existingQuizzes.length} label="Total quizzes" />
+          <Metric value={existingResources.length} label="Total resources" />
           <Metric value="38" label="Active students" />
-          <Metric value="126" label="Quiz attempts" />
-          <Metric value="19" label="Resources uploaded" />
         </div>
       </Card>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <Card>
+          <h3 className="font-black text-slate-950 dark:text-white">Recent quizzes</h3>
+          <div className="mt-4 space-y-3">
+            {existingQuizzes.slice(0, 5).map((item) => (
+              <div key={item.id} className="flex items-center justify-between rounded-2xl bg-slate-50 p-3 dark:bg-white/5">
+                <div>
+                  <p className="font-bold text-slate-950 dark:text-white">{item.title}</p>
+                  <p className="text-sm text-slate-500">{item.subject} • {item.questions?.length || 0} questions</p>
+                </div>
+                <div className="text-xs text-slate-400">
+                  {item.createdAt?.toDate?.()?.toLocaleDateString() || 'Recent'}
+                </div>
+              </div>
+            ))}
+            {existingQuizzes.length === 0 && (
+              <p className="text-sm text-slate-500 dark:text-slate-400">No quizzes created yet.</p>
+            )}
+          </div>
+        </Card>
+
+        <Card>
+          <h3 className="font-black text-slate-950 dark:text-white">Recent resources</h3>
+          <div className="mt-4 space-y-3">
+            {existingResources.slice(0, 5).map((item) => (
+              <div key={item.id} className="flex items-center justify-between rounded-2xl bg-slate-50 p-3 dark:bg-white/5">
+                <div>
+                  <p className="font-bold text-slate-950 dark:text-white">{item.title}</p>
+                  <p className="text-sm text-slate-500">{item.subject} • {item.type}</p>
+                </div>
+                <div className="text-xs text-slate-400">
+                  {item.createdAt?.toDate?.()?.toLocaleDateString() || 'Recent'}
+                </div>
+              </div>
+            ))}
+            {existingResources.length === 0 && (
+              <p className="text-sm text-slate-500 dark:text-slate-400">No resources uploaded yet.</p>
+            )}
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }
