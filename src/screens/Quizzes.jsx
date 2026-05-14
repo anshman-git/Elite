@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, Clock, RotateCcw, SlidersHorizontal } from 'lucide-react';
 import { subjects } from '../data/subjects';
 import { watchQuizzes, submitAttempt } from '../firebase';
-import { useApp } from '../context/AppContext';
+import { useApp } from '../context/useApp';
 import { Button, Card, EmptyState } from '../components/ui';
 import { classNames } from '../utils';
 

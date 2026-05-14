@@ -1,14 +1,22 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { watchAuth, watchCollection } from '../firebase';
+import { AppContext } from './app-context';
 
-const AppContext = createContext(null);
+const THEME_STORAGE_KEY = 'theme';
+const LEGACY_THEME_STORAGE_KEY = 'elitestudy-theme';
+
+function getStoredTheme() {
+  if (typeof window === 'undefined') return false;
+
+  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || localStorage.getItem(LEGACY_THEME_STORAGE_KEY);
+  if (savedTheme) return savedTheme === 'dark';
+
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+}
 
 export function AppProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [dark, setDark] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return localStorage.getItem('elitestudy-theme') === 'dark';
-  });
+  const [dark, setDark] = useState(getStoredTheme);
   const [notifications, setNotifications] = useState([]);
   const [toasts, setToasts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,6 +45,12 @@ export function AppProvider({ children }) {
     return unsubscribe;
   }, []);
 
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark);
+    localStorage.setItem(THEME_STORAGE_KEY, dark ? 'dark' : 'light');
+    localStorage.setItem(LEGACY_THEME_STORAGE_KEY, dark ? 'dark' : 'light');
+  }, [dark]);
+
   // Watch announcements
   useEffect(() => {
     if (!user) {
@@ -57,7 +71,9 @@ export function AppProvider({ children }) {
   // Alias for consistency
   const notify = addToast;
 
-  const toggleDark = () => setDark((prev) => !prev);
+  const toggleDark = useCallback(() => {
+    setDark((current) => !current);
+  }, []);
 
   const value = {
     user,
@@ -79,10 +95,3 @@ export function AppProvider({ children }) {
   );
 }
 
-export function useApp() {
-  const context = useContext(AppContext);
-  if (!context) {
-    throw new Error('useApp must be used inside <AppProvider>');
-  }
-  return context;
-}

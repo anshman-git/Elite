@@ -80,7 +80,7 @@ export function TopBar({ dark, onToggleDark, onOpenNotifications, isAdmin, user 
           <IconButton label="Notifications" onClick={onOpenNotifications}>
             <Bell size={19} />
           </IconButton>
-          <IconButton label="Toggle dark mode" onClick={onToggleDark}>
+          <IconButton label="Toggle dark mode" onClick={onToggleDark} aria-pressed={dark}>
             {dark ? <Sun size={19} /> : <Moon size={19} />}
           </IconButton>
         </div>

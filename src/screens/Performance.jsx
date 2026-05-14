@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { BarChart3, TrendingDown, TrendingUp } from 'lucide-react';
 import { subjects } from '../data/subjects';
 import { watchUserAttempts } from '../firebase';
-import { useApp } from '../context/AppContext';
+import { useApp } from '../context/useApp';
 import { Card, ProgressBar } from '../components/ui';
 
 export default function Performance({ notify }) {
