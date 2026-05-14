@@ -525,6 +525,16 @@ export default function Admin({ notify, user }) {
     { id: 'timer', label: 'Exam Timer', icon: Timer },
   ];
 
+  function Metric({ icon: Icon, label, value, urgent }) {
+    return (
+      <Card className={`p-4 ${urgent ? 'ring-2 ring-red-500/50 bg-red-50/50 dark:bg-red-500/5' : ''}`}>
+        <Icon className={`text-blue-600 ${urgent ? 'text-red-600' : ''}`} size={21} />
+        <p className={`mt-3 text-xs font-bold uppercase tracking-[0.12em] ${urgent ? 'text-red-600' : 'text-slate-400'}`}>{label}</p>
+        <p className={`mt-1 text-xl font-black ${urgent ? 'text-red-600' : 'text-slate-950 dark:text-white'}`}>{value}</p>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
