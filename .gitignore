@@ -7,3 +7,4 @@ serviceAccountKey.json
 *.key.json
 *-firebase-adminsdk-*.json
 firebase-key.json
+.agents/
