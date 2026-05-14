@@ -19,7 +19,7 @@ function AppContent() {
   const [active, setActive] = useState('dashboard');
   const [drawer, setDrawer] = useState(false);
 
-  const safeActive = active === 'admin' && !isAdmin ? 'dashboard' : active;
+  const safeActive = active === 'admin' && user?.role !== 'admin' ? 'dashboard' : active;
 
   const page = useMemo(() => {
     const props = { setActive, user, notify };
@@ -40,7 +40,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 transition dark:bg-slate-950 dark:text-slate-100">
-      <TopBar dark={dark} onToggleDark={toggleDark} onOpenNotifications={() => setDrawer(true)} />
+      <TopBar dark={dark} onToggleDark={toggleDark} onOpenNotifications={() => setDrawer(true)} isAdmin={isAdmin} user={user} />
       <div className="mx-auto flex max-w-[1600px]">
         <Sidebar active={safeActive} setActive={setActive} isAdmin={isAdmin} />
         <main className="min-w-0 flex-1 px-4 pb-28 pt-4 sm:px-6 lg:pb-8">
