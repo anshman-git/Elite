@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FilePlus2, Megaphone, Plus, Send, Upload, UsersRound } from 'lucide-react';
-import { createAnnouncement, createQuiz, uploadResource, watchCollection } from '../firebase';
+import { createAnnouncement, createQuiz, uploadResource, watchCollection, watchQuizzes } from '../firebase';
 import { subjects } from '../data/subjects';
 import { Button, Card } from '../components/ui';
 
@@ -32,7 +32,7 @@ export default function Admin({ notify, user }) {
   const [existingResources, setExistingResources] = useState([]);
 
   useEffect(() => {
-    const unsubscribeQuizzes = watchCollection('quizzes', setExistingQuizzes, {
+    const unsubscribeQuizzes = watchQuizzes(setExistingQuizzes, {
       take: 20,
       onError: (error) => console.error('Failed to load quizzes:', error),
     });
@@ -401,7 +401,7 @@ export default function Admin({ notify, user }) {
               <div key={item.id} className="flex items-center justify-between rounded-2xl bg-slate-50 p-3 dark:bg-white/5">
                 <div>
                   <p className="font-bold text-slate-950 dark:text-white">{item.title}</p>
-                  <p className="text-sm text-slate-500">{item.subject} • {item.questions?.length || 0} questions</p>
+                  <p className="text-sm text-slate-500">{item.subject} - {item.questions?.length || 0} questions</p>
                 </div>
                 <div className="text-xs text-slate-400">
                   {item.createdAt?.toDate?.()?.toLocaleDateString() || 'Recent'}
@@ -421,7 +421,7 @@ export default function Admin({ notify, user }) {
               <div key={item.id} className="flex items-center justify-between rounded-2xl bg-slate-50 p-3 dark:bg-white/5">
                 <div>
                   <p className="font-bold text-slate-950 dark:text-white">{item.title}</p>
-                  <p className="text-sm text-slate-500">{item.subject} • {item.type}</p>
+                  <p className="text-sm text-slate-500">{item.subject} - {item.type}</p>
                 </div>
                 <div className="text-xs text-slate-400">
                   {item.createdAt?.toDate?.()?.toLocaleDateString() || 'Recent'}

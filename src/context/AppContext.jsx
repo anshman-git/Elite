@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { watchAuth, watchCollection } from '../firebase';
 
 const AppContext = createContext(null);
@@ -14,7 +14,7 @@ export function AppProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   // Toast notification system
-  const addToast = (message, type = 'info', duration = 3200) => {
+  const addToast = useCallback((message, type = 'info', duration = 3200) => {
     const id = Date.now();
     setToasts((prev) => [...prev, { id, message, type }]);
 
@@ -23,23 +23,19 @@ export function AppProvider({ children }) {
     }, duration);
 
     return () => clearTimeout(timer);
-  };
+  }, []);
 
   // Watch auth state
   useEffect(() => {
     const unsubscribe = watchAuth((sessionUser) => {
       setUser(sessionUser);
+      if (!sessionUser) {
+        setNotifications([]);
+      }
       setLoading(false);
     });
     return unsubscribe;
   }, []);
-
-  // Clear notifications when user logs out
-  useEffect(() => {
-    if (!user) {
-      setNotifications([]);
-    }
-  }, [user]);
 
   // Watch announcements
   useEffect(() => {

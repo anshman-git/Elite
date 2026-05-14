@@ -44,6 +44,7 @@ const app = firebaseEnabled ? initializeApp(firebaseConfig) : null;
 export const auth = app ? getAuth(app) : null;
 export const db = app ? getFirestore(app) : null;
 export const storage = app ? getStorage(app) : null;
+export const QUIZZES_COLLECTION = 'quizzes';
 
 if (auth) {
   setPersistence(auth, browserLocalPersistence);
@@ -272,7 +273,15 @@ export async function submitAttempt(userId, quizId, quizData, answers) {
 
 export async function createQuiz(payload) {
   if (!db) throw new Error('Firebase is not configured yet.');
-  return addDoc(collection(db, 'quizzes'), { ...payload, createdAt: serverTimestamp() });
+  return addDoc(collection(db, QUIZZES_COLLECTION), { ...payload, createdAt: serverTimestamp() });
+}
+
+export function watchQuizzes(callback, options = {}) {
+  return watchCollection(QUIZZES_COLLECTION, callback, options);
+}
+
+export async function fetchQuizzes(take = 30) {
+  return fetchCollection(QUIZZES_COLLECTION, 'createdAt', take);
 }
 
 export async function uploadResource({ file, subject, type, title, createdBy }) {

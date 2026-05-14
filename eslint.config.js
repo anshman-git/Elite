@@ -9,9 +9,13 @@ export default [
     languageOptions: {
       ecmaVersion: 2020,
       globals: {
+        clearTimeout: 'readonly',
+        console: 'readonly',
         document: 'readonly',
         window: 'readonly',
         localStorage: 'readonly',
+        process: 'readonly',
+        setTimeout: 'readonly',
       },
       parserOptions: {
         ecmaVersion: 'latest',

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, Clock, RotateCcw, SlidersHorizontal } from 'lucide-react';
 import { subjects } from '../data/subjects';
-import { watchCollection, submitAttempt } from '../firebase';
+import { watchQuizzes, submitAttempt } from '../firebase';
 import { useApp } from '../context/AppContext';
 import { Button, Card, EmptyState } from '../components/ui';
 import { classNames } from '../utils';
@@ -18,7 +18,10 @@ export default function Quizzes({ notify }) {
   const [submitting, setSubmitting] = useState(false);
 
   const filtered = useMemo(
-    () => (subject === 'All' ? quizzes : quizzes.filter((quiz) => quiz.subject === subject)),
+    () => {
+      if (subject === 'All') return quizzes;
+      return quizzes.filter((quiz) => quiz.subject === subject || quiz.subject === 'All');
+    },
     [quizzes, subject],
   );
 
@@ -41,7 +44,7 @@ export default function Quizzes({ notify }) {
   }, [user, activeQuiz, answers, globalNotify]);
 
   useEffect(() => {
-    return watchCollection('quizzes', setQuizzes, {
+    return watchQuizzes(setQuizzes, {
       onError: () => notify('Could not load quizzes from Firestore.'),
     });
   }, [notify]);
