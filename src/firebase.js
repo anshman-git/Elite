@@ -61,7 +61,8 @@ export function watchAuth(callback) {
     }
 
     try {
-      // Get the ID token to access custom claims
+      // Force refresh the ID token to get latest custom claims
+      await sessionUser.getIdToken(true);
       const idTokenResult = await sessionUser.getIdTokenResult();
       const isAdmin = idTokenResult.claims.admin === true;
 
@@ -78,10 +79,13 @@ export function watchAuth(callback) {
           lastActiveAt: serverTimestamp(),
         };
         await setDoc(doc(db, 'users', sessionUser.uid), profileData);
-      } else if (isAdmin && profileData.role !== 'admin') {
-        // Update role if user became admin
-        await updateDoc(doc(db, 'users', sessionUser.uid), { role: 'admin' });
-        profileData.role = 'admin';
+      } else {
+        // Always update role based on current custom claims
+        const currentRole = isAdmin ? 'admin' : 'student';
+        if (profileData.role !== currentRole) {
+          await updateDoc(doc(db, 'users', sessionUser.uid), { role: currentRole });
+          profileData.role = currentRole;
+        }
       }
       callback({ ...sessionUser, ...profileData });
     } catch (error) {

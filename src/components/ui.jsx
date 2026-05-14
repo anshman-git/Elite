@@ -54,13 +54,27 @@ export function IconButton({ label, children, className = '', ...props }) {
   );
 }
 
-export function TopBar({ dark, onToggleDark, onOpenNotifications }) {
+export function TopBar({ dark, onToggleDark, onOpenNotifications, isAdmin, user }) {
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200/70 bg-slate-50/85 px-4 py-3 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/80 sm:px-6">
       <div className="mx-auto flex max-w-7xl items-center justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">EliteStudy</p>
-          <h1 className="text-lg font-black text-slate-950 dark:text-white">Study command center</h1>
+        <div className="flex items-center gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">EliteStudy</p>
+            <h1 className="text-lg font-black text-slate-950 dark:text-white">Study command center</h1>
+          </div>
+          {user && (
+            <div className={`hidden items-center gap-2 rounded-full px-3 py-1 text-xs font-bold sm:flex ${
+              isAdmin 
+                ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-100' 
+                : 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-100'
+            }`}>
+              <div className={`h-2 w-2 rounded-full ${
+                isAdmin ? 'bg-amber-600' : 'bg-blue-600'
+              }`} />
+              {isAdmin ? 'Admin Mode' : 'Student Mode'}
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <IconButton label="Notifications" onClick={onOpenNotifications}>
