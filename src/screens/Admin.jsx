@@ -26,6 +26,8 @@ export default function Admin({ notify, user }) {
     questions: [blankQuestion],
   });
   const [quizFile, setQuizFile] = useState(null);
+  const [announcement, setAnnouncement] = useState({ title: '', body: '', target: 'all' });
+  const [busy, setBusy] = useState('');
   const [existingQuizzes, setExistingQuizzes] = useState([]);
   const [existingResources, setExistingResources] = useState([]);
 

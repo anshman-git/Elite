@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, Clock, RotateCcw, SlidersHorizontal } from 'lucide-react';
 import { subjects } from '../data/subjects';
@@ -24,6 +24,22 @@ export default function Quizzes({ notify }) {
 
   const questions = activeQuiz?.questions || [];
 
+  const handleSubmit = useCallback(async () => {
+    if (!user || !activeQuiz) return;
+
+    setSubmitting(true);
+    try {
+      await submitAttempt(user.uid, activeQuiz.id, activeQuiz, answers);
+      setSubmitted(true);
+      globalNotify('Quiz submitted successfully!');
+    } catch (error) {
+      console.error('Failed to submit quiz:', error);
+      globalNotify('Failed to submit quiz. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  }, [user, activeQuiz, answers, globalNotify]);
+
   useEffect(() => {
     return watchCollection('quizzes', setQuizzes, {
       onError: () => notify('Could not load quizzes from Firestore.'),
@@ -43,22 +59,6 @@ export default function Quizzes({ notify }) {
     }, 1000);
     return () => window.clearInterval(timer);
   }, [activeQuiz, submitted, handleSubmit]);
-
-  const handleSubmit = async () => {
-    if (!user || !activeQuiz) return;
-
-    setSubmitting(true);
-    try {
-      await submitAttempt(user.uid, activeQuiz.id, activeQuiz, answers);
-      setSubmitted(true);
-      globalNotify('Quiz submitted successfully!');
-    } catch (error) {
-      console.error('Failed to submit quiz:', error);
-      globalNotify('Failed to submit quiz. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   const score = questions.reduce((total, item, index) => total + (answers[getQuestionId(item, index)] === item.answer ? 1 : 0), 0);
 
