@@ -1,24 +1,22 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BarChart3, TrendingDown, TrendingUp } from 'lucide-react';
 import { subjects } from '../data/subjects';
-import { watchCollection } from '../firebase';
+import { watchUserAttempts } from '../firebase';
+import { useApp } from '../context/AppContext';
 import { Card, ProgressBar } from '../components/ui';
 
-export default function Performance({ notify, user }) {
+export default function Performance({ notify }) {
+  const { user, notify: globalNotify } = useApp();
   const [attempts, setAttempts] = useState([]);
 
   useEffect(() => {
-    return watchCollection('attempts', setAttempts, {
-      sortField: 'completedAt',
-      take: 100,
-      onError: () => notify('Could not load attempts from Firestore.'),
+    if (!user?.uid) return;
+    return watchUserAttempts(user.uid, setAttempts, {
+      onError: () => globalNotify('Could not load your attempts from Firestore.'),
     });
-  }, [notify]);
+  }, [user?.uid, globalNotify]);
 
-  const userAttempts = useMemo(
-    () => attempts.filter((attempt) => !user?.uid || attempt.userId === user.uid),
-    [attempts, user?.uid],
-  );
+  const userAttempts = attempts;
 
   const averageAccuracy = userAttempts.length
     ? Math.round(userAttempts.reduce((sum, attempt) => sum + (attempt.accuracy || 0), 0) / userAttempts.length)

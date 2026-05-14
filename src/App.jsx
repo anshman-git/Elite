@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { BottomNav, Sidebar } from './components/navigation';
 import { Button, Card, EmptyState, Toast, TopBar } from './components/ui';
-import { watchAuth, watchCollection } from './firebase';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { AppProvider, useApp } from './context/AppContext';
 import Admin from './screens/Admin';
 import Auth from './screens/Auth';
 import Dashboard from './screens/Dashboard';
@@ -13,46 +14,15 @@ import Profile from './screens/Profile';
 import Quizzes from './screens/Quizzes';
 import Resources from './screens/Resources';
 
-export default function App() {
+function AppContent() {
+  const { user, dark, toggleDark, notifications, notify, toasts, isAdmin } = useApp();
   const [active, setActive] = useState('dashboard');
-  const [user, setUser] = useState(null);
-  const [dark, setDark] = useState(() => localStorage.getItem('elitestudy-theme') === 'dark');
-  const [toast, setToast] = useState('');
   const [drawer, setDrawer] = useState(false);
-  const [notifications, setNotifications] = useState([]);
 
-  useEffect(() => {
-    const unsubscribe = watchAuth((sessionUser) => setUser(sessionUser));
-    return unsubscribe;
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', dark);
-    localStorage.setItem('elitestudy-theme', dark ? 'dark' : 'light');
-  }, [dark]);
-
-  const authedUser = user;
-  const isAdmin = authedUser?.role === 'admin';
   const safeActive = active === 'admin' && !isAdmin ? 'dashboard' : active;
 
-  const notify = useCallback((message) => {
-    setToast(message);
-    window.clearTimeout(window.eliteStudyToastTimer);
-    window.eliteStudyToastTimer = window.setTimeout(() => setToast(''), 3200);
-  }, []);
-
-  useEffect(() => {
-    if (!authedUser) {
-      setNotifications([]);
-      return undefined;
-    }
-    return watchCollection('announcements', setNotifications, {
-      onError: () => notify('Could not load announcements from Firestore.'),
-    });
-  }, [authedUser, notify]);
-
   const page = useMemo(() => {
-    const props = { setActive, user: authedUser, notify };
+    const props = { setActive, user, notify };
     return {
       dashboard: <Dashboard {...props} />,
       quizzes: <Quizzes {...props} />,
@@ -62,15 +32,15 @@ export default function App() {
       profile: <Profile {...props} />,
       admin: isAdmin ? <Admin {...props} /> : <Dashboard {...props} />,
     }[safeActive];
-  }, [safeActive, authedUser, isAdmin, notify]);
+  }, [safeActive, user, isAdmin, notify]);
 
-  if (!authedUser) {
+  if (!user) {
     return <Auth notify={notify} />;
   }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 transition dark:bg-slate-950 dark:text-slate-100">
-      <TopBar dark={dark} onToggleDark={() => setDark((value) => !value)} onOpenNotifications={() => setDrawer(true)} />
+      <TopBar dark={dark} onToggleDark={toggleDark} onOpenNotifications={() => setDrawer(true)} />
       <div className="mx-auto flex max-w-[1600px]">
         <Sidebar active={safeActive} setActive={setActive} isAdmin={isAdmin} />
         <main className="min-w-0 flex-1 px-4 pb-28 pt-4 sm:px-6 lg:pb-8">
@@ -90,7 +60,7 @@ export default function App() {
         </main>
       </div>
       <BottomNav active={safeActive} setActive={setActive} isAdmin={isAdmin} />
-      <Toast message={toast} />
+      <Toast message={toasts.length > 0 ? toasts[0].message : ''} />
       <AnimatePresence>
         {drawer ? (
           <motion.aside
@@ -134,6 +104,16 @@ export default function App() {
         ) : null}
       </AnimatePresence>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <AppProvider>
+        <AppContent />
+      </AppProvider>
+    </ErrorBoundary>
   );
 }
 
