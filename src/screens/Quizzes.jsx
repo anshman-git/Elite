@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, Clock, RotateCcw, SlidersHorizontal } from 'lucide-react';
-import { subjects } from '../data/subjects';
-import { watchQuizzes, submitAttempt } from '../firebase';
+import { watchQuizzes, submitAttempt, watchSubjects } from '../firebase';
 import { useApp } from '../context/useApp';
 import { Button, Card, EmptyState } from '../components/ui';
 import { classNames } from '../utils';
@@ -10,6 +9,7 @@ import { classNames } from '../utils';
 export default function Quizzes({ notify }) {
   const { user, notify: globalNotify } = useApp();
   const [quizzes, setQuizzes] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   const [subject, setSubject] = useState('All');
   const [activeQuiz, setActiveQuiz] = useState(null);
   const [answers, setAnswers] = useState({});
@@ -19,8 +19,8 @@ export default function Quizzes({ notify }) {
 
   const filtered = useMemo(
     () => {
-      if (subject === 'All') return quizzes;
-      return quizzes.filter((quiz) => quiz.subject === subject || quiz.subject === 'All');
+      if (subject === 'All') return quizzes.filter(q => q.published !== false); // Only show published quizzes
+      return quizzes.filter((quiz) => (quiz.subject === subject || quiz.subject === 'All') && quiz.published !== false);
     },
     [quizzes, subject],
   );
@@ -44,9 +44,18 @@ export default function Quizzes({ notify }) {
   }, [user, activeQuiz, answers, globalNotify]);
 
   useEffect(() => {
-    return watchQuizzes(setQuizzes, {
+    const unsubscribers = [];
+    
+    unsubscribers.push(watchQuizzes(setQuizzes, {
       onError: () => notify('Could not load quizzes from Firestore.'),
-    });
+    }));
+    
+    unsubscribers.push(watchSubjects(setSubjects, {
+      take: 50,
+      onError: () => console.error('Could not load subjects.'),
+    }));
+    
+    return () => unsubscribers.forEach(unsub => unsub?.());
   }, [notify]);
 
   useEffect(() => {

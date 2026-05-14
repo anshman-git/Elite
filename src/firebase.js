@@ -273,7 +273,13 @@ export async function submitAttempt(userId, quizId, quizData, answers) {
 
 export async function createQuiz(payload) {
   if (!db) throw new Error('Firebase is not configured yet.');
-  return addDoc(collection(db, QUIZZES_COLLECTION), { ...payload, createdAt: serverTimestamp() });
+  return addDoc(collection(db, QUIZZES_COLLECTION), { 
+    ...payload, 
+    published: payload.published ?? true,
+    dailyQuiz: payload.dailyQuiz ?? false,
+    timerMinutes: payload.timerMinutes || payload.duration || 25,
+    createdAt: serverTimestamp() 
+  });
 }
 
 export function watchQuizzes(callback, options = {}) {
@@ -337,4 +343,120 @@ export async function uploadResource({ file, subject, type, title, createdBy }) 
 export async function createAnnouncement(payload) {
   if (!db) throw new Error('Firebase is not configured yet.');
   return addDoc(collection(db, 'announcements'), { ...payload, createdAt: serverTimestamp() });
+}
+
+// Quiz CRUD functions
+export async function updateQuiz(quizId, payload) {
+  if (!db) throw new Error('Firebase is not configured yet.');
+  return updateDoc(doc(db, QUIZZES_COLLECTION, quizId), { ...payload, updatedAt: serverTimestamp() });
+}
+
+export async function deleteQuiz(quizId) {
+  if (!db) throw new Error('Firebase is not configured yet.');
+  return deleteDoc(doc(db, QUIZZES_COLLECTION, quizId));
+}
+
+export async function duplicateQuiz(quizId) {
+  if (!db) throw new Error('Firebase is not configured yet.');
+  const quizDoc = await getDoc(doc(db, QUIZZES_COLLECTION, quizId));
+  if (!quizDoc.exists()) throw new Error('Quiz not found');
+  
+  const quizData = quizDoc.data();
+  const { id, createdAt, ...duplicateData } = quizData;
+  return addDoc(collection(db, QUIZZES_COLLECTION), {
+    ...duplicateData,
+    title: `${duplicateData.title} (Copy)`,
+    published: false,
+    dailyQuiz: false,
+    createdAt: serverTimestamp(),
+  });
+}
+
+// Subject CRUD functions
+export async function createSubject(payload) {
+  if (!db) throw new Error('Firebase is not configured yet.');
+  return addDoc(collection(db, 'subjects'), { ...payload, createdAt: serverTimestamp() });
+}
+
+export async function updateSubject(subjectId, payload) {
+  if (!db) throw new Error('Firebase is not configured yet.');
+  return updateDoc(doc(db, 'subjects', subjectId), { ...payload, updatedAt: serverTimestamp() });
+}
+
+export async function deleteSubject(subjectId) {
+  if (!db) throw new Error('Firebase is not configured yet.');
+  return deleteDoc(doc(db, 'subjects', subjectId));
+}
+
+export function watchSubjects(callback, options = {}) {
+  return watchCollection('subjects', callback, options);
+}
+
+// User management functions
+export async function updateUser(userId, payload) {
+  if (!db) throw new Error('Firebase is not configured yet.');
+  return updateDoc(doc(db, 'users', userId), { ...payload, updatedAt: serverTimestamp() });
+}
+
+export async function banUser(userId) {
+  return updateUser(userId, { banned: true });
+}
+
+export async function unbanUser(userId) {
+  return updateUser(userId, { banned: false });
+}
+
+export async function promoteToAdmin(userId) {
+  return updateUser(userId, { role: 'admin' });
+}
+
+export async function demoteFromAdmin(userId) {
+  return updateUser(userId, { role: 'student' });
+}
+
+export async function resetUserStreak(userId) {
+  return updateUser(userId, { streak: 0 });
+}
+
+export async function getUsersCount() {
+  if (!db) return 0;
+  const snapshot = await getDocs(collection(db, 'users'));
+  return snapshot.size;
+}
+
+export async function getOnlineUsersCount() {
+  if (!db) return 0;
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+  const q = query(
+    collection(db, 'users'),
+    where('lastActiveAt', '>', fiveMinutesAgo)
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.size;
+}
+
+export function watchUsers(callback, options = {}) {
+  return watchCollection('users', callback, { ...options, sortField: 'createdAt', sortDirection: 'desc' });
+}
+
+// Settings functions
+export async function updateExamCountdown(payload) {
+  if (!db) throw new Error('Firebase is not configured yet.');
+  return setDoc(doc(db, 'settings', 'examCountdown'), { ...payload, updatedAt: serverTimestamp() });
+}
+
+export async function getExamCountdown() {
+  if (!db) return null;
+  const docSnap = await getDoc(doc(db, 'settings', 'examCountdown'));
+  return docSnap.exists() ? docSnap.data() : null;
+}
+
+export function watchExamCountdown(callback) {
+  if (!db) {
+    callback(null);
+    return () => {};
+  }
+  return onSnapshot(doc(db, 'settings', 'examCountdown'), (doc) => {
+    callback(doc.exists() ? doc.data() : null);
+  });
 }

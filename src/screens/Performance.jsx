@@ -1,19 +1,29 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BarChart3, TrendingDown, TrendingUp } from 'lucide-react';
-import { subjects } from '../data/subjects';
-import { watchUserAttempts } from '../firebase';
+import { watchUserAttempts, watchSubjects } from '../firebase';
 import { useApp } from '../context/useApp';
 import { Card, ProgressBar } from '../components/ui';
 
 export default function Performance({ notify }) {
   const { user, notify: globalNotify } = useApp();
   const [attempts, setAttempts] = useState([]);
+  const [subjects, setSubjects] = useState([]);
 
   useEffect(() => {
-    if (!user?.uid) return;
-    return watchUserAttempts(user.uid, setAttempts, {
-      onError: () => globalNotify('Could not load your attempts from Firestore.'),
-    });
+    const unsubscribers = [];
+    
+    if (user?.uid) {
+      unsubscribers.push(watchUserAttempts(user.uid, setAttempts, {
+        onError: () => globalNotify('Could not load your attempts from Firestore.'),
+      }));
+    }
+    
+    unsubscribers.push(watchSubjects(setSubjects, {
+      take: 50,
+      onError: () => console.error('Could not load subjects.'),
+    }));
+    
+    return () => unsubscribers.forEach(unsub => unsub?.());
   }, [user?.uid, globalNotify]);
 
   const userAttempts = attempts;

@@ -1,19 +1,28 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Download, Eye, FileText, Image, Upload } from 'lucide-react';
-import { subjects } from '../data/subjects';
-import { uploadResource, watchCollection } from '../firebase';
+import { uploadResource, watchCollection, watchSubjects } from '../firebase';
 import { Button, Card, EmptyState, SearchInput } from '../components/ui';
 
 export default function Resources({ notify }) {
   const [resources, setResources] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   const [query, setQuery] = useState('');
   const [type, setType] = useState('All');
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    return watchCollection('resources', setResources, {
+    const unsubscribers = [];
+    
+    unsubscribers.push(watchCollection('resources', setResources, {
       onError: () => notify('Could not load resources from Firestore.'),
-    });
+    }));
+    
+    unsubscribers.push(watchSubjects(setSubjects, {
+      take: 50,
+      onError: () => console.error('Could not load subjects.'),
+    }));
+    
+    return () => unsubscribers.forEach(unsub => unsub?.());
   }, [notify]);
 
   const filtered = useMemo(
@@ -30,7 +39,8 @@ export default function Resources({ notify }) {
     if (!file) return;
     setUploading(true);
     try {
-      await uploadResource({ file, subject: 'CSA', type: 'Notes', title: file.name });
+      const defaultSubject = subjects.length > 0 ? subjects[0].name : 'General';
+      await uploadResource({ file, subject: defaultSubject, type: 'Notes', title: file.name });
       notify('Upload saved to Firebase Storage.');
     } catch (error) {
       notify(error.message || 'Firebase credentials are needed for uploads.');

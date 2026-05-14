@@ -20,6 +20,11 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /subjects/{subjectId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
     match /attempts/{attemptId} {
       allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
@@ -32,6 +37,11 @@ service cloud.firestore {
     }
 
     match /announcements/{announcementId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /settings/{settingId} {
       allow read: if signedIn();
       allow write: if isAdmin();
     }
