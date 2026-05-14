@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { CalendarClock, Flame, Play, Quote, TrendingUp, Trophy, Clock } from 'lucide-react';
-import { watchCollection, watchExamCountdown, watchSubjects } from '../firebase';
+import { watchCollection, watchExamCountdown, watchSubjects, watchUserAttempts } from '../firebase';
 import { daysUntilExam, formatPercent } from '../utils';
 import { Button, Card, EmptyState, ProgressBar } from '../components/ui';
 
@@ -10,6 +10,7 @@ export default function Dashboard({ setActive, user, notify }) {
   const [activities, setActivities] = useState([]);
   const [examCountdown, setExamCountdown] = useState(null);
   const [subjects, setSubjects] = useState([]);
+  const [attempts, setAttempts] = useState([]);
   const rank = leaderboard.findIndex((person) => person.id === user?.uid) + 1;
 
   useEffect(() => {
@@ -27,6 +28,13 @@ export default function Dashboard({ setActive, user, notify }) {
     }));
     
     unsubscribers.push(watchExamCountdown(setExamCountdown));
+    
+    if (user?.uid) {
+      unsubscribers.push(watchUserAttempts(user.uid, setAttempts, {
+        take: 50,
+        onError: () => notify('Could not load your attempt history.'),
+      }));
+    }
     
     unsubscribers.push(watchSubjects(setSubjects, {
       take: 10,
@@ -109,6 +117,10 @@ export default function Dashboard({ setActive, user, notify }) {
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {subjects.slice(0, 6).map((subject, index) => {
+              const subjectAttempts = attempts.filter((attempt) => attempt.subject === subject.name);
+              const progress = subjectAttempts.length
+                ? Math.round(subjectAttempts.reduce((sum, attempt) => sum + (attempt.accuracy || 0), 0) / subjectAttempts.length)
+                : 0;
               const tones = ['bg-blue-500', 'bg-slate-950 dark:bg-white dark:text-slate-950', 'bg-sky-500', 'bg-indigo-500', 'bg-cyan-600', 'bg-green-500'];
               const tone = subject.tone || tones[index % tones.length];
               return (
@@ -125,10 +137,10 @@ export default function Dashboard({ setActive, user, notify }) {
                       <h4 className="font-bold text-slate-950 dark:text-white">{subject.name}</h4>
                       <p className="truncate text-xs text-slate-500 dark:text-slate-400">{subject.description || 'No description'}</p>
                     </div>
-                    <span className="text-sm font-black text-blue-600">0%</span>
+                    <span className="text-sm font-black text-blue-600">{formatPercent(progress)}</span>
                   </div>
                   <div className="mt-3">
-                    <ProgressBar value={0} />
+                    <ProgressBar value={progress} />
                   </div>
                 </button>
               );

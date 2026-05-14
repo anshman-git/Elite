@@ -99,7 +99,7 @@ export default function Quizzes({ notify }) {
                 <CheckCircle2 className="text-blue-600" size={34} />
                 <h3 className="mt-3 text-2xl font-black text-slate-950 dark:text-white">Score: {score}/{questions.length}</h3>
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  Time taken: {(activeQuiz.duration || 25) * 60 - seconds}s. Review the correct answers below.
+                  Time taken: {((activeQuiz.timerMinutes || activeQuiz.duration || 25) * 60) - seconds}s. Review the correct answers below.
                 </p>
                 <div className="mt-4 flex gap-2">
                   <Button onClick={() => setActiveQuiz(null)}>Back to quizzes</Button>
@@ -194,8 +194,8 @@ export default function Quizzes({ notify }) {
               <h3 className="mt-2 text-lg font-black text-slate-950 dark:text-white">{quiz.title}</h3>
               <div className="mt-4 grid grid-cols-3 gap-2 text-center">
                 <Badge label="MCQs" value={quiz.questions?.length || 0} />
-                <Badge label="Timer" value={`${quiz.duration}m`} />
-                <Badge label="Daily" value={quiz.isDaily ? 'Yes' : 'No'} />
+                <Badge label="Timer" value={`${quiz.timerMinutes || quiz.duration || 25}m`} />
+                <Badge label="Daily" value={(quiz.dailyQuiz ?? quiz.isDaily) ? 'Yes' : 'No'} />
               </div>
               <Button
                 variant="accent"
@@ -203,7 +203,7 @@ export default function Quizzes({ notify }) {
                 onClick={() => {
                   setActiveQuiz(quiz);
                   setAnswers({});
-                  setSeconds(quiz.duration * 60);
+                  setSeconds((quiz.timerMinutes || quiz.duration || 25) * 60);
                   setSubmitted(false);
                 }}
               >

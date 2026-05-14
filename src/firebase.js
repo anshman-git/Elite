@@ -65,11 +65,13 @@ export function watchAuth(callback) {
       // Force refresh the ID token to get latest custom claims
       await sessionUser.getIdToken(true);
       const idTokenResult = await sessionUser.getIdTokenResult();
-      const isAdmin = idTokenResult.claims.admin === true;
+      const hasAdminClaim = idTokenResult.claims.admin === true;
 
-      const profile = await getDoc(doc(db, 'users', sessionUser.uid));
-      let profileData = profile.exists() ? profile.data() : null;
-      if (!profile.exists()) {
+      const profileSnap = await getDoc(doc(db, 'users', sessionUser.uid));
+      let profileData = profileSnap.exists() ? profileSnap.data() : null;
+      const isAdmin = hasAdminClaim || profileData?.role === 'admin';
+
+      if (!profileSnap.exists()) {
         profileData = {
           name: sessionUser.displayName || 'Elite learner',
           email: sessionUser.email || '',
@@ -81,8 +83,9 @@ export function watchAuth(callback) {
         };
         await setDoc(doc(db, 'users', sessionUser.uid), profileData);
       } else {
-        // Always update role based on current custom claims
-        const currentRole = isAdmin ? 'admin' : 'student';
+        // Preserve Firestore role when it already indicates admin,
+        // or upgrade based on auth custom claims.
+        const currentRole = profileData.role === 'admin' || hasAdminClaim ? 'admin' : 'student';
         if (profileData.role !== currentRole) {
           await updateDoc(doc(db, 'users', sessionUser.uid), { role: currentRole });
           profileData.role = currentRole;
@@ -251,7 +254,7 @@ export async function submitAttempt(userId, quizId, quizData, answers) {
     score,
     total: questions.length,
     accuracy: Math.round(accuracy),
-    timeTaken: quizData.duration * 60, // Will be updated with actual time
+    timeTaken: (quizData.timerMinutes || quizData.duration || 25) * 60, // Will be updated with actual time
     answers: Object.keys(answers).length > 0 ? answers : {},
     completedAt: serverTimestamp(),
   });
