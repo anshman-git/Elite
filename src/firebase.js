@@ -431,8 +431,12 @@ export async function deleteSubject(subjectId) {
   return deleteDoc(doc(db, 'subjects', subjectId));
 }
 
+export async function fetchSubjects(take = 50) {
+  return fetchCollection('subjects', 'name', take);
+}
+
 export function watchSubjects(callback, options = {}) {
-  return watchCollection('subjects', callback, options);
+  return watchCollection('subjects', callback, { sortField: 'name', sortDirection: 'asc', ...options });
 }
 
 // User management functions

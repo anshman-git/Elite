@@ -103,6 +103,8 @@ export default function Admin({ notify, user }) {
   const [examTimer, setExamTimer] = useState({ title: '', examDate: '' });
 
   useEffect(() => {
+    if (!user) return () => {};
+
     const unsubscribers = [];
 
     // Quizzes
@@ -119,7 +121,7 @@ export default function Admin({ notify, user }) {
 
     // Subjects
     unsubscribers.push(watchSubjects(setSubjects, {
-      take: 50,
+      take: 100,
       onError: (error) => console.error('Failed to load subjects:', error),
     }));
 
@@ -133,11 +135,22 @@ export default function Admin({ notify, user }) {
     unsubscribers.push(watchExamCountdown(setExamCountdown));
 
     return () => unsubscribers.forEach(unsub => unsub?.());
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     loadAnalytics();
   }, [existingQuizzes, existingResources, subjects, users]);
+
+  useEffect(() => {
+    const subjectNames = subjects.map((item) => item.name);
+
+    if (resource.subject && !subjectNames.includes(resource.subject)) {
+      setResource((current) => ({ ...current, subject: '' }));
+    }
+    if (quiz.subject && !subjectNames.includes(quiz.subject)) {
+      setQuiz((current) => ({ ...current, subject: '' }));
+    }
+  }, [subjects, resource.subject, quiz.subject]);
 
   async function loadAnalytics() {
     try {
@@ -402,8 +415,19 @@ export default function Admin({ notify, user }) {
 
   async function submitSubject(event) {
     event.preventDefault();
-    if (!newSubject.name.trim()) {
+    const subjectName = newSubject.name.trim();
+    if (!subjectName) {
       notify('Enter a subject name.');
+      return;
+    }
+
+    const duplicateSubject = subjects.find((subject) =>
+      subject.name?.toLowerCase() === subjectName.toLowerCase() &&
+      (!editingSubject || subject.id !== editingSubject.id)
+    );
+
+    if (duplicateSubject) {
+      notify('A subject with this name already exists.');
       return;
     }
 
@@ -411,14 +435,14 @@ export default function Admin({ notify, user }) {
     try {
       if (editingSubject) {
         await updateSubject(editingSubject.id, {
-          name: newSubject.name.trim(),
+          name: subjectName,
           description: newSubject.description.trim(),
         });
         notify('Subject updated successfully.');
         setEditingSubject(null);
       } else {
         await createSubject({
-          name: newSubject.name.trim(),
+          name: subjectName,
           description: newSubject.description.trim(),
           createdBy: user?.uid,
         });
