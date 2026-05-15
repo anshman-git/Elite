@@ -251,6 +251,7 @@ export async function submitAttempt(userId, quizId, quizData, answers) {
   // Create attempt document
   const attemptRef = await addDoc(collection(db, 'attempts'), {
     userId,
+    uid: userId,
     quizId,
     subject: quizData.subject,
     score,
@@ -259,6 +260,7 @@ export async function submitAttempt(userId, quizId, quizData, answers) {
     timeTaken: (quizData.timerMinutes || quizData.duration || 25) * 60, // Will be updated with actual time
     answers: Object.keys(answers).length > 0 ? answers : {},
     completedAt: serverTimestamp(),
+    createdAt: serverTimestamp(),
   });
 
   // Update user points and last active

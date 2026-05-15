@@ -29,12 +29,15 @@ export default function Dashboard({ setActive, user, notify }) {
     
     unsubscribers.push(watchExamCountdown(setExamCountdown));
     
-    if (user?.uid) {
-      unsubscribers.push(watchUserAttempts(user.uid, setAttempts, {
-        take: 50,
-        onError: () => notify('Could not load your attempt history.'),
-      }));
+    if (!user?.uid) {
+      setAttempts([]);
+      return () => {};
     }
+
+    unsubscribers.push(watchUserAttempts(user.uid, setAttempts, {
+      take: 50,
+      onError: () => notify('Could not load your attempt history.'),
+    }));
     
     unsubscribers.push(watchSubjects(setSubjects, {
       take: 10,
@@ -42,7 +45,7 @@ export default function Dashboard({ setActive, user, notify }) {
     }));
     
     return () => unsubscribers.forEach(unsub => unsub?.());
-  }, [notify]);
+  }, [notify, user?.uid]);
 
   const getCountdownDisplay = () => {
     if (!examCountdown?.examDate) return null;
