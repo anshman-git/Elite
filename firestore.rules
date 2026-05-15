@@ -19,15 +19,28 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if signedIn();
       allow create: if signedIn() && isOwner(userId);
-      allow update: if isOwner(userId) && (
-        !('role' in request.resource.data) || 
-        (request.resource.data.role == resource.data.role)
+
+      // Allow users to update their own profile (but not change role),
+      // and allow admins to update any user (including role changes).
+      allow update: if (
+        // Owner may update their profile but cannot escalate role
+        (isOwner(userId) && !('role' in request.resource.data))
+        // Admins may update any user, including role changes
+        || isAdmin()
       );
-      allow delete: if isOwner(userId);
+
+      // Allow owners or admins to delete user documents
+      allow delete: if isOwner(userId) || isAdmin();
     }
 
     // Quizzes - readable by all, writable by admins
     match /quizzes/{quizId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Subjects - readable by signed-in users, writable only by admins
+    match /subjects/{subjectId} {
       allow read: if signedIn();
       allow create, update, delete: if isAdmin();
     }
@@ -45,6 +58,12 @@ service cloud.firestore {
 
     // Resources - readable by all, writable by admins
     match /resources/{resourceId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Settings (e.g., examCountdown) - readable by signed-in users, writable only by admins
+    match /settings/{settingId} {
       allow read: if signedIn();
       allow create, update, delete: if isAdmin();
     }

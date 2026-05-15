@@ -5,6 +5,7 @@ import {
   Plus, 
   Send, 
   Upload, 
+  Download,
   UsersRound, 
   Edit, 
   Trash2, 
@@ -50,6 +51,7 @@ import {
   updateExamCountdown,
   watchExamCountdown
 } from '../firebase';
+import { deleteResource } from '../firebase';
 import { Button, Card, Input, Select, Textarea } from '../components/ui';
 
 const blankQuestion = {
@@ -76,6 +78,7 @@ export default function Admin({ notify, user }) {
     questions: [blankQuestion],
   });
   const [editingQuiz, setEditingQuiz] = useState(null);
+  const [showQuizForm, setShowQuizForm] = useState(false);
   const [quizFile, setQuizFile] = useState(null);
   const [announcement, setAnnouncement] = useState({ title: '', body: '', target: 'all' });
   const [busy, setBusy] = useState('');
@@ -185,6 +188,19 @@ export default function Admin({ notify, user }) {
     }
   }
 
+  async function handleDeleteResource(resourceId) {
+    if (!confirm('Delete this resource? This cannot be undone.')) return;
+    setBusy(`delete-resource-${resourceId}`);
+    try {
+      await deleteResource(resourceId);
+      notify('Resource deleted.');
+    } catch (error) {
+      notify('Failed to delete resource.');
+    } finally {
+      setBusy('');
+    }
+  }
+
   async function submitQuiz(event) {
     event.preventDefault();
     const cleanQuestions = quiz.questions
@@ -228,6 +244,8 @@ export default function Admin({ notify, user }) {
         notify('Quiz created successfully.');
       }
       setQuiz({ title: '', subject: '', timerMinutes: 25, published: true, dailyQuiz: false, questions: [blankQuestion] });
+      setShowQuizForm(false);
+      setEditingQuiz(null);
     } catch (error) {
       notify(error.message || 'Failed to save quiz.');
     } finally {
@@ -237,6 +255,7 @@ export default function Admin({ notify, user }) {
 
   async function handleEditQuiz(quizItem) {
     setEditingQuiz(quizItem);
+    setShowQuizForm(true);
     setQuiz({
       title: quizItem.title,
       subject: quizItem.subject,
@@ -643,7 +662,7 @@ export default function Admin({ notify, user }) {
                     <option key={subject.id} value={subject.name}>{subject.name}</option>
                   ))}
                 </select>
-                <Button onClick={() => { setEditingQuiz(null); setActiveTab('create-quiz'); }} className="whitespace-nowrap">
+                <Button onClick={() => { setEditingQuiz(null); setShowQuizForm(true); setActiveTab('quizzes'); }} className="whitespace-nowrap">
                   <Plus size={16} /> Create Quiz
                 </Button>
               </div>
@@ -710,7 +729,7 @@ export default function Admin({ notify, user }) {
           </Card>
 
           {/* Create/Edit Quiz Form */}
-          {(activeTab === 'create-quiz' || editingQuiz) && (
+          {(showQuizForm || editingQuiz) && (
             <Card>
               <div className="flex items-center gap-3">
                 {editingQuiz ? <Edit className="text-blue-600" /> : <Plus className="text-blue-600" />}
@@ -1040,8 +1059,17 @@ export default function Admin({ notify, user }) {
                     <p className="font-bold text-slate-950 dark:text-white">{item.title}</p>
                     <p className="text-sm text-slate-500">{item.subject} - {item.type}</p>
                   </div>
-                  <div className="text-xs text-slate-400">
-                    {item.createdAt?.toDate?.()?.toLocaleDateString() || 'Recent'}
+                  <div className="flex items-center gap-2">
+                    <div className="text-xs text-slate-400">{item.createdAt?.toDate?.()?.toLocaleDateString() || 'Recent'}</div>
+                    <Button variant="ghost" size="sm" onClick={() => window.open(item.url, '_blank', 'noopener,noreferrer')} disabled={!item.url}>
+                      <Eye size={14} />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => window.open(item.url, '_blank', 'noopener,noreferrer')} disabled={!item.url}>
+                      <Download size={14} />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleDeleteResource(item.id)} disabled={busy === `delete-resource-${item.id}`} className="text-red-600 hover:text-red-700">
+                      <Trash2 size={14} />
+                    </Button>
                   </div>
                 </div>
               ))}

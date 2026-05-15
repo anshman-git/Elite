@@ -24,6 +24,8 @@ import {
   serverTimestamp,
   setDoc,
   where,
+  deleteDoc,
+  Timestamp,
   increment,
   updateDoc,
 } from 'firebase/firestore';
@@ -326,6 +328,7 @@ export async function uploadResource({ file, subject, type, title, createdBy }) 
   try {
     await uploadBytes(fileRef, file);
     const url = await getDownloadURL(fileRef);
+    const storagePath = fileRef.fullPath || `resources/${subject}/${Date.now()}-${file.name}`;
     return addDoc(collection(db, 'resources'), {
       title,
       subject,
@@ -333,6 +336,7 @@ export async function uploadResource({ file, subject, type, title, createdBy }) 
       fileType: file.type,
       fileSize: file.size,
       url,
+      storagePath,
       createdBy: createdBy || null,
       createdAt: serverTimestamp(),
     });
@@ -341,6 +345,42 @@ export async function uploadResource({ file, subject, type, title, createdBy }) 
     await deleteObject(fileRef).catch(() => {}); // Ignore cleanup errors
     throw error;
   }
+}
+
+export async function deleteResource(resourceId) {
+  if (!db || !storage) throw new Error('Firebase is not configured yet.');
+
+  const resourceRef = doc(db, 'resources', resourceId);
+  const snap = await getDoc(resourceRef);
+  if (!snap.exists()) {
+    // Nothing to delete
+    return;
+  }
+
+  const data = snap.data();
+  const pathFromDoc = data.storagePath;
+  const url = data.url;
+
+  // Attempt to delete storage object if we can determine its path
+  try {
+    let storagePath = pathFromDoc;
+    if (!storagePath && url) {
+      // Try to parse path from download URL
+      // Format: https://firebasestorage.googleapis.com/v0/b/<bucket>/o/<encodedPath>?alt=media&token=...
+      const match = url.match(/\/o\/(.*?)\?/);
+      if (match && match[1]) storagePath = decodeURIComponent(match[1]);
+    }
+
+    if (storagePath) {
+      await deleteObject(ref(storage, storagePath));
+    }
+  } catch (error) {
+    console.error('Failed to delete storage object for resource', resourceId, error);
+    // proceed to delete doc even if storage delete fails
+  }
+
+  // Delete the Firestore document
+  return deleteDoc(resourceRef);
 }
 
 export async function createAnnouncement(payload) {
@@ -429,11 +469,8 @@ export async function getUsersCount() {
 
 export async function getOnlineUsersCount() {
   if (!db) return 0;
-  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-  const q = query(
-    collection(db, 'users'),
-    where('lastActiveAt', '>', fiveMinutesAgo)
-  );
+  const fiveMinutesAgo = Timestamp.fromDate(new Date(Date.now() - 5 * 60 * 1000));
+  const q = query(collection(db, 'users'), where('lastActiveAt', '>', fiveMinutesAgo));
   const snapshot = await getDocs(q);
   return snapshot.size;
 }
