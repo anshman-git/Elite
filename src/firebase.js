@@ -21,6 +21,7 @@ import {
   onSnapshot,
   orderBy,
   query,
+  runTransaction,
   serverTimestamp,
   setDoc,
   where,
@@ -28,6 +29,7 @@ import {
   Timestamp,
   increment,
   updateDoc,
+  writeBatch,
 } from 'firebase/firestore';
 import { getDownloadURL, getStorage, ref, uploadBytes, deleteObject } from 'firebase/storage';
 
@@ -79,8 +81,11 @@ export function watchAuth(callback) {
           name: sessionUser.displayName || 'Elite learner',
           email: sessionUser.email || '',
           role: isAdmin ? 'admin' : 'student',
-          streak: 0,
           points: 0,
+          weeklyPoints: 0,
+          streak: 0,
+          quizzesAttempted: 0,
+          averageScore: 0,
           createdAt: serverTimestamp(),
           lastActiveAt: serverTimestamp(),
         };
@@ -123,8 +128,11 @@ export async function signupWithEmail({ name, email, password }) {
       name: cleanName,
       email: cleanEmail,
       role: 'student',
-      streak: 0,
       points: 0,
+      weeklyPoints: 0,
+      streak: 0,
+      quizzesAttempted: 0,
+      averageScore: 0,
       createdAt: serverTimestamp(),
       lastActiveAt: serverTimestamp(),
     });
@@ -208,6 +216,27 @@ export function watchCollection(name, callback, options = {}) {
   return () => unsubscribe?.();
 }
 
+export function watchDocument(collectionName, documentId, callback, options = {}) {
+  const { onError } = options;
+
+  if (!db || !documentId) {
+    callback(null);
+    return () => {};
+  }
+
+  const documentRef = doc(db, collectionName, documentId);
+  return onSnapshot(
+    documentRef,
+    (snapshot) => {
+      callback(snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null);
+    },
+    (error) => {
+      console.error(`Error watching ${collectionName}/${documentId}:`, error);
+      onError?.(error);
+    }
+  );
+}
+
 export function watchUserAttempts(userId, callback, options = {}) {
   const { take = 50, onError } = options;
 
@@ -264,16 +293,32 @@ export async function submitAttempt(userId, quizId, quizData, answers) {
     createdAt: serverTimestamp(),
   });
 
-  // Update user points and last active
+  // Update user points, weekly leaderboard and stats
   try {
     const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, {
-      points: increment(Math.min(100, score * 10)),
-      lastActiveAt: serverTimestamp(),
+    await runTransaction(db, async (transaction) => {
+      const userSnap = await transaction.get(userRef);
+      const pointsGained = Math.min(100, score * 10);
+      const currentData = userSnap.exists() ? userSnap.data() : {};
+      const currentAttempts = currentData.quizzesAttempted || 0;
+      const currentAverage = currentData.averageScore || 0;
+      const newAttempts = currentAttempts + 1;
+      const newAverage = newAttempts > 0
+        ? Math.round(((currentAverage * currentAttempts) + accuracy) / newAttempts)
+        : Math.round(accuracy);
+
+      transaction.set(userRef, {
+        ...currentData,
+        points: (currentData.points || 0) + pointsGained,
+        weeklyPoints: (currentData.weeklyPoints || 0) + (quizData.weeklyTest ? pointsGained : 0),
+        quizzesAttempted: newAttempts,
+        averageScore: newAverage,
+        lastActiveAt: serverTimestamp(),
+      }, { merge: true });
     });
   } catch (error) {
-    console.error('Failed to update user points:', error);
-    // Don't throw - attempt is saved even if points update fails
+    console.error('Failed to update user stats:', error);
+    // Don't throw - attempt is saved even if stats update fails
   }
 
   return attemptRef;
@@ -285,6 +330,7 @@ export async function createQuiz(payload) {
     ...payload, 
     published: payload.published ?? true,
     dailyQuiz: payload.dailyQuiz ?? false,
+    weeklyTest: payload.weeklyTest ?? false,
     timerMinutes: payload.timerMinutes || payload.duration || 25,
     createdAt: serverTimestamp() 
   });
@@ -484,6 +530,17 @@ export async function getOnlineUsersCount() {
 
 export function watchUsers(callback, options = {}) {
   return watchCollection('users', callback, { ...options, sortField: 'createdAt', sortDirection: 'desc' });
+}
+
+export async function resetWeeklyLeaderboard() {
+  if (!db) throw new Error('Firebase is not configured yet.');
+
+  const usersSnapshot = await getDocs(collection(db, 'users'));
+  const batch = writeBatch(db);
+  usersSnapshot.docs.forEach((userDoc) => {
+    batch.update(userDoc.ref, { weeklyPoints: 0 });
+  });
+  await batch.commit();
 }
 
 // Settings functions

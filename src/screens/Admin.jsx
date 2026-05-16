@@ -46,6 +46,7 @@ import {
   promoteToAdmin,
   demoteFromAdmin,
   resetUserStreak,
+  resetWeeklyLeaderboard,
   getUsersCount,
   getOnlineUsersCount,
   updateExamCountdown,
@@ -75,6 +76,7 @@ export default function Admin({ notify, user }) {
     timerMinutes: 25,
     published: true,
     dailyQuiz: false,
+    weeklyTest: false,
     questions: [blankQuestion],
   });
   const [editingQuiz, setEditingQuiz] = useState(null);
@@ -240,6 +242,7 @@ export default function Admin({ notify, user }) {
           timerMinutes: Number(quiz.timerMinutes),
           published: quiz.published,
           dailyQuiz: quiz.dailyQuiz,
+          weeklyTest: quiz.weeklyTest,
           questions: cleanQuestions,
         });
         notify('Quiz updated successfully.');
@@ -251,12 +254,13 @@ export default function Admin({ notify, user }) {
           timerMinutes: Number(quiz.timerMinutes),
           published: quiz.published,
           dailyQuiz: quiz.dailyQuiz,
+          weeklyTest: quiz.weeklyTest,
           questions: cleanQuestions,
           createdBy: user?.uid || null,
         });
         notify('Quiz created successfully.');
       }
-      setQuiz({ title: '', subject: '', timerMinutes: 25, published: true, dailyQuiz: false, questions: [blankQuestion] });
+      setQuiz({ title: '', subject: '', timerMinutes: 25, published: true, dailyQuiz: false, weeklyTest: false, questions: [blankQuestion] });
       setShowQuizForm(false);
       setEditingQuiz(null);
     } catch (error) {
@@ -275,6 +279,7 @@ export default function Admin({ notify, user }) {
       timerMinutes: quizItem.timerMinutes || 25,
       published: quizItem.published ?? true,
       dailyQuiz: quizItem.dailyQuiz ?? false,
+      weeklyTest: quizItem.weeklyTest ?? false,
       questions: quizItem.questions || [blankQuestion],
     });
     setActiveTab('quizzes');
@@ -397,6 +402,7 @@ export default function Admin({ notify, user }) {
           timerMinutes: Number(quiz.timerMinutes) || Number(quiz.duration) || 25,
           published: quiz.published ?? true,
           dailyQuiz: quiz.dailyQuiz ?? false,
+          weeklyTest: quiz.weeklyTest ?? false,
           questions: cleanQuestions,
           createdBy: user?.uid || null,
         });
@@ -946,16 +952,41 @@ export default function Admin({ notify, user }) {
       {activeTab === 'users' && (
         <Card>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <h3 className="font-black text-slate-950 dark:text-white">User Management</h3>
-            <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search users..."
-                value={userSearchTerm}
-                onChange={(e) => setUserSearchTerm(e.target.value)}
-                className="min-h-10 rounded-2xl border border-slate-200 bg-white pl-10 pr-4 text-sm font-semibold outline-none transition focus:border-blue-400 dark:border-white/10 dark:bg-slate-950"
-              />
+            <div>
+              <h3 className="font-black text-slate-950 dark:text-white">User Management</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Weekly leaderboard resets are available for admins.</p>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              {user?.role === 'admin' && (
+                <Button
+                  variant="secondary"
+                  onClick={async () => {
+                    if (!confirm('Reset weekly leaderboard points for all users?')) return;
+                    setBusy('reset-weekly');
+                    try {
+                      await resetWeeklyLeaderboard();
+                      notify('Weekly leaderboard reset successfully.');
+                    } catch (error) {
+                      notify('Failed to reset weekly leaderboard.');
+                    } finally {
+                      setBusy('');
+                    }
+                  }}
+                  disabled={busy === 'reset-weekly'}
+                >
+                  Reset weekly leaderboard
+                </Button>
+              )}
+              <div className="relative">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search users..."
+                  value={userSearchTerm}
+                  onChange={(e) => setUserSearchTerm(e.target.value)}
+                  className="min-h-10 rounded-2xl border border-slate-200 bg-white pl-10 pr-4 text-sm font-semibold outline-none transition focus:border-blue-400 dark:border-white/10 dark:bg-slate-950"
+                />
+              </div>
             </div>
           </div>
           <div className="mt-4 space-y-3">

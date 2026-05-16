@@ -8,7 +8,7 @@ export default function Leaderboard({ notify }) {
 
   useEffect(() => {
     return watchCollection('users', setLeaderboard, {
-      sortField: 'points',
+      sortField: 'weeklyPoints',
       take: 50,
       onError: () => notify('Could not load leaderboard from Firestore.'),
     });
@@ -33,10 +33,11 @@ export default function Leaderboard({ notify }) {
                   <div className="mt-1 flex flex-wrap gap-3 text-xs font-bold text-slate-500 dark:text-slate-400">
                     <span className="inline-flex items-center gap-1"><Timer size={14} /> Active member</span>
                     <span className="inline-flex items-center gap-1"><Flame size={14} /> {person.streak || 0} days</span>
+                    <span className="inline-flex items-center gap-1">Weekly</span>
                   </div>
                 </div>
               </div>
-              <p className="text-2xl font-black text-blue-600">{person.points || 0}</p>
+              <p className="text-2xl font-black text-blue-600">{person.weeklyPoints || 0}</p>
             </div>
           </Card>
         )) : (
