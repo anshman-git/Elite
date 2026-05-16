@@ -5,7 +5,7 @@ import { watchQuizzes, submitAttempt, watchSubjects, watchUserAttempts } from '.
 import { useApp } from '../context/useApp';
 import { Button, Card, EmptyState } from '../components/ui';
 import { getFriendlyFirebaseError } from '../firebase';
-import { classNames, confirmLeaveQuiz, getQuestionId, setQuizInProgress } from '../utils';
+import { classNames, confirmLeaveQuiz, getQuestionId, isCompletedAttempt, setQuizInProgress } from '../utils';
 
 export default function Quizzes({ notify }) {
   const { user, notify: globalNotify } = useApp();
@@ -29,7 +29,7 @@ export default function Quizzes({ notify }) {
 
   const questions = activeQuiz?.questions || [];
   const attemptedQuizIds = useMemo(
-    () => new Set(attempts.map((item) => item.quizId)),
+    () => new Set(attempts.filter(isCompletedAttempt).map((item) => item.quizId)),
     [attempts],
   );
   const isQuizAttempted = activeQuiz ? attemptedQuizIds.has(activeQuiz.id) : false;
@@ -40,7 +40,7 @@ export default function Quizzes({ notify }) {
     if (submitting) return;
 
     if (attemptedQuizIds.has(activeQuiz.id)) {
-      globalNotify('You have already attempted this quiz. No additional points will be awarded.');
+      globalNotify('You have already completed this quiz.');
       setSubmitted(true);
       setQuizInProgress(false);
       return;
@@ -54,7 +54,12 @@ export default function Quizzes({ notify }) {
       globalNotify('Quiz submitted successfully!');
     } catch (error) {
       console.error('Failed to submit quiz:', error);
-      globalNotify(getFriendlyFirebaseError(error) || 'Failed to submit quiz. Please try again.');
+      if (error?.code === 'already-attempted') {
+        setSubmitted(true);
+        globalNotify(error.message);
+      } else {
+        globalNotify(getFriendlyFirebaseError(error) || error.message || 'Failed to submit quiz. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }

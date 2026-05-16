@@ -121,3 +121,11 @@ export function confirmLeaveQuiz() {
   if (leave) setQuizInProgress(false);
   return leave;
 }
+
+/** Completed attempts count for scoring / lockout. Legacy docs without status use completedAt. */
+export function isCompletedAttempt(attempt) {
+  if (!attempt) return false;
+  if (attempt.status === 'completed') return true;
+  if (attempt.status === 'pending' || attempt.status === 'failed') return false;
+  return Boolean(attempt.completedAt);
+}

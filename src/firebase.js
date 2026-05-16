@@ -30,7 +30,14 @@ import {
   updateDoc,
   writeBatch,
 } from 'firebase/firestore';
-import { buildAttemptReviewData, calculateAverageScore, calculateStreak } from './utils';
+import {
+  buildAttemptReviewData,
+  calculateAverageScore,
+  calculateStreak,
+  isCompletedAttempt,
+} from './utils';
+
+const SUBMIT_LOG = '[submitAttempt]';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -254,7 +261,10 @@ export function watchUserAttempts(userId, callback, options = {}) {
   return onSnapshot(
     userAttemptsQuery,
     (snapshot) => {
-      callback(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+      const attempts = snapshot.docs
+        .map((item) => ({ id: item.id, ...item.data() }))
+        .filter(isCompletedAttempt);
+      callback(attempts);
     },
     (error) => {
       console.error('Error watching user attempts:', error);
@@ -264,11 +274,27 @@ export function watchUserAttempts(userId, callback, options = {}) {
   );
 }
 
+async function rollbackPendingAttempt(attemptRef, reason) {
+  if (!attemptRef) return;
+  try {
+    await deleteDoc(attemptRef);
+    console.warn(SUBMIT_LOG, 'Rolled back pending attempt', { attemptId: attemptRef.id, reason });
+  } catch (rollbackError) {
+    console.error(SUBMIT_LOG, 'ROLLBACK FAILED — pending attempt may block retry', {
+      attemptId: attemptRef.id,
+      reason,
+      rollbackError,
+    });
+    throw new Error(
+      'Quiz could not be finalized and cleanup failed. Ask an admin to remove the stuck attempt, or try again.',
+    );
+  }
+}
+
 export async function submitAttempt(userId, quizId, quizData, answers) {
   if (!db) throw new Error('Firebase not configured');
 
   const questions = quizData.questions || [];
-
   const score = questions.reduce((total, item, index) => {
     const questionId = item.id || item.question || `question-${index}`;
     return total + (answers[questionId] === item.answer ? 1 : 0);
@@ -276,8 +302,58 @@ export async function submitAttempt(userId, quizId, quizData, answers) {
 
   const accuracy = questions.length > 0 ? Math.round((score / questions.length) * 100) : 0;
   const pointsGained = Math.min(100, score * 10);
+  const isWeeklyQuiz = quizData.weeklyTest === true;
+  const weeklyPointsGained = pointsGained;
+
+  console.info(SUBMIT_LOG, 'Starting submission', {
+    userId,
+    quizId,
+    score,
+    accuracy,
+    pointsGained,
+    weeklyPointsGained,
+    isWeeklyQuiz,
+  });
+
+  const existingAttemptQuery = query(
+    collection(db, 'attempts'),
+    where('userId', '==', userId),
+    where('quizId', '==', quizId),
+    limit(10),
+  );
+  const existingAttemptSnap = await getDocs(existingAttemptQuery);
+
+  const completedAttempt = existingAttemptSnap.docs.find((item) =>
+    isCompletedAttempt(item.data()),
+  );
+  if (completedAttempt) {
+    console.warn(SUBMIT_LOG, 'Blocked — completed attempt already exists', {
+      attemptId: completedAttempt.id,
+    });
+    const error = new Error('You have already completed this quiz.');
+    error.code = 'already-attempted';
+    throw error;
+  }
+
+  const pendingAttempts = existingAttemptSnap.docs.filter(
+    (item) => item.data().status === 'pending',
+  );
+  await Promise.all(
+    pendingAttempts.map(async (item) => {
+      try {
+        await deleteDoc(item.ref);
+        console.info(SUBMIT_LOG, 'Removed stale pending attempt', { attemptId: item.id });
+      } catch (cleanupError) {
+        console.error(SUBMIT_LOG, 'Failed to remove stale pending attempt', {
+          attemptId: item.id,
+          cleanupError,
+        });
+      }
+    }),
+  );
+
   const reviewData = buildAttemptReviewData(questions, answers);
-  const attemptPayload = {
+  const pendingPayload = {
     userId,
     uid: userId,
     quizId,
@@ -292,43 +368,55 @@ export async function submitAttempt(userId, quizId, quizData, answers) {
     selectedAnswers: reviewData.selectedAnswers,
     correctAnswers: reviewData.correctAnswers,
     reviewItems: reviewData.reviewItems,
-    completedAt: serverTimestamp(),
+    status: 'pending',
     createdAt: serverTimestamp(),
   };
 
-  const existingAttemptQuery = query(
-    collection(db, 'attempts'),
-    where('userId', '==', userId),
-    where('quizId', '==', quizId),
-    limit(1),
-  );
-  const existingAttemptSnap = await getDocs(existingAttemptQuery);
-
-  if (!existingAttemptSnap.empty) {
-    return existingAttemptSnap.docs[0].ref;
+  let attemptRef;
+  try {
+    attemptRef = await addDoc(collection(db, 'attempts'), pendingPayload);
+    console.info(SUBMIT_LOG, 'Pending attempt created', { attemptId: attemptRef.id });
+  } catch (createError) {
+    console.error(SUBMIT_LOG, 'Failed to create pending attempt', createError);
+    throw createError;
   }
 
-  const attemptRef = await addDoc(collection(db, 'attempts'), attemptPayload);
+  const userRef = doc(db, 'users', userId);
+  let userSnap;
+  try {
+    userSnap = await getDoc(userRef);
+  } catch (readError) {
+    console.error(SUBMIT_LOG, 'Failed to read user profile', readError);
+    await rollbackPendingAttempt(attemptRef, 'user-read-failed');
+    throw readError;
+  }
+
+  const currentData = userSnap.exists() ? userSnap.data() : {};
+  const currentAttempts = Number(currentData.quizzesAttempted) || 0;
+  const newAttempts = currentAttempts + 1;
+  const newAverage = calculateAverageScore(currentData.averageScore, currentAttempts, accuracy);
+  const streakReference = currentData.lastAttemptDate || currentData.lastActiveAt;
+  const newStreak = calculateStreak(currentData.streak, streakReference);
+  const statsUpdate = {
+    points: (Number(currentData.points) || 0) + pointsGained,
+    weeklyPoints: (Number(currentData.weeklyPoints) || 0) + weeklyPointsGained,
+    quizzesAttempted: newAttempts,
+    averageScore: newAverage,
+    streak: newStreak,
+    lastAttemptDate: serverTimestamp(),
+    lastActiveAt: serverTimestamp(),
+  };
+
+  console.info(SUBMIT_LOG, 'Updating user stats / leaderboard fields', {
+    userId,
+    statsUpdate: {
+      ...statsUpdate,
+      lastAttemptDate: '(serverTimestamp)',
+      lastActiveAt: '(serverTimestamp)',
+    },
+  });
 
   try {
-    const userRef = doc(db, 'users', userId);
-    const userSnap = await getDoc(userRef);
-    const currentData = userSnap.exists() ? userSnap.data() : {};
-    const currentAttempts = Number(currentData.quizzesAttempted) || 0;
-    const newAttempts = currentAttempts + 1;
-    const newAverage = calculateAverageScore(currentData.averageScore, currentAttempts, accuracy);
-    const streakReference = currentData.lastAttemptDate || currentData.lastActiveAt;
-    const newStreak = calculateStreak(currentData.streak, streakReference);
-    const statsUpdate = {
-      points: (Number(currentData.points) || 0) + pointsGained,
-      weeklyPoints: (Number(currentData.weeklyPoints) || 0) + pointsGained,
-      quizzesAttempted: newAttempts,
-      averageScore: newAverage,
-      streak: newStreak,
-      lastAttemptDate: serverTimestamp(),
-      lastActiveAt: serverTimestamp(),
-    };
-
     if (userSnap.exists()) {
       await updateDoc(userRef, statsUpdate);
     } else {
@@ -345,11 +433,30 @@ export async function submitAttempt(userId, quizId, quizData, answers) {
         ...statsUpdate,
       });
     }
-  } catch (error) {
-    console.error('Failed to update user stats after quiz submission:', error);
-    // Attempt is already saved — do not fail the whole submission.
+    console.info(SUBMIT_LOG, 'User stats updated (points, weeklyPoints, quizzesAttempted, averageScore, streak)');
+  } catch (statsError) {
+    console.error(SUBMIT_LOG, 'Stats update failed — rolling back attempt', statsError);
+    await rollbackPendingAttempt(attemptRef, 'stats-update-failed');
+    const error = new Error(getFriendlyFirebaseError(statsError) || 'Could not update your score. Please try again.');
+    error.code = 'stats-update-failed';
+    throw error;
   }
 
+  try {
+    await updateDoc(attemptRef, {
+      status: 'completed',
+      completedAt: serverTimestamp(),
+    });
+    console.info(SUBMIT_LOG, 'Attempt marked completed', { attemptId: attemptRef.id });
+  } catch (completeError) {
+    console.error(SUBMIT_LOG, 'Failed to mark attempt completed — rolling back', completeError);
+    await rollbackPendingAttempt(attemptRef, 'mark-completed-failed');
+    const error = new Error('Could not finalize your quiz attempt. Please try again.');
+    error.code = 'complete-failed';
+    throw error;
+  }
+
+  console.info(SUBMIT_LOG, 'Submission successful', { attemptId: attemptRef.id, quizId, userId });
   return attemptRef;
 }
 

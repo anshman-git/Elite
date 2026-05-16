@@ -54,16 +54,32 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
-    // Attempts - user sees only their own, admins see all
+    // Attempts - pending until stats sync, then completed; rollback deletes pending only
     match /attempts/{attemptId} {
       allow read: if signedIn() && (
-        resource.data.userId == request.auth.uid || 
+        resource.data.userId == request.auth.uid ||
         isAdmin()
       );
+
       allow create: if signedIn() &&
         request.resource.data.userId == request.auth.uid &&
-        request.resource.data.uid == request.auth.uid;
-      allow update, delete: if false; // Immutable
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.status == 'pending';
+
+      allow update: if signedIn() &&
+        resource.data.userId == request.auth.uid &&
+        resource.data.status == 'pending' &&
+        request.resource.data.status == 'completed' &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status',
+          'completedAt'
+        ]);
+
+      allow delete: if signedIn() &&
+        resource.data.userId == request.auth.uid &&
+        resource.data.status == 'pending';
+
+      allow delete: if isAdmin();
     }
 
     // Resources - readable by all, writable by admins
