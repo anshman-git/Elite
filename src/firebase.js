@@ -296,28 +296,26 @@ export async function submitAttempt(userId, quizId, quizData, answers) {
   // Update user points, weekly leaderboard and stats
   try {
     const userRef = doc(db, 'users', userId);
-    await runTransaction(db, async (transaction) => {
-      const userSnap = await transaction.get(userRef);
-      const pointsGained = Math.min(100, score * 10);
-      const currentData = userSnap.exists() ? userSnap.data() : {};
-      const currentAttempts = currentData.quizzesAttempted || 0;
-      const currentAverage = currentData.averageScore || 0;
-      const newAttempts = currentAttempts + 1;
-      const newAverage = newAttempts > 0
-        ? Math.round(((currentAverage * currentAttempts) + accuracy) / newAttempts)
-        : Math.round(accuracy);
+    const userSnap = await getDoc(userRef);
+    const currentData = userSnap.exists() ? userSnap.data() : {};
+    const pointsGained = Math.min(100, score * 10);
+    const currentAttempts = currentData.quizzesAttempted || 0;
+    const currentAverage = currentData.averageScore || 0;
+    const newAttempts = currentAttempts + 1;
+    const newAverage = newAttempts > 0
+      ? Math.round(((currentAverage * currentAttempts) + accuracy) / newAttempts)
+      : Math.round(accuracy);
 
-      transaction.set(userRef, {
-        ...currentData,
-        points: (currentData.points || 0) + pointsGained,
-        weeklyPoints: (currentData.weeklyPoints || 0) + (quizData.weeklyTest ? pointsGained : 0),
-        quizzesAttempted: newAttempts,
-        averageScore: newAverage,
-        lastActiveAt: serverTimestamp(),
-      }, { merge: true });
+    // Only update safe fields that are allowed by Firestore rules
+    await updateDoc(userRef, {
+      points: (currentData.points || 0) + pointsGained,
+      weeklyPoints: (currentData.weeklyPoints || 0) + (quizData.weeklyTest ? pointsGained : 0),
+      quizzesAttempted: newAttempts,
+      averageScore: newAverage,
+      lastActiveAt: serverTimestamp(),
     });
   } catch (error) {
-    console.error('Failed to update user stats:', error);
+    console.error('Failed to update user stats after quiz submission:', error);
     // Don't throw - attempt is saved even if stats update fails
   }
 
@@ -540,6 +538,25 @@ export async function resetWeeklyLeaderboard() {
   usersSnapshot.docs.forEach((userDoc) => {
     batch.update(userDoc.ref, { weeklyPoints: 0 });
   });
+  await batch.commit();
+}
+
+export async function resetAllUserStats() {
+  if (!db) throw new Error('Firebase is not configured yet.');
+
+  const usersSnapshot = await getDocs(collection(db, 'users'));
+  const batch = writeBatch(db);
+
+  usersSnapshot.docs.forEach((userDoc) => {
+    batch.update(userDoc.ref, {
+      points: 0,
+      weeklyPoints: 0,
+      quizzesAttempted: 0,
+      averageScore: 0,
+      streak: 0,
+    });
+  });
+
   await batch.commit();
 }
 

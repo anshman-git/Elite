@@ -47,6 +47,7 @@ import {
   demoteFromAdmin,
   resetUserStreak,
   resetWeeklyLeaderboard,
+  resetAllUserStats,
   getUsersCount,
   getOnlineUsersCount,
   updateExamCountdown,
@@ -958,24 +959,44 @@ export default function Admin({ notify, user }) {
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               {user?.role === 'admin' && (
-                <Button
-                  variant="secondary"
-                  onClick={async () => {
-                    if (!confirm('Reset weekly leaderboard points for all users?')) return;
-                    setBusy('reset-weekly');
-                    try {
-                      await resetWeeklyLeaderboard();
-                      notify('Weekly leaderboard reset successfully.');
-                    } catch (error) {
-                      notify('Failed to reset weekly leaderboard.');
-                    } finally {
-                      setBusy('');
-                    }
-                  }}
-                  disabled={busy === 'reset-weekly'}
-                >
-                  Reset weekly leaderboard
-                </Button>
+                <>
+                  <Button
+                    variant="secondary"
+                    onClick={async () => {
+                      if (!confirm('Reset weekly leaderboard points for all users? This cannot be undone.')) return;
+                      setBusy('reset-weekly');
+                      try {
+                        await resetWeeklyLeaderboard();
+                        notify('Weekly leaderboard reset successfully.');
+                      } catch (error) {
+                        notify('Failed to reset weekly leaderboard.');
+                      } finally {
+                        setBusy('');
+                      }
+                    }}
+                    disabled={busy === 'reset-weekly' || busy === 'reset-all'}
+                  >
+                    Reset weekly leaderboard
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={async () => {
+                      if (!confirm('RESET ALL USER SCORES AND STATS? This cannot be undone. Points, weekly points, attempts, and streaks will be reset to zero for ALL users.')) return;
+                      setBusy('reset-all');
+                      try {
+                        await resetAllUserStats();
+                        notify('All user stats reset successfully.');
+                      } catch (error) {
+                        notify('Failed to reset all user stats.');
+                      } finally {
+                        setBusy('');
+                      }
+                    }}
+                    disabled={busy === 'reset-all' || busy === 'reset-weekly'}
+                  >
+                    Reset All Scores
+                  </Button>
+                </>
               )}
               <div className="relative">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />

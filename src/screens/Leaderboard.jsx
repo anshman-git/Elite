@@ -1,24 +1,45 @@
 import { useEffect, useState } from 'react';
 import { Flame, Timer } from 'lucide-react';
 import { watchCollection } from '../firebase';
-import { Card, EmptyState } from '../components/ui';
+import { Card, EmptyState, Button } from '../components/ui';
 
 export default function Leaderboard({ notify }) {
   const [leaderboard, setLeaderboard] = useState([]);
+  const [isWeekly, setIsWeekly] = useState(true);
 
   useEffect(() => {
     return watchCollection('users', setLeaderboard, {
-      sortField: 'weeklyPoints',
+      sortField: isWeekly ? 'weeklyPoints' : 'points',
       take: 50,
       onError: () => notify('Could not load leaderboard from Firestore.'),
     });
-  }, [notify]);
+  }, [notify, isWeekly]);
 
   return (
     <div className="space-y-4">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">Leaderboard</p>
-        <h2 className="text-2xl font-black text-slate-950 dark:text-white">Weekly rankings</h2>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">Leaderboard</p>
+          <h2 className="text-2xl font-black text-slate-950 dark:text-white">
+            {isWeekly ? 'Weekly' : 'All-time'} rankings
+          </h2>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant={isWeekly ? 'accent' : 'secondary'}
+            onClick={() => setIsWeekly(true)}
+            className="whitespace-nowrap"
+          >
+            Weekly
+          </Button>
+          <Button
+            variant={!isWeekly ? 'accent' : 'secondary'}
+            onClick={() => setIsWeekly(false)}
+            className="whitespace-nowrap"
+          >
+            All-time
+          </Button>
+        </div>
       </div>
       <div className="space-y-3">
         {leaderboard.length ? leaderboard.map((person, index) => (
@@ -33,11 +54,13 @@ export default function Leaderboard({ notify }) {
                   <div className="mt-1 flex flex-wrap gap-3 text-xs font-bold text-slate-500 dark:text-slate-400">
                     <span className="inline-flex items-center gap-1"><Timer size={14} /> Active member</span>
                     <span className="inline-flex items-center gap-1"><Flame size={14} /> {person.streak || 0} days</span>
-                    <span className="inline-flex items-center gap-1">Weekly</span>
+                    <span className="inline-flex items-center gap-1">{isWeekly ? 'Weekly' : 'Total'}</span>
                   </div>
                 </div>
               </div>
-              <p className="text-2xl font-black text-blue-600">{person.weeklyPoints || 0}</p>
+              <p className="text-2xl font-black text-blue-600">
+                {isWeekly ? (person.weeklyPoints || 0) : (person.points || 0)}
+              </p>
             </div>
           </Card>
         )) : (
