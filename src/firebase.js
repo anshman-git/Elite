@@ -306,10 +306,19 @@ export async function submitAttempt(userId, quizId, quizData, answers) {
       ? Math.round(((currentAverage * currentAttempts) + accuracy) / newAttempts)
       : Math.round(accuracy);
 
+    // Backward-compatible weekly quiz detection:
+    // - Respect explicit weeklyTest flag if set
+    // - For older quizzes (weeklyTest undefined), check title/subject for "weekly" pattern
+    const isWeeklyQuiz = quizData.weeklyTest === true ||
+      (quizData.weeklyTest === undefined && (
+        quizData.title?.toLowerCase().includes('weekly') ||
+        quizData.subject?.toLowerCase().includes('weekly')
+      ));
+
     // Only update safe fields that are allowed by Firestore rules
     await updateDoc(userRef, {
       points: (currentData.points || 0) + pointsGained,
-      weeklyPoints: (currentData.weeklyPoints || 0) + (quizData.weeklyTest ? pointsGained : 0),
+      weeklyPoints: (currentData.weeklyPoints || 0) + (isWeeklyQuiz ? pointsGained : 0),
       quizzesAttempted: newAttempts,
       averageScore: newAverage,
       lastActiveAt: serverTimestamp(),
@@ -438,7 +447,15 @@ export async function createAnnouncement(payload) {
 // Quiz CRUD functions
 export async function updateQuiz(quizId, payload) {
   if (!db) throw new Error('Firebase is not configured yet.');
-  return updateDoc(doc(db, QUIZZES_COLLECTION, quizId), { ...payload, updatedAt: serverTimestamp() });
+  
+  // Ensure weeklyTest field is safely set when updating old quizzes
+  const safePayload = {
+    ...payload,
+    weeklyTest: payload.weeklyTest ?? false,
+    updatedAt: serverTimestamp(),
+  };
+  
+  return updateDoc(doc(db, QUIZZES_COLLECTION, quizId), safePayload);
 }
 
 export async function deleteQuiz(quizId) {
