@@ -48,6 +48,7 @@ import {
   resetUserStreak,
   resetWeeklyLeaderboard,
   resetAllUserStats,
+  giveWeeklyPoints,
   getUsersCount,
   getOnlineUsersCount,
   updateExamCountdown,
@@ -974,7 +975,7 @@ export default function Admin({ notify, user }) {
                         setBusy('');
                       }
                     }}
-                    disabled={busy === 'reset-weekly' || busy === 'reset-all'}
+                    disabled={busy === 'reset-weekly' || busy === 'reset-all' || busy === 'debug-weekly'}
                   >
                     Reset weekly leaderboard
                   </Button>
@@ -992,9 +993,27 @@ export default function Admin({ notify, user }) {
                         setBusy('');
                       }
                     }}
-                    disabled={busy === 'reset-all' || busy === 'reset-weekly'}
+                    disabled={busy === 'reset-all' || busy === 'reset-weekly' || busy === 'debug-weekly'}
                   >
                     Reset All Scores
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={async () => {
+                      if (!user?.uid) return;
+                      setBusy('debug-weekly');
+                      try {
+                        await giveWeeklyPoints(user.uid, 100);
+                        notify('Added 100 weekly points to your account for debug testing.');
+                      } catch (error) {
+                        notify('Failed to add debug weekly points.');
+                      } finally {
+                        setBusy('');
+                      }
+                    }}
+                    disabled={busy === 'debug-weekly' || busy === 'reset-weekly' || busy === 'reset-all'}
+                  >
+                    Give Weekly Points +100
                   </Button>
                 </>
               )}

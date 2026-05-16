@@ -315,16 +315,49 @@ export async function submitAttempt(userId, quizId, quizData, answers) {
         quizData.subject?.toLowerCase().includes('weekly')
       ));
 
+    const weeklyPointsGained = isWeeklyQuiz ? pointsGained : 0;
+
+    // Debug logging
+    console.log('[submitAttempt] Quiz data:', {
+      quizId,
+      title: quizData.title,
+      weeklyTest: quizData.weeklyTest,
+      isWeeklyQuiz,
+    });
+    console.log('[submitAttempt] Score calculation:', {
+      score,
+      accuracy: Math.round(accuracy),
+      pointsGained,
+      weeklyPointsGained,
+    });
+    console.log('[submitAttempt] Current user data:', {
+      points: currentData.points || 0,
+      weeklyPoints: currentData.weeklyPoints || 0,
+      quizzesAttempted: currentAttempts,
+      averageScore: currentAverage,
+    });
+
     // Only update safe fields that are allowed by Firestore rules
-    await updateDoc(userRef, {
+    const updatePayload = {
       points: (currentData.points || 0) + pointsGained,
-      weeklyPoints: (currentData.weeklyPoints || 0) + (isWeeklyQuiz ? pointsGained : 0),
+      weeklyPoints: (currentData.weeklyPoints || 0) + weeklyPointsGained,
       quizzesAttempted: newAttempts,
       averageScore: newAverage,
       lastActiveAt: serverTimestamp(),
-    });
+    };
+
+    console.log('[submitAttempt] Update payload:', updatePayload);
+
+    await updateDoc(userRef, updatePayload);
+
+    console.log('[submitAttempt] User stats updated successfully');
   } catch (error) {
-    console.error('Failed to update user stats after quiz submission:', error);
+    console.error('Failed to update user stats after quiz submission:', {
+      userId,
+      quizId,
+      quizDataWeeklyTest: quizData.weeklyTest,
+      error,
+    });
     // Don't throw - attempt is saved even if stats update fails
   }
 
@@ -575,6 +608,15 @@ export async function resetAllUserStats() {
   });
 
   await batch.commit();
+}
+
+export async function giveWeeklyPoints(userId, amount = 100) {
+  if (!db) throw new Error('Firebase is not configured yet.');
+  return updateDoc(doc(db, 'users', userId), {
+    points: increment(amount),
+    weeklyPoints: increment(amount),
+    lastActiveAt: serverTimestamp(),
+  });
 }
 
 // Settings functions

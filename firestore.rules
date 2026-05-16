@@ -20,22 +20,19 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create: if signedIn() && isOwner(userId);
 
-      // Allow users to update safe fields only, admins can update anything
+      // Allow users to update only safe fields on their own profile.
+      // The rule checks the changed fields rather than the full document shape.
       allow update: if (
-        // Owner may update safe fields only (not role)
-        (isOwner(userId) && (
-          request.resource.data.keys().hasOnly([
-            'name',
-            'email',
+        (isOwner(userId) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'points',
             'weeklyPoints',
-            'streak',
             'quizzesAttempted',
             'averageScore',
-            'lastActiveAt',
-            'banned'
+            'streak',
+            'lastActiveAt'
           ])
-        ))
+        )
         // Admins may update any field
         || isAdmin()
       );

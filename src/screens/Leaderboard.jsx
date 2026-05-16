@@ -42,28 +42,32 @@ export default function Leaderboard({ notify }) {
         </div>
       </div>
       <div className="space-y-3">
-        {leaderboard.length ? leaderboard.map((person, index) => (
-          <Card key={person.id} className={index === 0 ? 'border-blue-300 bg-blue-50 dark:bg-blue-500/10' : ''}>
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-950 text-sm font-black text-white dark:bg-white dark:text-slate-950">
-                  #{index + 1}
-                </div>
-                <div>
-                  <h3 className="font-black text-slate-950 dark:text-white">{person.name || person.displayName || person.email || 'Elite learner'}</h3>
-                  <div className="mt-1 flex flex-wrap gap-3 text-xs font-bold text-slate-500 dark:text-slate-400">
-                    <span className="inline-flex items-center gap-1"><Timer size={14} /> Active member</span>
-                    <span className="inline-flex items-center gap-1"><Flame size={14} /> {person.streak || 0} days</span>
-                    <span className="inline-flex items-center gap-1">{isWeekly ? 'Weekly' : 'Total'}</span>
+        {leaderboard.length ? leaderboard.map((person, index) => {
+          const badge = index === 0 ? '🥇 Gold' : index === 1 ? '🥈 Silver' : index === 2 ? '🥉 Bronze' : null;
+          return (
+            <Card key={person.id} className={index === 0 ? 'border-blue-300 bg-blue-50 dark:bg-blue-500/10' : ''}>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-950 text-sm font-black text-white dark:bg-white dark:text-slate-950">
+                    #{index + 1}
+                  </div>
+                  <div>
+                    <h3 className="font-black text-slate-950 dark:text-white">{person.name || person.displayName || person.email || 'Elite learner'}</h3>
+                    <div className="mt-1 flex flex-wrap gap-3 text-xs font-bold text-slate-500 dark:text-slate-400">
+                      <span className="inline-flex items-center gap-1"><Timer size={14} /> Active member</span>
+                      <span className="inline-flex items-center gap-1"><Flame size={14} /> {person.streak || 0} days</span>
+                      <span className="inline-flex items-center gap-1">{isWeekly ? 'Weekly' : 'Total'}</span>
+                      {badge && <span className="inline-flex items-center gap-1">{badge}</span>}
+                    </div>
                   </div>
                 </div>
+                <p className="text-2xl font-black text-blue-600">
+                  {isWeekly ? (person.weeklyPoints || 0) : (person.points || 0)}
+                </p>
               </div>
-              <p className="text-2xl font-black text-blue-600">
-                {isWeekly ? (person.weeklyPoints || 0) : (person.points || 0)}
-              </p>
-            </div>
-          </Card>
-        )) : (
+            </Card>
+          );
+        }) : (
           <EmptyState title="No rankings yet" body="Rankings will appear after members earn points." />
         )}
       </div>

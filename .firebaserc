@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "elitestudy-3088e"
-  }
+    "default": "elitestudy-3088e",
+    "final": "elitestudy-3088e"
+  },
+  "targets": {},
+  "etags": {}
 }
