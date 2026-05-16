@@ -21,7 +21,6 @@ import {
   onSnapshot,
   orderBy,
   query,
-  runTransaction,
   serverTimestamp,
   setDoc,
   where,
@@ -297,21 +296,23 @@ export async function submitAttempt(userId, quizId, quizData, answers) {
     createdAt: serverTimestamp(),
   };
 
-  return runTransaction(db, async (transaction) => {
-    const existingAttemptQuery = query(
-      collection(db, 'attempts'),
-      where('userId', '==', userId),
-      where('quizId', '==', quizId),
-      limit(1),
-    );
-    const existingAttemptSnap = await transaction.get(existingAttemptQuery);
+  const existingAttemptQuery = query(
+    collection(db, 'attempts'),
+    where('userId', '==', userId),
+    where('quizId', '==', quizId),
+    limit(1),
+  );
+  const existingAttemptSnap = await getDocs(existingAttemptQuery);
 
-    if (!existingAttemptSnap.empty) {
-      return existingAttemptSnap.docs[0].ref;
-    }
+  if (!existingAttemptSnap.empty) {
+    return existingAttemptSnap.docs[0].ref;
+  }
 
+  const attemptRef = await addDoc(collection(db, 'attempts'), attemptPayload);
+
+  try {
     const userRef = doc(db, 'users', userId);
-    const userSnap = await transaction.get(userRef);
+    const userSnap = await getDoc(userRef);
     const currentData = userSnap.exists() ? userSnap.data() : {};
     const currentAttempts = Number(currentData.quizzesAttempted) || 0;
     const newAttempts = currentAttempts + 1;
@@ -329,15 +330,27 @@ export async function submitAttempt(userId, quizId, quizData, answers) {
     };
 
     if (userSnap.exists()) {
-      transaction.update(userRef, statsUpdate);
+      await updateDoc(userRef, statsUpdate);
     } else {
-      transaction.set(userRef, statsUpdate);
+      await setDoc(userRef, {
+        name: 'Elite learner',
+        email: '',
+        role: 'student',
+        points: 0,
+        weeklyPoints: 0,
+        streak: 0,
+        quizzesAttempted: 0,
+        averageScore: 0,
+        createdAt: serverTimestamp(),
+        ...statsUpdate,
+      });
     }
+  } catch (error) {
+    console.error('Failed to update user stats after quiz submission:', error);
+    // Attempt is already saved — do not fail the whole submission.
+  }
 
-    const attemptRef = doc(collection(db, 'attempts'));
-    transaction.set(attemptRef, attemptPayload);
-    return attemptRef;
-  });
+  return attemptRef;
 }
 
 export async function createQuiz(payload) {

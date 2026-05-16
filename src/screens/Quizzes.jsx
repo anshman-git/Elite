@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CheckCircle2, Clock, RotateCcw, SlidersHorizontal } from 'lucide-react';
+import { CheckCircle2, Clock, SlidersHorizontal } from 'lucide-react';
 import { watchQuizzes, submitAttempt, watchSubjects, watchUserAttempts } from '../firebase';
 import { useApp } from '../context/useApp';
 import { Button, Card, EmptyState } from '../components/ui';
-import { classNames, getQuestionId } from '../utils';
+import { getFriendlyFirebaseError } from '../firebase';
+import { classNames, confirmLeaveQuiz, getQuestionId, setQuizInProgress } from '../utils';
 
 export default function Quizzes({ notify }) {
   const { user, notify: globalNotify } = useApp();
@@ -34,25 +35,30 @@ export default function Quizzes({ notify }) {
   const isQuizAttempted = activeQuiz ? attemptedQuizIds.has(activeQuiz.id) : false;
 
   const handleSubmit = useCallback(async () => {
-    if (!user || !activeQuiz) return;
+    const userId = user?.uid || user?.id;
+    if (!userId || !activeQuiz) return;
+    if (submitting) return;
+
     if (attemptedQuizIds.has(activeQuiz.id)) {
       globalNotify('You have already attempted this quiz. No additional points will be awarded.');
       setSubmitted(true);
+      setQuizInProgress(false);
       return;
     }
 
     setSubmitting(true);
     try {
-      await submitAttempt(user.uid, activeQuiz.id, activeQuiz, answers);
+      await submitAttempt(userId, activeQuiz.id, activeQuiz, answers);
       setSubmitted(true);
+      setQuizInProgress(false);
       globalNotify('Quiz submitted successfully!');
     } catch (error) {
       console.error('Failed to submit quiz:', error);
-      globalNotify('Failed to submit quiz. Please try again.');
+      globalNotify(getFriendlyFirebaseError(error) || 'Failed to submit quiz. Please try again.');
     } finally {
       setSubmitting(false);
     }
-  }, [user, activeQuiz, answers, globalNotify, attemptedQuizIds]);
+  }, [user, activeQuiz, answers, globalNotify, attemptedQuizIds, submitting]);
 
   useEffect(() => {
     const unsubscribers = [];
@@ -96,17 +102,31 @@ export default function Quizzes({ notify }) {
   }, [activeQuiz, submitted, handleSubmit]);
 
   useEffect(() => {
+    setQuizInProgress(Boolean(activeQuiz && !submitted));
+    return () => {
+      if (!activeQuiz) setQuizInProgress(false);
+    };
+  }, [activeQuiz, submitted]);
+
+  useEffect(() => {
     if (!activeQuiz || submitted) return undefined;
 
     const handleBeforeUnload = (event) => {
       event.preventDefault();
       event.returnValue = '';
-      return '';
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [activeQuiz, submitted]);
+
+  const exitQuiz = useCallback(() => {
+    if (!submitted && !confirmLeaveQuiz()) return;
+    setQuizInProgress(false);
+    setActiveQuiz(null);
+    setAnswers({});
+    setSubmitted(false);
+  }, [submitted]);
 
   const score = questions.reduce((total, item, index) => total + (answers[getQuestionId(item, index)] === item.answer ? 1 : 0), 0);
 
@@ -123,15 +143,7 @@ export default function Quizzes({ notify }) {
               <span className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-slate-100 px-3 text-sm font-black dark:bg-white/10">
                 <Clock size={17} /> {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}
               </span>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  if (activeQuiz && !submitted && !window.confirm('Leave quiz? Your progress will be lost.')) {
-                    return;
-                  }
-                  setActiveQuiz(null);
-                }}
-              >
+              <Button variant="secondary" onClick={exitQuiz}>
                 Exit
               </Button>
             </div>
@@ -148,17 +160,7 @@ export default function Quizzes({ notify }) {
                   Time taken: {((activeQuiz.timerMinutes || activeQuiz.duration || 25) * 60) - seconds}s. Review the correct answers below.
                 </p>
                 <div className="mt-4 flex gap-2">
-                  <Button onClick={() => setActiveQuiz(null)}>Back to quizzes</Button>
-                  <Button
-                    variant="secondary"
-                    onClick={() => {
-                      setAnswers({});
-                      setSeconds(25 * 60);
-                      setSubmitted(false);
-                    }}
-                  >
-                    <RotateCcw size={17} /> Retake
-                  </Button>
+                  <Button onClick={exitQuiz}>Back to quizzes</Button>
                 </div>
               </Card>
             </motion.div>
@@ -250,10 +252,12 @@ export default function Quizzes({ notify }) {
                   className="mt-4 w-full"
                   disabled={quizAttempted}
                   onClick={() => {
+                    if (!confirmLeaveQuiz()) return;
                     setActiveQuiz(quiz);
                     setAnswers({});
                     setSeconds((quiz.timerMinutes || quiz.duration || 25) * 60);
                     setSubmitted(false);
+                    setQuizInProgress(true);
                   }}
                 >
                   {quizAttempted ? 'Already attempted' : 'Start quiz'}

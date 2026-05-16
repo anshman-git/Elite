@@ -98,3 +98,26 @@ export function isSameLocalDay(a, b) {
   if (!left || !right) return false;
   return toLocalDayKey(left) === toLocalDayKey(right);
 }
+
+const QUIZ_GUARD_KEY = 'elitestudy-quiz-in-progress';
+
+export function setQuizInProgress(active) {
+  if (typeof window === 'undefined') return;
+  if (active) {
+    sessionStorage.setItem(QUIZ_GUARD_KEY, '1');
+  } else {
+    sessionStorage.removeItem(QUIZ_GUARD_KEY);
+  }
+}
+
+export function isQuizInProgress() {
+  if (typeof window === 'undefined') return false;
+  return sessionStorage.getItem(QUIZ_GUARD_KEY) === '1';
+}
+
+export function confirmLeaveQuiz() {
+  if (!isQuizInProgress()) return true;
+  const leave = window.confirm('Leave quiz? Your progress will be lost.');
+  if (leave) setQuizInProgress(false);
+  return leave;
+}

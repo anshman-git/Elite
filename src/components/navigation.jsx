@@ -1,5 +1,10 @@
 import { BarChart3, BookOpen, Home, ShieldCheck, Trophy, UserRound } from 'lucide-react';
-import { classNames } from '../utils';
+import { classNames, confirmLeaveQuiz } from '../utils';
+
+function navigate(setActive, target) {
+  if (!confirmLeaveQuiz()) return;
+  setActive(target);
+}
 
 const items = [
   { id: 'dashboard', label: 'Home', icon: Home },
@@ -27,7 +32,7 @@ export function BottomNav({ active, setActive, isAdmin }) {
           return (
             <button
               key={item.id}
-              onClick={() => setActive(item.id)}
+              onClick={() => navigate(setActive, item.id)}
               className={classNames(
                 'flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl text-[11px] font-bold transition',
                 isActive
@@ -57,7 +62,7 @@ export function Sidebar({ active, setActive, isAdmin }) {
           return (
             <button
               key={item.id}
-              onClick={() => setActive(item.id)}
+              onClick={() => navigate(setActive, item.id)}
               className={classNames(
                 'flex min-h-12 items-center gap-3 rounded-2xl px-4 text-sm font-bold transition',
                 isActive

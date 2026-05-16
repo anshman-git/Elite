@@ -7,6 +7,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { AppProvider } from './context/AppContext';
 import { useApp } from './context/useApp';
 import { navigateHome, navigateToProfile, parseRoute } from './routing';
+import { confirmLeaveQuiz } from './utils';
 import Admin from './screens/Admin';
 import Auth from './screens/Auth';
 import Dashboard from './screens/Dashboard';
@@ -29,12 +30,19 @@ function AppContent() {
     return () => window.removeEventListener('popstate', syncRoute);
   }, []);
 
+  const guardedSetActive = (next) => {
+    if (!confirmLeaveQuiz()) return;
+    setActive(next);
+  };
+
   const openProfile = (userId) => {
+    if (!confirmLeaveQuiz()) return;
     navigateToProfile(userId);
     setRoute({ view: 'public-profile', profileUserId: userId });
   };
 
   const closePublicProfile = () => {
+    if (!confirmLeaveQuiz()) return;
     navigateHome();
     setRoute(parseRoute('/'));
   };
@@ -43,7 +51,7 @@ function AppContent() {
   const showingPublicProfile = Boolean(route.profileUserId);
 
   const page = useMemo(() => {
-    const props = { setActive, user, notify, openProfile };
+    const props = { setActive: guardedSetActive, user, notify, openProfile };
     return {
       dashboard: <Dashboard {...props} />,
       quizzes: <Quizzes {...props} />,
@@ -71,7 +79,7 @@ function AppContent() {
     <div className="min-h-screen bg-slate-50 text-slate-900 transition dark:bg-slate-950 dark:text-slate-100">
       <TopBar dark={dark} onToggleDark={toggleDark} onOpenNotifications={() => setDrawer(true)} isAdmin={isAdmin} user={user} />
       <div className="mx-auto flex max-w-[1600px]">
-        <Sidebar active={showingPublicProfile ? 'leaderboard' : safeActive} setActive={setActive} isAdmin={isAdmin} />
+        <Sidebar active={showingPublicProfile ? 'leaderboard' : safeActive} setActive={guardedSetActive} isAdmin={isAdmin} />
         <main className="min-w-0 flex-1 px-4 pb-28 pt-4 sm:px-6 lg:pb-8">
           <div className="mx-auto max-w-7xl">
             <AnimatePresence mode="wait">
@@ -97,7 +105,7 @@ function AppContent() {
         </main>
       </div>
       {!showingPublicProfile ? (
-        <BottomNav active={safeActive} setActive={setActive} isAdmin={isAdmin} />
+        <BottomNav active={safeActive} setActive={guardedSetActive} isAdmin={isAdmin} />
       ) : null}
       <Toast message={toasts.length > 0 ? toasts[0].message : ''} />
       <AnimatePresence>
