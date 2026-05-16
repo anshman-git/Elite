@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { BottomNav, Sidebar } from './components/navigation';
-import { Button, Card, EmptyState, Toast, TopBar } from './components/ui';
+import { Button, Card, EmptyState, LoadingState, Toast, TopBar } from './components/ui';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AppProvider } from './context/AppContext';
 import { useApp } from './context/useApp';
@@ -16,7 +16,7 @@ import Quizzes from './screens/Quizzes';
 import Resources from './screens/Resources';
 
 function AppContent() {
-  const { user, dark, toggleDark, notifications, notify, toasts, isAdmin } = useApp();
+  const { user, dark, toggleDark, notifications, notify, toasts, isAdmin, loading } = useApp();
   const [active, setActive] = useState('dashboard');
   const [drawer, setDrawer] = useState(false);
 
@@ -34,6 +34,14 @@ function AppContent() {
       admin: isAdmin ? <Admin {...props} /> : <Dashboard {...props} />,
     }[safeActive];
   }, [safeActive, user, isAdmin, notify]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 text-slate-900 transition dark:bg-slate-950 dark:text-slate-100">
+        <LoadingState />
+      </div>
+    );
+  }
 
   if (!user) {
     return <Auth notify={notify} />;

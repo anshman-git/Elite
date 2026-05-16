@@ -278,6 +278,16 @@ export async function submitAttempt(userId, quizId, quizData, answers) {
 
   const accuracy = questions.length > 0 ? (score / questions.length) * 100 : 0;
 
+  // Detect prior attempts for this quiz to avoid duplicate point awards
+  const existingAttemptQuery = query(
+    collection(db, 'attempts'),
+    where('userId', '==', userId),
+    where('quizId', '==', quizId),
+    limit(1),
+  );
+  const existingAttemptSnap = await getDocs(existingAttemptQuery);
+  const alreadyAttempted = !existingAttemptSnap.empty;
+
   // Create attempt document
   const attemptRef = await addDoc(collection(db, 'attempts'), {
     userId,
@@ -292,6 +302,11 @@ export async function submitAttempt(userId, quizId, quizData, answers) {
     completedAt: serverTimestamp(),
     createdAt: serverTimestamp(),
   });
+
+  if (alreadyAttempted) {
+    console.log('[submitAttempt] Existing attempt found, skipping additional user stat updates for duplicate quiz attempt.');
+    return attemptRef;
+  }
 
   // Update user points, weekly leaderboard and stats
   try {

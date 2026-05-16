@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, Clock, RotateCcw, SlidersHorizontal } from 'lucide-react';
-import { watchQuizzes, submitAttempt, watchSubjects } from '../firebase';
+import { watchQuizzes, submitAttempt, watchSubjects, watchUserAttempts } from '../firebase';
 import { useApp } from '../context/useApp';
 import { Button, Card, EmptyState } from '../components/ui';
 import { classNames } from '../utils';
@@ -16,6 +16,7 @@ export default function Quizzes({ notify }) {
   const [seconds, setSeconds] = useState(25 * 60);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [attempts, setAttempts] = useState([]);
 
   const filtered = useMemo(
     () => {
@@ -26,9 +27,19 @@ export default function Quizzes({ notify }) {
   );
 
   const questions = activeQuiz?.questions || [];
+  const attemptedQuizIds = useMemo(
+    () => new Set(attempts.map((item) => item.quizId)),
+    [attempts],
+  );
+  const isQuizAttempted = activeQuiz ? attemptedQuizIds.has(activeQuiz.id) : false;
 
   const handleSubmit = useCallback(async () => {
     if (!user || !activeQuiz) return;
+    if (attemptedQuizIds.has(activeQuiz.id)) {
+      globalNotify('You have already attempted this quiz. No additional points will be awarded.');
+      setSubmitted(true);
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -41,7 +52,7 @@ export default function Quizzes({ notify }) {
     } finally {
       setSubmitting(false);
     }
-  }, [user, activeQuiz, answers, globalNotify]);
+  }, [user, activeQuiz, answers, globalNotify, attemptedQuizIds]);
 
   useEffect(() => {
     const unsubscribers = [];
@@ -59,6 +70,18 @@ export default function Quizzes({ notify }) {
   }, [notify]);
 
   useEffect(() => {
+    if (!user?.uid) {
+      setAttempts([]);
+      return () => {};
+    }
+
+    return watchUserAttempts(user.uid, setAttempts, {
+      take: 200,
+      onError: () => console.error('Could not load user attempts.'),
+    });
+  }, [user?.uid]);
+
+  useEffect(() => {
     if (!activeQuiz || submitted) return undefined;
     const timer = window.setInterval(() => {
       setSeconds((value) => {
@@ -71,6 +94,19 @@ export default function Quizzes({ notify }) {
     }, 1000);
     return () => window.clearInterval(timer);
   }, [activeQuiz, submitted, handleSubmit]);
+
+  useEffect(() => {
+    if (!activeQuiz || submitted) return undefined;
+
+    const handleBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = '';
+      return '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [activeQuiz, submitted]);
 
   const score = questions.reduce((total, item, index) => total + (answers[getQuestionId(item, index)] === item.answer ? 1 : 0), 0);
 
@@ -87,7 +123,17 @@ export default function Quizzes({ notify }) {
               <span className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-slate-100 px-3 text-sm font-black dark:bg-white/10">
                 <Clock size={17} /> {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}
               </span>
-              <Button variant="secondary" onClick={() => setActiveQuiz(null)}>Exit</Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  if (activeQuiz && !submitted && !window.confirm('Leave quiz? Your progress will be lost.')) {
+                    return;
+                  }
+                  setActiveQuiz(null);
+                }}
+              >
+                Exit
+              </Button>
             </div>
           </div>
         </Card>
@@ -188,29 +234,36 @@ export default function Quizzes({ notify }) {
 
       {filtered.length ? (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((quiz) => (
-            <Card key={quiz.id} interactive>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-600">{quiz.subject}</p>
-              <h3 className="mt-2 text-lg font-black text-slate-950 dark:text-white">{quiz.title}</h3>
-              <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                <Badge label="MCQs" value={quiz.questions?.length || 0} />
-                <Badge label="Timer" value={`${quiz.timerMinutes || quiz.duration || 25}m`} />
-                <Badge label="Daily" value={(quiz.dailyQuiz ?? quiz.isDaily) ? 'Yes' : 'No'} />
-              </div>
-              <Button
-                variant="accent"
-                className="mt-4 w-full"
-                onClick={() => {
-                  setActiveQuiz(quiz);
-                  setAnswers({});
-                  setSeconds((quiz.timerMinutes || quiz.duration || 25) * 60);
-                  setSubmitted(false);
-                }}
-              >
-                Start quiz
-              </Button>
-            </Card>
-          ))}
+          {filtered.map((quiz) => {
+            const quizAttempted = attemptedQuizIds.has(quiz.id);
+            return (
+              <Card key={quiz.id} interactive>
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-600">{quiz.subject}</p>
+                <h3 className="mt-2 text-lg font-black text-slate-950 dark:text-white">{quiz.title}</h3>
+                <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                  <Badge label="MCQs" value={quiz.questions?.length || 0} />
+                  <Badge label="Timer" value={`${quiz.timerMinutes || quiz.duration || 25}m`} />
+                  <Badge label="Daily" value={(quiz.dailyQuiz ?? quiz.isDaily) ? 'Yes' : 'No'} />
+                </div>
+                <Button
+                  variant="accent"
+                  className="mt-4 w-full"
+                  disabled={quizAttempted}
+                  onClick={() => {
+                    setActiveQuiz(quiz);
+                    setAnswers({});
+                    setSeconds((quiz.timerMinutes || quiz.duration || 25) * 60);
+                    setSubmitted(false);
+                  }}
+                >
+                  {quizAttempted ? 'Already attempted' : 'Start quiz'}
+                </Button>
+                {quizAttempted ? (
+                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">You already attempted this quiz. Reattempts are disabled to keep scoring fair.</p>
+                ) : null}
+              </Card>
+            );
+          })}
         </div>
       ) : (
         <EmptyState title="No quizzes found" body="Try another subject filter." />
