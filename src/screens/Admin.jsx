@@ -796,6 +796,15 @@ export default function Admin({ notify, user }) {
                       />
                       Daily Quiz
                     </label>
+                    <label className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-200">
+                      <input
+                        type="checkbox"
+                        checked={quiz.weeklyTest}
+                        onChange={(event) => setQuiz((prev) => ({ ...prev, weeklyTest: event.target.checked }))}
+                        className="h-4 w-4 accent-blue-600"
+                      />
+                      Weekly Test 🏆
+                    </label>
                   </div>
                 </div>
 

@@ -182,7 +182,7 @@ export default function Dashboard({ setActive, user, notify }) {
                       </span>
                       <span className="font-bold text-slate-900 dark:text-white">{person.name || person.displayName || person.email || 'Elite learner'}</span>
                     </div>
-                    <span className="text-sm font-black text-blue-600">{person.weeklyPoints || 0}</span>\n
+                    <span className="text-sm font-black text-blue-600">{person.weeklyPoints || 0}</span>
                   </div>
                 ))}
               </div>
