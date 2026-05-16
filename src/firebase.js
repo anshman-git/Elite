@@ -48,6 +48,7 @@ export const db = app ? getFirestore(app) : null;
 export const storage = app ? getStorage(app) : null;
 export const QUIZZES_COLLECTION = 'quizzes';
 
+
 if (auth) {
   setPersistence(auth, browserLocalPersistence);
 }
