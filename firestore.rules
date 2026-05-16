@@ -30,7 +30,8 @@ service cloud.firestore {
             'quizzesAttempted',
             'averageScore',
             'streak',
-            'lastActiveAt'
+            'lastActiveAt',
+            'lastAttemptDate'
           ])
         )
         // Admins may update any field

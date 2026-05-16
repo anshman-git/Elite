@@ -1,8 +1,27 @@
+import { useEffect, useMemo, useState } from 'react';
 import { LogOut, Settings, UserRound } from 'lucide-react';
-import { logout } from '../firebase';
+import { logout, watchCollection } from '../firebase';
+import { formatPercent, getDisplayName } from '../utils';
 import { Button, Card } from '../components/ui';
 
 export default function Profile({ user, notify }) {
+  const [leaderboard, setLeaderboard] = useState([]);
+
+  useEffect(() => {
+    return watchCollection('users', setLeaderboard, {
+      sortField: 'weeklyPoints',
+      take: 50,
+    });
+  }, []);
+
+  const rank = useMemo(() => {
+    const sorted = [...leaderboard].sort(
+      (left, right) => (Number(right.weeklyPoints) || 0) - (Number(left.weeklyPoints) || 0),
+    );
+    const index = sorted.findIndex((person) => person.id === user?.uid);
+    return index >= 0 ? index + 1 : '-';
+  }, [leaderboard, user?.uid]);
+
   return (
     <div className="space-y-4">
       <Card>
@@ -11,17 +30,20 @@ export default function Profile({ user, notify }) {
             <UserRound size={30} />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-slate-950 dark:text-white">{user?.displayName || user?.name || 'New member'}</h2>
+            <h2 className="text-2xl font-black text-slate-950 dark:text-white">{getDisplayName(user)}</h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">{user?.email || 'No email available'}</p>
           </div>
         </div>
       </Card>
       <Card>
         <h3 className="font-black text-slate-950 dark:text-white">Profile stats</h3>
-        <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+        <div className="mt-4 grid grid-cols-2 gap-2 text-center sm:grid-cols-3">
           <Stat value={user?.streak || 0} label="Streak" />
-          <Stat value="0" label="Quizzes" />
-          <Stat value="-" label="Rank" />
+          <Stat value={user?.quizzesAttempted || 0} label="Quizzes" />
+          <Stat value={formatPercent(user?.averageScore || 0)} label="Average" />
+          <Stat value={user?.points || 0} label="Total points" />
+          <Stat value={user?.weeklyPoints || 0} label="Weekly points" />
+          <Stat value={rank} label="Weekly rank" />
         </div>
       </Card>
       <Card>

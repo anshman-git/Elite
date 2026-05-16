@@ -29,7 +29,7 @@ import {
 import { 
   createAnnouncement, 
   createQuiz, 
-  uploadResource, 
+  createResourceLink, 
   watchCollection, 
   watchQuizzes,
   updateQuiz,
@@ -70,7 +70,7 @@ export default function Admin({ notify, user }) {
     title: '',
     subject: '',
     type: 'Notes',
-    file: null,
+    url: '',
   });
   const [quiz, setQuiz] = useState({
     title: '',
@@ -180,8 +180,8 @@ export default function Admin({ notify, user }) {
 
   async function submitResource(event) {
     event.preventDefault();
-    if (!resource.file) {
-      notify('Choose a PDF or image before uploading.');
+    if (!resource.url?.trim()) {
+      notify('Paste a public file URL (Google Drive, GitHub raw, Dropbox, etc.).');
       return;
     }
     if (!resource.subject) {
@@ -190,16 +190,18 @@ export default function Admin({ notify, user }) {
     }
     setBusy('resource');
     try {
-      await uploadResource({
-        ...resource,
-        title: resource.title || resource.file.name,
+      await createResourceLink({
+        title: resource.title,
+        subject: resource.subject,
+        type: resource.type,
+        url: resource.url,
         createdBy: user?.uid,
       });
-      notify('Resource uploaded successfully.');
-      setResource({ title: '', subject: '', type: 'Notes', file: null });
-      event.currentTarget.reset();
+      notify('Resource link saved successfully.');
+      setResource({ title: '', subject: '', type: 'Notes', url: '' });
     } catch (error) {
-      notify(error.message || 'Connect Firebase to upload files.');
+      console.error('Resource save failed:', error);
+      notify(error.message || 'Could not save resource link.');
     } finally {
       setBusy('');
     }
@@ -1119,8 +1121,11 @@ export default function Admin({ notify, user }) {
           <Card>
             <div className="flex items-center gap-3">
               <Upload className="text-blue-600" />
-              <h3 className="font-black text-slate-950 dark:text-white">Upload resource</h3>
+              <h3 className="font-black text-slate-950 dark:text-white">Add resource link</h3>
             </div>
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+              Host files on Google Drive, GitHub, or Dropbox, then paste the public link here.
+            </p>
             <form onSubmit={submitResource} className="mt-4 grid gap-3">
               <Input
                 label="Title"
@@ -1139,17 +1144,14 @@ export default function Admin({ notify, user }) {
                   <option>Sample Paper</option>
                 </Select>
               </div>
-              <label className="grid gap-2 text-sm font-bold text-slate-700 dark:text-slate-200">
-                Document file (PDF, Word, Images, etc.)
-                <input
-                  type="file"
-                  accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,image/*"
-                  onChange={(event) => setResource({ ...resource, file: event.target.files?.[0] || null })}
-                  className="min-h-12 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold dark:border-white/10 dark:bg-slate-950"
-                />
-              </label>
-              <Button variant="accent" disabled={busy === 'resource'} className="w-full">
-                <Upload size={17} /> {busy === 'resource' ? 'Uploading...' : 'Upload resource'}
+              <Input
+                label="File URL"
+                value={resource.url}
+                onChange={(value) => setResource({ ...resource, url: value })}
+                placeholder="https://drive.google.com/... or https://raw.githubusercontent.com/..."
+              />
+              <Button type="submit" variant="accent" disabled={busy === 'resource'} className="w-full">
+                <Upload size={17} /> {busy === 'resource' ? 'Saving...' : 'Save resource link'}
               </Button>
             </form>
           </Card>
@@ -1165,10 +1167,10 @@ export default function Admin({ notify, user }) {
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="text-xs text-slate-400">{item.createdAt?.toDate?.()?.toLocaleDateString() || 'Recent'}</div>
-                    <Button variant="ghost" size="sm" onClick={() => window.open(item.url, '_blank', 'noopener,noreferrer')} disabled={!item.url}>
+                    <Button variant="ghost" size="sm" onClick={() => window.open(item.url || item.fileUrl, '_blank', 'noopener,noreferrer')} disabled={!(item.url || item.fileUrl)}>
                       <Eye size={14} />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => window.open(item.url, '_blank', 'noopener,noreferrer')} disabled={!item.url}>
+                    <Button variant="ghost" size="sm" onClick={() => window.open(item.url || item.fileUrl, '_blank', 'noopener,noreferrer')} disabled={!(item.url || item.fileUrl)}>
                       <Download size={14} />
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => handleDeleteResource(item.id)} disabled={busy === `delete-resource-${item.id}`} className="text-red-600 hover:text-red-700">

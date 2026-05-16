@@ -31,13 +31,12 @@ import {
   updateDoc,
   writeBatch,
 } from 'firebase/firestore';
-import { getDownloadURL, getStorage, ref, uploadBytes, deleteObject } from 'firebase/storage';
+import { buildAttemptReviewData, calculateAverageScore, calculateStreak } from './utils';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
@@ -47,7 +46,6 @@ export const firebaseEnabled = Boolean(firebaseConfig.apiKey && firebaseConfig.p
 const app = firebaseEnabled ? initializeApp(firebaseConfig) : null;
 export const auth = app ? getAuth(app) : null;
 export const db = app ? getFirestore(app) : null;
-export const storage = app ? getStorage(app) : null;
 export const QUIZZES_COLLECTION = 'quizzes';
 
 
@@ -88,6 +86,7 @@ export function watchAuth(callback) {
           averageScore: 0,
           createdAt: serverTimestamp(),
           lastActiveAt: serverTimestamp(),
+          lastAttemptDate: null,
         };
         await setDoc(doc(db, 'users', sessionUser.uid), profileData);
       } else {
@@ -135,6 +134,7 @@ export async function signupWithEmail({ name, email, password }) {
       averageScore: 0,
       createdAt: serverTimestamp(),
       lastActiveAt: serverTimestamp(),
+      lastAttemptDate: null,
     });
   } catch (error) {
     console.error('Failed to create user profile:', error);
@@ -270,113 +270,74 @@ export async function submitAttempt(userId, quizId, quizData, answers) {
 
   const questions = quizData.questions || [];
 
-  // Calculate score
   const score = questions.reduce((total, item, index) => {
     const questionId = item.id || item.question || `question-${index}`;
     return total + (answers[questionId] === item.answer ? 1 : 0);
   }, 0);
 
-  const accuracy = questions.length > 0 ? (score / questions.length) * 100 : 0;
-
-  // Detect prior attempts for this quiz to avoid duplicate point awards
-  const existingAttemptQuery = query(
-    collection(db, 'attempts'),
-    where('userId', '==', userId),
-    where('quizId', '==', quizId),
-    limit(1),
-  );
-  const existingAttemptSnap = await getDocs(existingAttemptQuery);
-  const alreadyAttempted = !existingAttemptSnap.empty;
-
-  // Create attempt document
-  const attemptRef = await addDoc(collection(db, 'attempts'), {
+  const accuracy = questions.length > 0 ? Math.round((score / questions.length) * 100) : 0;
+  const pointsGained = Math.min(100, score * 10);
+  const reviewData = buildAttemptReviewData(questions, answers);
+  const attemptPayload = {
     userId,
     uid: userId,
     quizId,
+    quizTitle: quizData.title || 'Quiz',
     subject: quizData.subject,
     score,
     total: questions.length,
-    accuracy: Math.round(accuracy),
-    timeTaken: (quizData.timerMinutes || quizData.duration || 25) * 60, // Will be updated with actual time
+    accuracy,
+    timeTaken: (quizData.timerMinutes || quizData.duration || 25) * 60,
     answers: Object.keys(answers).length > 0 ? answers : {},
+    questions: reviewData.questionTexts,
+    selectedAnswers: reviewData.selectedAnswers,
+    correctAnswers: reviewData.correctAnswers,
+    reviewItems: reviewData.reviewItems,
     completedAt: serverTimestamp(),
     createdAt: serverTimestamp(),
-  });
+  };
 
-  if (alreadyAttempted) {
-    console.log('[submitAttempt] Existing attempt found, skipping additional user stat updates for duplicate quiz attempt.');
-    return attemptRef;
-  }
+  return runTransaction(db, async (transaction) => {
+    const existingAttemptQuery = query(
+      collection(db, 'attempts'),
+      where('userId', '==', userId),
+      where('quizId', '==', quizId),
+      limit(1),
+    );
+    const existingAttemptSnap = await transaction.get(existingAttemptQuery);
 
-  // Update user points, weekly leaderboard and stats
-  try {
+    if (!existingAttemptSnap.empty) {
+      return existingAttemptSnap.docs[0].ref;
+    }
+
     const userRef = doc(db, 'users', userId);
-    const userSnap = await getDoc(userRef);
+    const userSnap = await transaction.get(userRef);
     const currentData = userSnap.exists() ? userSnap.data() : {};
-    const pointsGained = Math.min(100, score * 10);
-    const currentAttempts = currentData.quizzesAttempted || 0;
-    const currentAverage = currentData.averageScore || 0;
+    const currentAttempts = Number(currentData.quizzesAttempted) || 0;
     const newAttempts = currentAttempts + 1;
-    const newAverage = newAttempts > 0
-      ? Math.round(((currentAverage * currentAttempts) + accuracy) / newAttempts)
-      : Math.round(accuracy);
-
-    // Backward-compatible weekly quiz detection:
-    // - Respect explicit weeklyTest flag if set
-    // - For older quizzes (weeklyTest undefined), check title/subject for "weekly" pattern
-    const isWeeklyQuiz = quizData.weeklyTest === true ||
-      (quizData.weeklyTest === undefined && (
-        quizData.title?.toLowerCase().includes('weekly') ||
-        quizData.subject?.toLowerCase().includes('weekly')
-      ));
-
-    const weeklyPointsGained = isWeeklyQuiz ? pointsGained : 0;
-
-    // Debug logging
-    console.log('[submitAttempt] Quiz data:', {
-      quizId,
-      title: quizData.title,
-      weeklyTest: quizData.weeklyTest,
-      isWeeklyQuiz,
-    });
-    console.log('[submitAttempt] Score calculation:', {
-      score,
-      accuracy: Math.round(accuracy),
-      pointsGained,
-      weeklyPointsGained,
-    });
-    console.log('[submitAttempt] Current user data:', {
-      points: currentData.points || 0,
-      weeklyPoints: currentData.weeklyPoints || 0,
-      quizzesAttempted: currentAttempts,
-      averageScore: currentAverage,
-    });
-
-    // Only update safe fields that are allowed by Firestore rules
-    const updatePayload = {
-      points: (currentData.points || 0) + pointsGained,
-      weeklyPoints: (currentData.weeklyPoints || 0) + weeklyPointsGained,
+    const newAverage = calculateAverageScore(currentData.averageScore, currentAttempts, accuracy);
+    const streakReference = currentData.lastAttemptDate || currentData.lastActiveAt;
+    const newStreak = calculateStreak(currentData.streak, streakReference);
+    const statsUpdate = {
+      points: (Number(currentData.points) || 0) + pointsGained,
+      weeklyPoints: (Number(currentData.weeklyPoints) || 0) + pointsGained,
       quizzesAttempted: newAttempts,
       averageScore: newAverage,
+      streak: newStreak,
+      lastAttemptDate: serverTimestamp(),
       lastActiveAt: serverTimestamp(),
     };
 
-    console.log('[submitAttempt] Update payload:', updatePayload);
+    if (userSnap.exists()) {
+      transaction.update(userRef, statsUpdate);
+    } else {
+      transaction.set(userRef, statsUpdate);
+    }
 
-    await updateDoc(userRef, updatePayload);
-
-    console.log('[submitAttempt] User stats updated successfully');
-  } catch (error) {
-    console.error('Failed to update user stats after quiz submission:', {
-      userId,
-      quizId,
-      quizDataWeeklyTest: quizData.weeklyTest,
-      error,
-    });
-    // Don't throw - attempt is saved even if stats update fails
-  }
-
-  return attemptRef;
+    const attemptRef = doc(collection(db, 'attempts'));
+    transaction.set(attemptRef, attemptPayload);
+    return attemptRef;
+  });
 }
 
 export async function createQuiz(payload) {
@@ -399,92 +360,42 @@ export async function fetchQuizzes(take = 30) {
   return fetchCollection(QUIZZES_COLLECTION, 'createdAt', take);
 }
 
-export async function uploadResource({ file, subject, type, title, createdBy }) {
-  if (!storage || !db) throw new Error('Firebase is not configured yet.');
-
-  // Validate file
-  const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-  const ALLOWED_TYPES = [
-    'application/pdf',
-    'image/png',
-    'image/jpeg',
-    'image/webp',
-    'image/gif',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'text/plain',
-    'application/vnd.ms-excel',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'application/vnd.ms-powerpoint',
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation'
-  ];
-
-  if (file.size > MAX_FILE_SIZE) {
-    throw new Error(`File too large. Maximum size: 50MB. Your file: ${(file.size / 1024 / 1024).toFixed(1)}MB`);
-  }
-
-  if (!ALLOWED_TYPES.includes(file.type)) {
-    throw new Error(`Invalid file type. Allowed: PDF, Word documents, Excel, PowerPoint, images, and text files.`);
-  }
-
-  const fileRef = ref(storage, `resources/${subject}/${Date.now()}-${file.name}`);
-
+function normalizeResourceUrl(url) {
+  const trimmed = url?.trim();
+  if (!trimmed) throw new Error('Paste a file URL.');
   try {
-    await uploadBytes(fileRef, file);
-    const url = await getDownloadURL(fileRef);
-    const storagePath = fileRef.fullPath || `resources/${subject}/${Date.now()}-${file.name}`;
-    return addDoc(collection(db, 'resources'), {
-      title,
-      subject,
-      type,
-      fileType: file.type,
-      fileSize: file.size,
-      url,
-      storagePath,
-      createdBy: createdBy || null,
-      createdAt: serverTimestamp(),
-    });
-  } catch (error) {
-    // Clean up failed upload
-    await deleteObject(fileRef).catch(() => {}); // Ignore cleanup errors
-    throw error;
+    const parsed = new URL(trimmed);
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      throw new Error('URL must start with http:// or https://');
+    }
+    return parsed.toString();
+  } catch {
+    throw new Error('Enter a valid file URL (Google Drive, GitHub raw, Dropbox, etc.).');
   }
 }
 
+export async function createResourceLink({ title, subject, type, url, createdBy }) {
+  if (!db) throw new Error('Firebase is not configured yet.');
+
+  const fileUrl = normalizeResourceUrl(url);
+
+  return addDoc(collection(db, 'resources'), {
+    title: title?.trim() || 'Untitled resource',
+    subject: subject || 'General',
+    type: type || 'Notes',
+    url: fileUrl,
+    fileUrl,
+    createdBy: createdBy || null,
+    createdAt: serverTimestamp(),
+  });
+}
+
+/** @deprecated Use createResourceLink — kept for import compatibility */
+export const uploadResource = createResourceLink;
+
 export async function deleteResource(resourceId) {
-  if (!db || !storage) throw new Error('Firebase is not configured yet.');
-
-  const resourceRef = doc(db, 'resources', resourceId);
-  const snap = await getDoc(resourceRef);
-  if (!snap.exists()) {
-    // Nothing to delete
-    return;
-  }
-
-  const data = snap.data();
-  const pathFromDoc = data.storagePath;
-  const url = data.url;
-
-  // Attempt to delete storage object if we can determine its path
-  try {
-    let storagePath = pathFromDoc;
-    if (!storagePath && url) {
-      // Try to parse path from download URL
-      // Format: https://firebasestorage.googleapis.com/v0/b/<bucket>/o/<encodedPath>?alt=media&token=...
-      const match = url.match(/\/o\/(.*?)\?/);
-      if (match && match[1]) storagePath = decodeURIComponent(match[1]);
-    }
-
-    if (storagePath) {
-      await deleteObject(ref(storage, storagePath));
-    }
-  } catch (error) {
-    console.error('Failed to delete storage object for resource', resourceId, error);
-    // proceed to delete doc even if storage delete fails
-  }
-
-  // Delete the Firestore document
-  return deleteDoc(resourceRef);
+  if (!db) throw new Error('Firebase is not configured yet.');
+  return deleteDoc(doc(db, 'resources', resourceId));
 }
 
 export async function createAnnouncement(payload) {

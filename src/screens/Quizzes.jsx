@@ -4,7 +4,7 @@ import { CheckCircle2, Clock, RotateCcw, SlidersHorizontal } from 'lucide-react'
 import { watchQuizzes, submitAttempt, watchSubjects, watchUserAttempts } from '../firebase';
 import { useApp } from '../context/useApp';
 import { Button, Card, EmptyState } from '../components/ui';
-import { classNames } from '../utils';
+import { classNames, getQuestionId } from '../utils';
 
 export default function Quizzes({ notify }) {
   const { user, notify: globalNotify } = useApp();
@@ -270,10 +270,6 @@ export default function Quizzes({ notify }) {
       )}
     </div>
   );
-}
-
-function getQuestionId(item, index) {
-  return item.id || item.question || `question-${index}`;
 }
 
 function Badge({ label, value }) {

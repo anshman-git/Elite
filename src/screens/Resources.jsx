@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Download, Eye, FileText, Image, Upload } from 'lucide-react';
-import { uploadResource, watchCollection, watchSubjects } from '../firebase';
+import { Download, Eye, FileText, Image } from 'lucide-react';
+import { watchCollection, watchSubjects } from '../firebase';
 import { Button, Card, EmptyState, SearchInput } from '../components/ui';
 
 export default function Resources({ notify }) {
@@ -8,21 +8,20 @@ export default function Resources({ notify }) {
   const [subjects, setSubjects] = useState([]);
   const [query, setQuery] = useState('');
   const [type, setType] = useState('All');
-  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     const unsubscribers = [];
-    
+
     unsubscribers.push(watchCollection('resources', setResources, {
       onError: () => notify('Could not load resources from Firestore.'),
     }));
-    
+
     unsubscribers.push(watchSubjects(setSubjects, {
       take: 50,
       onError: () => console.error('Could not load subjects.'),
     }));
-    
-    return () => unsubscribers.forEach(unsub => unsub?.());
+
+    return () => unsubscribers.forEach((unsub) => unsub?.());
   }, [notify]);
 
   const filtered = useMemo(
@@ -34,35 +33,14 @@ export default function Resources({ notify }) {
     [query, resources, type],
   );
 
-  async function handleUpload(event) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      const defaultSubject = subjects.length > 0 ? subjects[0].name : 'General';
-      await uploadResource({ file, subject: defaultSubject, type: 'Notes', title: file.name });
-      notify('Upload saved to Firebase Storage.');
-    } catch (error) {
-      notify(error.message || 'Firebase credentials are needed for uploads.');
-    } finally {
-      setUploading(false);
-      event.target.value = '';
-    }
-  }
-
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">Library</p>
-          <h2 className="text-2xl font-black text-slate-950 dark:text-white">PYQs, notes and papers</h2>
-        </div>
-        <label>
-          <input className="hidden" type="file" accept="application/pdf,image/*" onChange={handleUpload} />
-          <span className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-glow transition hover:bg-blue-700">
-            <Upload size={17} /> {uploading ? 'Uploading...' : 'Upload'}
-          </span>
-        </label>
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">Library</p>
+        <h2 className="text-2xl font-black text-slate-950 dark:text-white">PYQs, notes and papers</h2>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          Resources are added by admins as public file links.
+        </p>
       </div>
 
       <SearchInput value={query} onChange={setQuery} placeholder="Search subject, PYQ, notes, sample papers" />
@@ -103,15 +81,15 @@ export default function Resources({ notify }) {
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{item.type} - {item.subject}</p>
                   <h3 className="mt-1 truncate font-black text-slate-950 dark:text-white">{item.title}</h3>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Uploaded {formatDate(item.createdAt)} - {formatFileType(item.fileType)}</p>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Uploaded {formatDate(item.createdAt)}</p>
                 </div>
               </div>
               <div className="mt-4 grid grid-cols-2 gap-2">
-                <Button variant="secondary" onClick={() => window.open(item.url, '_blank', 'noopener,noreferrer')} disabled={!item.url}>
+                <Button variant="secondary" onClick={() => window.open(item.url || item.fileUrl, '_blank', 'noopener,noreferrer')} disabled={!(item.url || item.fileUrl)}>
                   <Eye size={17} /> Preview
                 </Button>
-                <Button onClick={() => window.open(item.url, '_blank', 'noopener,noreferrer')} disabled={!item.url}>
-                  <Download size={17} /> Download
+                <Button onClick={() => window.open(item.url || item.fileUrl, '_blank', 'noopener,noreferrer')} disabled={!(item.url || item.fileUrl)}>
+                  <Download size={17} /> Open
                 </Button>
               </div>
             </Card>
@@ -127,8 +105,4 @@ export default function Resources({ notify }) {
 function formatDate(value) {
   const date = value?.toDate?.() || null;
   return date ? date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'just now';
-}
-
-function formatFileType(fileType = '') {
-  return fileType.startsWith('image/') ? 'Image' : 'PDF';
 }

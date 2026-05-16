@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BarChart3, TrendingDown, TrendingUp } from 'lucide-react';
 import { watchUserAttempts, watchSubjects } from '../firebase';
+import AttemptReviewModal from '../components/AttemptReviewModal';
 import { useApp } from '../context/useApp';
-import { Card, ProgressBar } from '../components/ui';
+import { Button, Card, ProgressBar } from '../components/ui';
 
 export default function Performance({ notify }) {
   const { user, notify: globalNotify } = useApp();
   const [attempts, setAttempts] = useState([]);
   const [subjects, setSubjects] = useState([]);
+  const [reviewAttemptId, setReviewAttemptId] = useState(null);
 
   useEffect(() => {
     const unsubscribers = [];
@@ -70,6 +72,29 @@ export default function Performance({ notify }) {
         </div>
       </Card>
       <Card>
+        <h3 className="font-black text-slate-950 dark:text-white">Attempt history</h3>
+        <div className="mt-4 space-y-3">
+          {userAttempts.slice(0, 10).map((attempt) => (
+            <div
+              key={attempt.id}
+              className="flex flex-col gap-3 rounded-2xl bg-slate-50 p-4 dark:bg-white/5 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div>
+                <p className="font-bold text-slate-950 dark:text-white">
+                  {attempt.quizTitle || attempt.subject || 'Quiz attempt'}
+                </p>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                  {attempt.score}/{attempt.total} · {attempt.accuracy || 0}%
+                </p>
+              </div>
+              <Button variant="secondary" onClick={() => setReviewAttemptId(attempt.id)}>
+                Review Attempt
+              </Button>
+            </div>
+          ))}
+        </div>
+      </Card>
+      <Card>
         <h3 className="font-black text-slate-950 dark:text-white">Weekly progress</h3>
         <div className="mt-4 flex h-48 items-end gap-2">
           {getWeeklyBars(userAttempts).map((height, index) => (
@@ -80,6 +105,7 @@ export default function Performance({ notify }) {
           ))}
         </div>
       </Card>
+      <AttemptReviewModal attemptId={reviewAttemptId} onClose={() => setReviewAttemptId(null)} />
     </div>
   );
 }

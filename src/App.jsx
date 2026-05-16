@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { BottomNav, Sidebar } from './components/navigation';
@@ -6,12 +6,14 @@ import { Button, Card, EmptyState, LoadingState, Toast, TopBar } from './compone
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AppProvider } from './context/AppContext';
 import { useApp } from './context/useApp';
+import { navigateHome, navigateToProfile, parseRoute } from './routing';
 import Admin from './screens/Admin';
 import Auth from './screens/Auth';
 import Dashboard from './screens/Dashboard';
 import Leaderboard from './screens/Leaderboard';
 import Performance from './screens/Performance';
 import Profile from './screens/Profile';
+import PublicProfile from './screens/PublicProfile';
 import Quizzes from './screens/Quizzes';
 import Resources from './screens/Resources';
 
@@ -19,11 +21,29 @@ function AppContent() {
   const { user, dark, toggleDark, notifications, notify, toasts, isAdmin, loading } = useApp();
   const [active, setActive] = useState('dashboard');
   const [drawer, setDrawer] = useState(false);
+  const [route, setRoute] = useState(() => parseRoute());
+
+  useEffect(() => {
+    const syncRoute = () => setRoute(parseRoute());
+    window.addEventListener('popstate', syncRoute);
+    return () => window.removeEventListener('popstate', syncRoute);
+  }, []);
+
+  const openProfile = (userId) => {
+    navigateToProfile(userId);
+    setRoute({ view: 'public-profile', profileUserId: userId });
+  };
+
+  const closePublicProfile = () => {
+    navigateHome();
+    setRoute(parseRoute('/'));
+  };
 
   const safeActive = active === 'admin' && user?.role !== 'admin' ? 'dashboard' : active;
+  const showingPublicProfile = Boolean(route.profileUserId);
 
   const page = useMemo(() => {
-    const props = { setActive, user, notify };
+    const props = { setActive, user, notify, openProfile };
     return {
       dashboard: <Dashboard {...props} />,
       quizzes: <Quizzes {...props} />,
@@ -33,7 +53,7 @@ function AppContent() {
       profile: <Profile {...props} />,
       admin: isAdmin ? <Admin {...props} /> : <Dashboard {...props} />,
     }[safeActive];
-  }, [safeActive, user, isAdmin, notify]);
+  }, [safeActive, user, isAdmin, notify, openProfile]);
 
   if (loading) {
     return (
@@ -51,24 +71,34 @@ function AppContent() {
     <div className="min-h-screen bg-slate-50 text-slate-900 transition dark:bg-slate-950 dark:text-slate-100">
       <TopBar dark={dark} onToggleDark={toggleDark} onOpenNotifications={() => setDrawer(true)} isAdmin={isAdmin} user={user} />
       <div className="mx-auto flex max-w-[1600px]">
-        <Sidebar active={safeActive} setActive={setActive} isAdmin={isAdmin} />
+        <Sidebar active={showingPublicProfile ? 'leaderboard' : safeActive} setActive={setActive} isAdmin={isAdmin} />
         <main className="min-w-0 flex-1 px-4 pb-28 pt-4 sm:px-6 lg:pb-8">
           <div className="mx-auto max-w-7xl">
             <AnimatePresence mode="wait">
               <motion.div
-                key={safeActive}
+                key={showingPublicProfile ? `profile-${route.profileUserId}` : safeActive}
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.22, ease: 'easeOut' }}
               >
-                {page}
+                {showingPublicProfile ? (
+                  <PublicProfile
+                    profileUserId={route.profileUserId}
+                    onBack={closePublicProfile}
+                    notify={notify}
+                  />
+                ) : (
+                  page
+                )}
               </motion.div>
             </AnimatePresence>
           </div>
         </main>
       </div>
-      <BottomNav active={safeActive} setActive={setActive} isAdmin={isAdmin} />
+      {!showingPublicProfile ? (
+        <BottomNav active={safeActive} setActive={setActive} isAdmin={isAdmin} />
+      ) : null}
       <Toast message={toasts.length > 0 ? toasts[0].message : ''} />
       <AnimatePresence>
         {drawer ? (

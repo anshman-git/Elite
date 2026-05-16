@@ -1,11 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Flame, Timer } from 'lucide-react';
 import { watchCollection } from '../firebase';
+import { getDisplayName } from '../utils';
 import { Card, EmptyState, Button } from '../components/ui';
 
-export default function Leaderboard({ notify }) {
+export default function Leaderboard({ notify, openProfile }) {
   const [leaderboard, setLeaderboard] = useState([]);
   const [isWeekly, setIsWeekly] = useState(true);
+
+  const sortedLeaderboard = useMemo(() => {
+    const scoreField = isWeekly ? 'weeklyPoints' : 'points';
+    return [...leaderboard].sort((left, right) => {
+      const scoreDiff = (Number(right[scoreField]) || 0) - (Number(left[scoreField]) || 0);
+      if (scoreDiff !== 0) return scoreDiff;
+      return getDisplayName(left).localeCompare(getDisplayName(right));
+    });
+  }, [leaderboard, isWeekly]);
 
   useEffect(() => {
     return watchCollection('users', setLeaderboard, {
@@ -42,17 +52,23 @@ export default function Leaderboard({ notify }) {
         </div>
       </div>
       <div className="space-y-3">
-        {leaderboard.length ? leaderboard.map((person, index) => {
+        {sortedLeaderboard.length ? sortedLeaderboard.map((person, index) => {
           const badge = index === 0 ? '🥇 Gold' : index === 1 ? '🥈 Silver' : index === 2 ? '🥉 Bronze' : null;
+          const highlight = index < 3;
           return (
-            <Card key={person.id} className={index === 0 ? 'border-blue-300 bg-blue-50 dark:bg-blue-500/10' : ''}>
+            <Card
+              key={person.id}
+              interactive
+              className={highlight ? 'cursor-pointer border-blue-300 bg-blue-50 dark:bg-blue-500/10' : 'cursor-pointer'}
+              onClick={() => openProfile?.(person.id)}
+            >
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-950 text-sm font-black text-white dark:bg-white dark:text-slate-950">
                     #{index + 1}
                   </div>
                   <div>
-                    <h3 className="font-black text-slate-950 dark:text-white">{person.name || person.displayName || person.email || 'Elite learner'}</h3>
+                    <h3 className="font-black text-slate-950 dark:text-white">{getDisplayName(person)}</h3>
                     <div className="mt-1 flex flex-wrap gap-3 text-xs font-bold text-slate-500 dark:text-slate-400">
                       <span className="inline-flex items-center gap-1"><Timer size={14} /> Active member</span>
                       <span className="inline-flex items-center gap-1"><Flame size={14} /> {person.streak || 0} days</span>

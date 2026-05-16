@@ -1,17 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { CalendarClock, Flame, Play, Quote, TrendingUp, Trophy, Clock } from 'lucide-react';
 import { watchCollection, watchExamCountdown, watchSubjects, watchUserAttempts } from '../firebase';
-import { daysUntilExam, formatPercent } from '../utils';
+import AttemptReviewModal from '../components/AttemptReviewModal';
+import { daysUntilExam, formatPercent, getDisplayName } from '../utils';
 import { Button, Card, EmptyState, ProgressBar } from '../components/ui';
 
-export default function Dashboard({ setActive, user, notify }) {
+export default function Dashboard({ setActive, user, notify, openProfile }) {
   const [leaderboard, setLeaderboard] = useState([]);
   const [activities, setActivities] = useState([]);
   const [examCountdown, setExamCountdown] = useState(null);
   const [subjects, setSubjects] = useState([]);
   const [attempts, setAttempts] = useState([]);
-  const rank = leaderboard.findIndex((person) => person.id === user?.uid) + 1;
+  const [reviewAttemptId, setReviewAttemptId] = useState(null);
+
+  const sortedLeaderboard = useMemo(
+    () => [...leaderboard].sort((left, right) => (Number(right.weeklyPoints) || 0) - (Number(left.weeklyPoints) || 0)),
+    [leaderboard],
+  );
+  const rank = sortedLeaderboard.findIndex((person) => person.id === user?.uid) + 1;
 
   useEffect(() => {
     const unsubscribers = [];
@@ -172,18 +179,23 @@ export default function Dashboard({ setActive, user, notify }) {
           </Card>
           <Card>
             <h3 className="font-black text-slate-950 dark:text-white">Leaderboard preview</h3>
-            {leaderboard.length ? (
+            {sortedLeaderboard.length ? (
               <div className="mt-3 space-y-3">
-                {leaderboard.slice(0, 3).map((person, index) => (
-                  <div key={person.id} className="flex items-center justify-between rounded-2xl bg-slate-50 p-3 dark:bg-white/5">
+                {sortedLeaderboard.slice(0, 3).map((person, index) => (
+                  <button
+                    key={person.id}
+                    type="button"
+                    onClick={() => openProfile?.(person.id)}
+                    className="flex w-full items-center justify-between rounded-2xl bg-slate-50 p-3 text-left transition hover:bg-blue-50 dark:bg-white/5 dark:hover:bg-blue-500/10"
+                  >
                     <div className="flex items-center gap-3">
                       <span className="grid h-8 w-8 place-items-center rounded-xl bg-white text-xs font-black shadow-sm dark:bg-slate-900">
                         #{index + 1}
                       </span>
-                      <span className="font-bold text-slate-900 dark:text-white">{person.name || person.displayName || person.email || 'Elite learner'}</span>
+                      <span className="font-bold text-slate-900 dark:text-white">{getDisplayName(person)}</span>
                     </div>
                     <span className="text-sm font-black text-blue-600">{person.weeklyPoints || 0}</span>
-                  </div>
+                  </button>
                 ))}
               </div>
             ) : (
@@ -194,6 +206,39 @@ export default function Dashboard({ setActive, user, notify }) {
           </Card>
         </div>
       </div>
+
+      <Card>
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="font-black text-slate-950 dark:text-white">Attempt history</h3>
+          <Button variant="secondary" onClick={() => setActive('performance')}>View all</Button>
+        </div>
+        {attempts.length ? (
+          <div className="mt-3 space-y-3">
+            {attempts.slice(0, 6).map((attempt) => (
+              <div
+                key={attempt.id}
+                className="flex flex-col gap-3 rounded-2xl bg-slate-50 p-4 dark:bg-white/5 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div>
+                  <p className="font-bold text-slate-950 dark:text-white">
+                    {attempt.quizTitle || attempt.subject || 'Quiz attempt'}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    Score {attempt.score}/{attempt.total} · {attempt.accuracy || 0}% · {formatAttemptDate(attempt.completedAt)}
+                  </p>
+                </div>
+                <Button variant="accent" onClick={() => setReviewAttemptId(attempt.id)}>
+                  Review Attempt
+                </Button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-3">
+            <EmptyState title="No attempts yet" body="Complete a quiz to see your attempt history here." />
+          </div>
+        )}
+      </Card>
 
       <Card>
         <h3 className="font-black text-slate-950 dark:text-white">Recent activity</h3>
@@ -211,8 +256,14 @@ export default function Dashboard({ setActive, user, notify }) {
           </div>
         )}
       </Card>
+      <AttemptReviewModal attemptId={reviewAttemptId} onClose={() => setReviewAttemptId(null)} />
     </div>
   );
+}
+
+function formatAttemptDate(value) {
+  const date = value?.toDate?.();
+  return date ? date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Recently';
 }
 
 function Metric({ icon: Icon, label, value, urgent }) {
