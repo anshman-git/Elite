@@ -17,7 +17,7 @@ export default function Dashboard({ setActive, user, notify }) {
     const unsubscribers = [];
     
     unsubscribers.push(watchCollection('users', setLeaderboard, {
-      sortField: 'points',
+      sortField: 'weeklyPoints',
       take: 5,
       onError: () => notify('Could not load leaderboard from Firestore.'),
     }));

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { watchAuth, watchCollection } from '../firebase';
+import { watchAuth, watchCollection, watchDocument } from '../firebase';
 import { AppContext } from './app-context';
 
 const THEME_STORAGE_KEY = 'theme';
@@ -44,6 +44,22 @@ export function AppProvider({ children }) {
     });
     return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    if (!user?.uid) return () => {};
+
+    const unsubscribe = watchDocument('users', user.uid, (userDoc) => {
+      if (!userDoc) return;
+      const { id, ...data } = userDoc;
+      setUser((current) => ({ ...current, uid: id, ...data }));
+    }, {
+      onError: (error) => {
+        console.error('Failed to sync user profile:', error);
+      },
+    });
+
+    return unsubscribe;
+  }, [user?.uid]);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);

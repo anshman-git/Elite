@@ -20,12 +20,23 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create: if signedIn() && isOwner(userId);
 
-      // Allow users to update their own profile (but not change role),
-      // and allow admins to update any user (including role changes).
+      // Allow users to update safe fields only, admins can update anything
       allow update: if (
-        // Owner may update their profile but cannot escalate role
-        (isOwner(userId) && !('role' in request.resource.data))
-        // Admins may update any user, including role changes
+        // Owner may update safe fields only (not role)
+        (isOwner(userId) && (
+          request.resource.data.keys().hasOnly([
+            'name',
+            'email',
+            'points',
+            'weeklyPoints',
+            'streak',
+            'quizzesAttempted',
+            'averageScore',
+            'lastActiveAt',
+            'banned'
+          ])
+        ))
+        // Admins may update any field
         || isAdmin()
       );
 
