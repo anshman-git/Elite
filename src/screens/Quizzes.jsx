@@ -308,7 +308,7 @@ function normalizeImageUrl(value) {
   const driveFileMatch = trimmed.match(/drive\.google\.com\/(?:file\/d\/([\w-]+)|open\?id=([\w-]+))/);
   const driveId = driveFileMatch?.[1] || driveFileMatch?.[2];
   if (driveId) {
-    return `https://drive.google.com/uc?export=view&id=${driveId}`;
+    return `https://drive.google.com/thumbnail?id=${driveId}&sz=w1000`;
   }
 
   if (/dropbox\.com\//i.test(trimmed)) {
