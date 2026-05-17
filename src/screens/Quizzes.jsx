@@ -303,16 +303,26 @@ export default function Quizzes({ notify }) {
 
 function normalizeImageUrl(value) {
   if (!value || typeof value !== 'string') return value;
+
   const trimmed = value.trim();
 
-  const driveFileMatch = trimmed.match(/drive\.google\.com\/(?:file\/d\/([\w-]+)|open\?id=([\w-]+))/);
-  const driveId = driveFileMatch?.[1] || driveFileMatch?.[2];
+  const driveFileMatch = trimmed.match(
+    /drive\.google\.com\/(?:file\/d\/([\w-]+)|open\?id=([\w-]+)|uc\?.*id=([\w-]+))/
+  );
+
+  const driveId =
+    driveFileMatch?.[1] ||
+    driveFileMatch?.[2] ||
+    driveFileMatch?.[3];
+
   if (driveId) {
     return `https://drive.google.com/thumbnail?id=${driveId}&sz=w1000`;
   }
 
   if (/dropbox\.com\//i.test(trimmed)) {
-    return trimmed.replace('?dl=0', '?raw=1').replace('?dl=1', '?raw=1');
+    return trimmed
+      .replace('?dl=0', '?raw=1')
+      .replace('?dl=1', '?raw=1');
   }
 
   return trimmed;
