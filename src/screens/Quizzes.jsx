@@ -179,16 +179,28 @@ export default function Quizzes({ notify }) {
             <Card key={questionId}>
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Question {index + 1}</p>
               <h3 className="mt-2 font-black text-slate-950 dark:text-white">{item.question}</h3>
-              <div className="mt-4 grid gap-2">
-                {(item.options || []).map((option) => {
-                  const picked = answers[questionId] === option;
-                  const revealCorrect = submitted && option === item.answer;
-                  const revealWrong = submitted && picked && option !== item.answer;
+              {item.image || isImageUrl(item.question) ? (
+        <div className="mt-4 overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-950">
+          <img
+            src={normalizeImageUrl(item.image || item.question)}
+            alt={item.question && !isImageUrl(item.question) ? item.question : 'Quiz image'}
+            className="mx-auto max-h-[300px] w-full max-w-full object-contain"
+          />
+        </div>
+      ) : null}
+      <div className="mt-4 grid gap-2">
+                {(item.options || []).map((option, optionIndex) => {
+                  const optionValue = typeof option === 'object'
+                    ? option.value || option.text || option.label || option.image || ''
+                    : option;
+                  const picked = answers[questionId] === optionValue;
+                  const revealCorrect = submitted && optionValue === item.answer;
+                  const revealWrong = submitted && picked && optionValue !== item.answer;
                   return (
                     <button
-                      key={option}
+                      key={`${questionId}-${optionIndex}`}
                       disabled={submitted}
-                      onClick={() => setAnswers((current) => ({ ...current, [questionId]: option }))}
+                      onClick={() => setAnswers((current) => ({ ...current, [questionId]: optionValue }))}
                       className={classNames(
                         'min-h-12 rounded-2xl border px-4 text-left text-sm font-bold transition',
                         picked ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-500/10' : 'border-slate-200 dark:border-white/10',
@@ -196,7 +208,15 @@ export default function Quizzes({ notify }) {
                         revealWrong && 'border-rose-500 bg-rose-50 text-rose-700 dark:bg-rose-500/10',
                       )}
                     >
-                      {option}
+                      {isImageUrl(optionValue) ? (
+                        <img
+                          src={normalizeImageUrl(optionValue)}
+                          alt={`Option ${optionIndex + 1}`}
+                          className="max-h-28 w-full object-contain"
+                        />
+                      ) : (
+                        optionValue
+                      )}
                     </button>
                   );
                 })}
@@ -279,6 +299,33 @@ export default function Quizzes({ notify }) {
       )}
     </div>
   );
+}
+
+function normalizeImageUrl(value) {
+  if (!value || typeof value !== 'string') return value;
+  const trimmed = value.trim();
+
+  const driveFileMatch = trimmed.match(/drive\.google\.com\/(?:file\/d\/([\w-]+)|open\?id=([\w-]+))/);
+  const driveId = driveFileMatch?.[1] || driveFileMatch?.[2];
+  if (driveId) {
+    return `https://drive.google.com/uc?export=view&id=${driveId}`;
+  }
+
+  if (/dropbox\.com\//i.test(trimmed)) {
+    return trimmed.replace('?dl=0', '?raw=1').replace('?dl=1', '?raw=1');
+  }
+
+  return trimmed;
+}
+
+function isImageUrl(value) {
+  if (!value || typeof value !== 'string') return false;
+  const normalized = value.trim();
+  const imageExtension = /\.(png|jpe?g|gif|webp|bmp|svg)(?:\?.*)?$/i;
+  return imageExtension.test(normalized)
+    || /drive\.google\.com\//i.test(normalized)
+    || /dropbox\.com\//i.test(normalized)
+    || /githubusercontent\.com\//i.test(normalized);
 }
 
 function Badge({ label, value }) {
