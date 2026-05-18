@@ -26,6 +26,7 @@ import {
   where,
   deleteDoc,
   Timestamp,
+  arrayUnion,
   increment,
   updateDoc,
   writeBatch,
@@ -34,6 +35,7 @@ import {
   buildAttemptReviewData,
   calculateAverageScore,
   calculateStreak,
+  getLevelFromXp,
   isCompletedAttempt,
 } from './utils';
 
@@ -88,11 +90,17 @@ export function watchAuth(callback) {
           points: 0,
           weeklyPoints: 0,
           streak: 0,
+          bestStreak: 0,
+          xp: 0,
+          level: 1,
+          totalCorrectAnswers: 0,
+          achievements: [],
           quizzesAttempted: 0,
           averageScore: 0,
           createdAt: serverTimestamp(),
           lastActiveAt: serverTimestamp(),
           lastAttemptDate: null,
+          lastQuizDate: null,
         };
         await setDoc(doc(db, 'users', sessionUser.uid), profileData);
       } else {
@@ -102,6 +110,18 @@ export function watchAuth(callback) {
         if (profileData.role !== currentRole) {
           await updateDoc(doc(db, 'users', sessionUser.uid), { role: currentRole });
           profileData.role = currentRole;
+        }
+
+        const patches = {};
+        if (profileData.bestStreak === undefined) patches.bestStreak = 0;
+        if (profileData.xp === undefined) patches.xp = 0;
+        if (profileData.level === undefined) patches.level = 1;
+        if (profileData.totalCorrectAnswers === undefined) patches.totalCorrectAnswers = 0;
+        if (profileData.achievements === undefined) patches.achievements = [];
+        if (profileData.lastQuizDate === undefined) patches.lastQuizDate = null;
+        if (Object.keys(patches).length > 0) {
+          await updateDoc(doc(db, 'users', sessionUser.uid), patches);
+          profileData = { ...profileData, ...patches };
         }
       }
       callback({ ...sessionUser, ...profileData });
@@ -136,11 +156,17 @@ export async function signupWithEmail({ name, email, password }) {
       points: 0,
       weeklyPoints: 0,
       streak: 0,
+      bestStreak: 0,
+      xp: 0,
+      level: 1,
+      totalCorrectAnswers: 0,
+      achievements: [],
       quizzesAttempted: 0,
       averageScore: 0,
       createdAt: serverTimestamp(),
       lastActiveAt: serverTimestamp(),
       lastAttemptDate: null,
+      lastQuizDate: null,
     });
   } catch (error) {
     console.error('Failed to create user profile:', error);
@@ -397,20 +423,39 @@ export async function submitAttempt(userId, quizId, quizData, answers) {
   const newAverage = calculateAverageScore(currentData.averageScore, currentAttempts, accuracy);
   const streakReference = currentData.lastAttemptDate || currentData.lastActiveAt;
   const newStreak = calculateStreak(currentData.streak, streakReference);
+  const perfectBonus = questions.length > 0 && score === questions.length ? 20 : 0;
+  const streakMultiplier = 1 + Math.min(Math.max(newStreak - 1, 0) * 0.05, 0.25);
+  const xpGained = Math.round(((score * 10) + perfectBonus) * streakMultiplier);
+  const currentXp = Number(currentData.xp) || 0;
+  const newXp = currentXp + xpGained;
+  const newLevel = getLevelFromXp(newXp);
+  const bestStreak = Math.max(Number(currentData.bestStreak) || 0, newStreak);
+  const totalCorrectAnswers = (Number(currentData.totalCorrectAnswers) || 0) + score;
+
   const statsUpdate = {
     points: (Number(currentData.points) || 0) + pointsGained,
     weeklyPoints: (Number(currentData.weeklyPoints) || 0) + weeklyPointsGained,
+    xp: newXp,
+    level: newLevel,
+    totalCorrectAnswers,
     quizzesAttempted: newAttempts,
     averageScore: newAverage,
     streak: newStreak,
+    bestStreak,
+    lastQuizDate: serverTimestamp(),
     lastAttemptDate: serverTimestamp(),
     lastActiveAt: serverTimestamp(),
   };
+
+  if (score === questions.length && questions.length > 0) {
+    statsUpdate.achievements = arrayUnion('Perfect Score');
+  }
 
   console.info(SUBMIT_LOG, 'Updating user stats / leaderboard fields', {
     userId,
     statsUpdate: {
       ...statsUpdate,
+      lastQuizDate: '(serverTimestamp)',
       lastAttemptDate: '(serverTimestamp)',
       lastActiveAt: '(serverTimestamp)',
     },
@@ -427,6 +472,11 @@ export async function submitAttempt(userId, quizId, quizData, answers) {
         points: 0,
         weeklyPoints: 0,
         streak: 0,
+        bestStreak: 0,
+        xp: 0,
+        level: 1,
+        totalCorrectAnswers: 0,
+        achievements: [],
         quizzesAttempted: 0,
         averageScore: 0,
         createdAt: serverTimestamp(),

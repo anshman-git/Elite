@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Flame, Trophy, X } from 'lucide-react';
 import { watchDocument } from '../firebase';
-import { formatPercent, getDisplayName } from '../utils';
-import { Button, Card, LoadingState } from './ui';
+import { formatPercent, getDicebearAvatar, getDisplayName, getLevelFromXp, getXpProgress } from '../utils';
+import { Button, Card, LoadingState, ProgressBar } from './ui';
 
 export default function UserProfileModal({ userId, onClose }) {
   const [profile, setProfile] = useState(null);
@@ -45,17 +45,25 @@ export default function UserProfileModal({ userId, onClose }) {
             onClick={(event) => event.stopPropagation()}
           >
             <Card className="p-5">
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-4">
+                <img
+                  src={getDicebearAvatar(profile?.id)}
+                  alt="avatar"
+                  className="h-16 w-16 rounded-3xl border border-slate-200/20 object-cover"
+                />
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">Member profile</p>
                   <h3 className="mt-1 text-2xl font-black text-slate-950 dark:text-white">
                     {getDisplayName(profile)}
                   </h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Level {getLevelFromXp(profile?.xp)}</p>
                 </div>
-                <Button variant="ghost" className="h-10 w-10 shrink-0 p-0" onClick={onClose}>
-                  <X size={18} />
-                </Button>
               </div>
+              <Button variant="ghost" className="h-10 w-10 shrink-0 p-0" onClick={onClose}>
+                <X size={18} />
+              </Button>
+            </div>
 
               {loading ? (
                 <div className="mt-6">

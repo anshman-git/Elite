@@ -84,6 +84,29 @@ export function getDisplayName(user) {
   return user?.name || user?.displayName || user?.email || 'Elite learner';
 }
 
+export function getDicebearAvatar(uid, style = 'bottts') {
+  const safeStyle = encodeURIComponent(style || 'bottts');
+  const safeId = encodeURIComponent(uid || 'guest');
+  return `https://api.dicebear.com/7.x/${safeStyle}/svg?seed=${safeId}&scale=100`;
+}
+
+export function getLevelFromXp(xp = 0) {
+  const value = Number(xp) || 0;
+  return Math.floor(value / 100) + 1;
+}
+
+export function getXpProgress(xp = 0) {
+  const value = Number(xp) || 0;
+  return Math.min(100, Math.max(0, value % 100));
+}
+
+export function getStreakMotivation(streak = 0) {
+  if (streak >= 10) return 'Legendary streak — keep the fire alive.';
+  if (streak >= 5) return 'You are on a roll. Don’t break the flame.';
+  if (streak >= 2) return 'Daily focus is building fast.';
+  return 'Complete one quiz today to ignite your streak.';
+}
+
 export function toTimestampDate(value) {
   if (!value) return null;
   if (value instanceof Date) return value;

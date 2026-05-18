@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { CalendarClock, Flame, Play, Quote, TrendingUp, Trophy, Clock } from 'lucide-react';
 import { watchCollection, watchExamCountdown, watchSubjects, watchUserAttempts } from '../firebase';
 import AttemptReviewModal from '../components/AttemptReviewModal';
-import { daysUntilExam, formatPercent, getDisplayName } from '../utils';
+import { daysUntilExam, formatPercent, getDicebearAvatar, getDisplayName, getLevelFromXp, getXpProgress, getStreakMotivation } from '../utils';
 import { Button, Card, EmptyState, ProgressBar } from '../components/ui';
 
 export default function Dashboard({ setActive, user, notify, openProfile }) {
@@ -82,21 +82,83 @@ export default function Dashboard({ setActive, user, notify, openProfile }) {
       <motion.section
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-[1.75rem] bg-slate-950 p-5 text-white shadow-glow dark:bg-white dark:text-slate-950 sm:p-7"
+        className="rounded-[1.75rem] bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.22),transparent_35%),linear-gradient(180deg,#05070f_0%,#0d1221_100%)] p-5 text-white shadow-[0_30px_110px_-80px_rgba(14,165,233,0.35)] sm:p-7"
       >
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold text-blue-200 dark:text-blue-700">Welcome back</p>
-            <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
-              {user?.displayName || 'Elite learner'}
-            </h2>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300 dark:text-slate-600">
-              Today is built for one focused quiz, one revision pass, and one clean win.
-            </p>
+        <div className="grid gap-6 lg:grid-cols-[1.8fr_1fr]">
+          <div className="space-y-5">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-300">Study command center</p>
+                <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
+                  {user?.displayName || 'Elite learner'}
+                </h2>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 dark:text-slate-600">
+                  The mission for today: keep your streak, level up faster, and close the gap on your rivals.
+                </p>
+              </div>
+              <Button variant="accent" onClick={() => setActive('quizzes')} className="w-full sm:w-auto">
+                <Play size={18} /> Launch quiz
+              </Button>
+            </div>
+
+            <div className="grid gap-4 rounded-[1.5rem] border border-slate-800/90 bg-slate-950/80 p-4 shadow-[0_0_60px_-30px_rgba(14,165,233,0.22)] backdrop-blur-xl">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300">Level</p>
+                  <div className="mt-2 flex items-center gap-3">
+                    <span className="rounded-2xl bg-cyan-500 px-3 py-1 text-sm font-black text-slate-950 shadow-[0_0_24px_-10px_rgba(14,165,233,0.55)]">LV {getLevelFromXp(user?.xp)}</span>
+                    <span className="text-sm font-semibold text-slate-200 dark:text-slate-400">XP {Number(user?.xp || 0)} / next</span>
+                  </div>
+                </div>
+                <div className="flex min-w-[160px] flex-col gap-2 rounded-3xl bg-slate-950/80 px-4 py-3 text-right text-white shadow-inner dark:bg-slate-800/90">
+                  <p className="text-xs uppercase tracking-[0.24em] text-cyan-200">Current rank</p>
+                  <p className="text-2xl font-black">#{rank || '-'}</p>
+                  <p className="text-xs text-slate-300">Weekly leaderboard pulse</p>
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center justify-between gap-3 text-sm font-semibold text-slate-300">
+                  <span>XP progress</span>
+                  <span>{getXpProgress(user?.xp)} / 100</span>
+                </div>
+                <ProgressBar value={getXpProgress(user?.xp)} />
+              </div>
+              <div className="flex flex-wrap items-center gap-3 text-sm font-semibold text-cyan-200">
+                <Flame size={14} /> {user?.streak ? `🔥 ${user.streak} Day Streak` : 'Start your first streak today'}
+              </div>
+              <p className="text-sm text-slate-300">{getStreakMotivation(user?.streak)}</p>
+            </div>
           </div>
-          <Button variant="accent" onClick={() => setActive('quizzes')} className="w-full sm:w-auto">
-            <Play size={18} /> Start today's quiz
-          </Button>
+
+          <div className="grid gap-4">
+            <div className="rounded-[1.5rem] border border-slate-800/80 bg-slate-950/90 p-4 text-white shadow-[0_0_40px_-20px_rgba(14,165,233,0.2)]">
+              <p className="text-xs uppercase tracking-[0.24em] text-cyan-300">Daily pulse</p>
+              <p className="mt-2 text-lg font-black">{user?.streak ? `Keep the flame at ${user.streak} days` : 'Take today’s quiz'}</p>
+              <p className="mt-2 text-sm text-slate-300">Complete one quiz to secure your streak, earn XP, and climb the weekly leaderboard.</p>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {sortedLeaderboard.slice(0, 3).map((person, index) => (
+                <button
+                  key={person.id}
+                  type="button"
+                  onClick={() => openProfile?.(person.id)}
+                  className="group rounded-[1.5rem] border border-slate-800/70 bg-slate-950/80 p-3 text-left transition hover:border-cyan-400/70 hover:bg-cyan-500/10"
+                >
+                  <div className="flex items-center gap-3">
+                    <img src={getDicebearAvatar(person.id)} alt="avatar" className="h-11 w-11 rounded-2xl border border-slate-700/70 object-cover" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-black text-white">{getDisplayName(person)}</p>
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">#{index + 1}</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-2 text-xs font-semibold text-slate-300">
+                    <span>{person.weeklyPoints || 0} pts</span>
+                    <span className="rounded-full bg-cyan-500/20 px-2 py-1 text-cyan-200">{index === 0 ? 'Gold' : index === 1 ? 'Silver' : 'Bronze'}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </motion.section>
 
@@ -120,8 +182,8 @@ export default function Dashboard({ setActive, user, notify, openProfile }) {
         <Card>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">Subjects</p>
-              <h3 className="mt-1 text-xl font-black text-slate-950 dark:text-white">Preparation map</h3>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-300">Subjects</p>
+              <h3 className="mt-1 text-xl font-black text-slate-100">Preparation map</h3>
             </div>
             <Button variant="secondary" onClick={() => setActive('performance')}>View stats</Button>
           </div>
@@ -131,23 +193,23 @@ export default function Dashboard({ setActive, user, notify, openProfile }) {
               const progress = subjectAttempts.length
                 ? Math.round(subjectAttempts.reduce((sum, attempt) => sum + (attempt.accuracy || 0), 0) / subjectAttempts.length)
                 : 0;
-              const tones = ['bg-blue-500', 'bg-slate-950 dark:bg-white dark:text-slate-950', 'bg-sky-500', 'bg-indigo-500', 'bg-cyan-600', 'bg-green-500'];
+              const tones = ['bg-cyan-500', 'bg-slate-950 text-white', 'bg-sky-500', 'bg-violet-500', 'bg-cyan-600', 'bg-emerald-500'];
               const tone = subject.tone || tones[index % tones.length];
               return (
                 <button
                   key={subject.id}
                   onClick={() => setActive('quizzes')}
-                  className="rounded-2xl border border-slate-200 p-4 text-left transition hover:border-blue-300 hover:bg-blue-50 dark:border-white/10 dark:hover:bg-blue-500/10"
+                  className="rounded-2xl border border-slate-800/80 bg-slate-950/90 p-4 text-left transition hover:border-cyan-400/70 hover:bg-cyan-500/10"
                 >
                   <div className="flex items-center gap-3">
                     <span className={`grid h-11 w-11 place-items-center rounded-2xl text-sm font-black text-white ${tone}`}>
                       {subject.name.slice(0, 2)}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <h4 className="font-bold text-slate-950 dark:text-white">{subject.name}</h4>
+                      <h4 className="font-bold text-slate-100">{subject.name}</h4>
                       <p className="truncate text-xs text-slate-500 dark:text-slate-400">{subject.description || 'No description'}</p>
                     </div>
-                    <span className="text-sm font-black text-blue-600">{formatPercent(progress)}</span>
+                    <span className="text-sm font-black text-cyan-300">{formatPercent(progress)}</span>
                   </div>
                   <div className="mt-3">
                     <ProgressBar value={progress} />
@@ -166,11 +228,11 @@ export default function Dashboard({ setActive, user, notify, openProfile }) {
         <div className="space-y-4">
           <Card>
             <div className="flex gap-3">
-              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-500/10">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-cyan-500/10 text-cyan-300">
                 <Quote size={20} />
               </div>
               <div>
-                <h3 className="font-black text-slate-950 dark:text-white">Focus line</h3>
+                <h3 className="font-black text-slate-100">Focus line</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
                   Small daily wins compound faster than last-night panic. Keep the streak honest.
                 </p>
@@ -178,7 +240,7 @@ export default function Dashboard({ setActive, user, notify, openProfile }) {
             </div>
           </Card>
           <Card>
-            <h3 className="font-black text-slate-950 dark:text-white">Leaderboard preview</h3>
+            <h3 className="font-black text-slate-100">Leaderboard preview</h3>
             {sortedLeaderboard.length ? (
               <div className="mt-3 space-y-3">
                 {sortedLeaderboard.slice(0, 3).map((person, index) => (
@@ -186,15 +248,15 @@ export default function Dashboard({ setActive, user, notify, openProfile }) {
                     key={person.id}
                     type="button"
                     onClick={() => openProfile?.(person.id)}
-                    className="flex w-full items-center justify-between rounded-2xl bg-slate-50 p-3 text-left transition hover:bg-blue-50 dark:bg-white/5 dark:hover:bg-blue-500/10"
+                    className="flex w-full items-center justify-between rounded-2xl border border-slate-800/80 bg-slate-950/90 p-3 text-left transition hover:border-cyan-400/70 hover:bg-cyan-500/10"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="grid h-8 w-8 place-items-center rounded-xl bg-white text-xs font-black shadow-sm dark:bg-slate-900">
+                      <span className="grid h-8 w-8 place-items-center rounded-xl bg-slate-900 text-xs font-black text-cyan-300 shadow-sm">
                         #{index + 1}
                       </span>
-                      <span className="font-bold text-slate-900 dark:text-white">{getDisplayName(person)}</span>
+                      <span className="font-bold text-slate-100">{getDisplayName(person)}</span>
                     </div>
-                    <span className="text-sm font-black text-blue-600">{person.weeklyPoints || 0}</span>
+                    <span className="text-sm font-black text-cyan-300">{person.weeklyPoints || 0}</span>
                   </button>
                 ))}
               </div>
@@ -209,7 +271,7 @@ export default function Dashboard({ setActive, user, notify, openProfile }) {
 
       <Card>
         <div className="flex items-center justify-between gap-3">
-          <h3 className="font-black text-slate-950 dark:text-white">Attempt history</h3>
+          <h3 className="font-black text-slate-100">Attempt history</h3>
           <Button variant="secondary" onClick={() => setActive('performance')}>View all</Button>
         </div>
         {attempts.length ? (
@@ -217,10 +279,10 @@ export default function Dashboard({ setActive, user, notify, openProfile }) {
             {attempts.slice(0, 6).map((attempt) => (
               <div
                 key={attempt.id}
-                className="flex flex-col gap-3 rounded-2xl bg-slate-50 p-4 dark:bg-white/5 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-3 rounded-2xl bg-slate-950/95 p-4 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
-                  <p className="font-bold text-slate-950 dark:text-white">
+                  <p className="font-bold text-slate-100">
                     {attempt.quizTitle || attempt.subject || 'Quiz attempt'}
                   </p>
                   <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
@@ -241,11 +303,11 @@ export default function Dashboard({ setActive, user, notify, openProfile }) {
       </Card>
 
       <Card>
-        <h3 className="font-black text-slate-950 dark:text-white">Recent activity</h3>
+        <h3 className="font-black text-slate-100">Recent activity</h3>
         {activities.length ? (
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             {activities.map((activity) => (
-              <div key={activity.id} className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600 dark:bg-white/5 dark:text-slate-300">
+              <div key={activity.id} className="rounded-2xl bg-slate-950/90 px-4 py-3 text-sm font-semibold text-slate-300">
                 {activity.title}
               </div>
             ))}
@@ -268,10 +330,10 @@ function formatAttemptDate(value) {
 
 function Metric({ icon: Icon, label, value, urgent }) {
   return (
-    <Card className={`p-4 ${urgent ? 'ring-2 ring-red-500/50 bg-red-50/50 dark:bg-red-500/5' : ''}`}>
-      <Icon className={`text-blue-600 ${urgent ? 'text-red-600' : ''}`} size={21} />
+    <Card className={`p-4 ${urgent ? 'ring-2 ring-red-500/50 bg-slate-900/70' : 'bg-slate-950/95'}`}>
+      <Icon className={`text-cyan-300 ${urgent ? 'text-red-600' : ''}`} size={21} />
       <p className={`mt-3 text-xs font-bold uppercase tracking-[0.12em] ${urgent ? 'text-red-600' : 'text-slate-400'}`}>{label}</p>
-      <p className={`mt-1 text-xl font-black ${urgent ? 'text-red-600' : 'text-slate-950 dark:text-white'}`}>{value}</p>
+      <p className={`mt-1 text-xl font-black ${urgent ? 'text-red-600' : 'text-slate-100'}`}>{value}</p>
     </Card>
   );
 }

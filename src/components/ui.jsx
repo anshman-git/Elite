@@ -2,15 +2,17 @@ import { motion } from 'framer-motion';
 import { Bell, Loader2, Moon, Search, Sun } from 'lucide-react';
 import { classNames } from '../utils';
 
-export function Card({ children, className = '', interactive = false }) {
+export function Card({ children, className = '', interactive = false, ...props }) {
   return (
     <motion.section
       layout
-      whileHover={interactive ? { y: -2 } : undefined}
+      whileHover={interactive ? { y: -2, scale: 1.01 } : undefined}
       className={classNames(
-        'rounded-2xl border border-slate-200/80 bg-white p-4 shadow-soft transition dark:border-white/10 dark:bg-slate-900',
+        'rounded-2xl border border-slate-800/80 bg-slate-950/95 p-4 shadow-[0_20px_80px_-40px_rgba(0,0,0,0.75)] backdrop-blur-xl transition-all duration-200',
+        interactive ? 'cursor-pointer hover:shadow-[0_0_30px_-8px_rgba(14,165,233,0.45)]' : '',
         className,
       )}
+      {...props}
     >
       {children}
     </motion.section>
@@ -19,10 +21,10 @@ export function Card({ children, className = '', interactive = false }) {
 
 export function Button({ children, variant = 'primary', className = '', ...props }) {
   const styles = {
-    primary: 'bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200',
-    secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-white/10 dark:text-white dark:hover:bg-white/15',
-    ghost: 'bg-transparent text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10',
-    accent: 'bg-blue-600 text-white hover:bg-blue-700 shadow-glow',
+    primary: 'bg-slate-900 text-slate-100 hover:bg-slate-800',
+    secondary: 'bg-slate-900/90 text-slate-300 hover:bg-slate-800',
+    ghost: 'bg-transparent text-slate-300 hover:bg-white/10',
+    accent: 'bg-[#0ea5e9] text-white hover:bg-[#22c7ff] shadow-[0_0_28px_-10px_rgba(14,165,233,0.75)]',
   };
   return (
     <button
@@ -44,7 +46,7 @@ export function IconButton({ label, children, className = '', ...props }) {
       aria-label={label}
       title={label}
       className={classNames(
-        'grid h-11 w-11 place-items-center rounded-xl border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-100 dark:border-white/10 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-white/10',
+        'grid h-11 w-11 place-items-center rounded-xl border border-slate-700/80 bg-slate-900 text-slate-200 transition hover:bg-slate-800',
         className,
       )}
       {...props}
@@ -56,21 +58,21 @@ export function IconButton({ label, children, className = '', ...props }) {
 
 export function TopBar({ dark, onToggleDark, onOpenNotifications, isAdmin, user }) {
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200/70 bg-slate-50/85 px-4 py-3 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/80 sm:px-6">
+    <header className="sticky top-0 z-30 border-b border-slate-800/80 bg-slate-950/95 px-4 py-3 backdrop-blur-xl sm:px-6">
       <div className="mx-auto flex max-w-7xl items-center justify-between">
         <div className="flex items-center gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600">EliteStudy</p>
-            <h1 className="text-lg font-black text-slate-950 dark:text-white">Study command center</h1>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">EliteStudy</p>
+            <h1 className="text-lg font-black text-slate-100">Study command center</h1>
           </div>
           {user && (
             <div className={`hidden items-center gap-2 rounded-full px-3 py-1 text-xs font-bold sm:flex ${
               isAdmin 
-                ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-100' 
-                : 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-100'
+                ? 'bg-slate-800 text-amber-300' 
+                : 'bg-slate-800 text-cyan-300'
             }`}>
               <div className={`h-2 w-2 rounded-full ${
-                isAdmin ? 'bg-amber-600' : 'bg-blue-600'
+                isAdmin ? 'bg-amber-300' : 'bg-cyan-300'
               }`} />
               {isAdmin ? 'Admin Mode' : 'Student Mode'}
             </div>
@@ -91,7 +93,7 @@ export function TopBar({ dark, onToggleDark, onOpenNotifications, isAdmin, user 
 
 export function SearchInput({ value, onChange, placeholder = 'Search' }) {
   return (
-    <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 text-slate-500 shadow-sm dark:border-white/10 dark:bg-slate-900">
+    <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-700 bg-slate-900 px-4 text-slate-300 shadow-[0_0_30px_-20px_rgba(14,165,233,0.45)]">
       <Search size={18} />
       <input
         value={value}
@@ -105,12 +107,12 @@ export function SearchInput({ value, onChange, placeholder = 'Search' }) {
 
 export function ProgressBar({ value }) {
   return (
-    <div className="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-white/10">
+    <div className="h-2 overflow-hidden rounded-full bg-slate-800">
       <motion.div
         initial={{ width: 0 }}
         animate={{ width: `${value}%` }}
         transition={{ duration: 0.7, ease: 'easeOut' }}
-        className="h-full rounded-full bg-blue-600"
+        className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-sky-500 to-blue-600"
       />
     </div>
   );
@@ -131,11 +133,11 @@ export function LoadingState() {
 export function EmptyState({ title, body, action }) {
   return (
     <Card className="grid place-items-center py-10 text-center">
-      <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-500/10">
+      <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-900 text-cyan-300 shadow-[0_0_30px_-18px_rgba(14,165,233,0.6)]">
         <Search size={24} />
       </div>
-      <h3 className="mt-4 text-base font-bold text-slate-950 dark:text-white">{title}</h3>
-      <p className="mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400">{body}</p>
+      <h3 className="mt-4 text-base font-bold text-slate-100">{title}</h3>
+      <p className="mt-1 max-w-sm text-sm text-slate-400">{body}</p>
       {action ? <div className="mt-4">{action}</div> : null}
     </Card>
   );
@@ -157,7 +159,7 @@ export function Toast({ message }) {
 
 export function Input({ label, value, onChange, placeholder, type = 'text', className = '' }) {
   return (
-    <label className="grid gap-2 text-sm font-bold text-slate-700 dark:text-slate-200">
+    <label className="grid gap-2 text-sm font-bold text-slate-200">
       {label}
       <input
         type={type}
@@ -165,7 +167,7 @@ export function Input({ label, value, onChange, placeholder, type = 'text', clas
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         className={classNames(
-          'min-h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold outline-none transition focus:border-blue-400 dark:border-white/10 dark:bg-slate-950',
+          'min-h-12 rounded-2xl border border-slate-700 bg-slate-950 px-4 text-sm font-semibold text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/15',
           className,
         )}
       />
@@ -175,13 +177,13 @@ export function Input({ label, value, onChange, placeholder, type = 'text', clas
 
 export function Select({ label, value, onChange, children, className = '' }) {
   return (
-    <label className="grid gap-2 text-sm font-bold text-slate-700 dark:text-slate-200">
+    <label className="grid gap-2 text-sm font-bold text-slate-200">
       {label}
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
         className={classNames(
-          'min-h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold outline-none transition focus:border-blue-400 dark:border-white/10 dark:bg-slate-950',
+          'min-h-12 rounded-2xl border border-slate-700 bg-slate-950 px-4 text-sm font-semibold text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/15',
           className,
         )}
       >
@@ -193,7 +195,7 @@ export function Select({ label, value, onChange, children, className = '' }) {
 
 export function Textarea({ label, value, onChange, placeholder, className = '' }) {
   return (
-    <label className="grid gap-2 text-sm font-bold text-slate-700 dark:text-slate-200">
+    <label className="grid gap-2 text-sm font-bold text-slate-200">
       {label}
       <textarea
         value={value}
@@ -201,7 +203,7 @@ export function Textarea({ label, value, onChange, placeholder, className = '' }
         placeholder={placeholder}
         rows={4}
         className={classNames(
-          'min-h-24 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold outline-none transition focus:border-blue-400 dark:border-white/10 dark:bg-slate-950',
+          'min-h-24 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm font-semibold text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/15',
           className,
         )}
       />

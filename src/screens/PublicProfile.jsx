@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Flame, Trophy } from 'lucide-react';
 import { watchCollection, watchDocument } from '../firebase';
-import { formatPercent, getDisplayName } from '../utils';
-import { Button, Card, LoadingState } from '../components/ui';
+import { formatPercent, getDicebearAvatar, getDisplayName, getLevelFromXp, getXpProgress } from '../utils';
+import { Button, Card, LoadingState, ProgressBar } from '../components/ui';
 
 export default function PublicProfile({ profileUserId, onBack, notify }) {
   const [profile, setProfile] = useState(null);
@@ -63,9 +63,27 @@ export default function PublicProfile({ profileUserId, onBack, notify }) {
       </Button>
 
       <Card>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">Public profile</p>
-        <h2 className="mt-1 text-3xl font-black text-slate-950 dark:text-white">{getDisplayName(profile)}</h2>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Weekly rank #{rank}</p>
+        <div className="flex flex-col gap-4 rounded-[1.75rem] border border-blue-500/10 bg-slate-950/90 p-4 text-white sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <img
+              src={getDicebearAvatar(profile?.id)}
+              alt="avatar"
+              className="h-16 w-16 rounded-3xl border border-white/10 object-cover"
+            />
+            <div>
+              <p className="text-xs uppercase tracking-[0.24em] text-blue-300">Public profile</p>
+              <h2 className="mt-2 text-3xl font-black text-white">{getDisplayName(profile)}</h2>
+              <p className="mt-1 text-sm text-slate-300">Weekly rank #{rank}</p>
+            </div>
+          </div>
+          <div className="space-y-2 text-right">
+            <p className="text-sm font-semibold text-blue-200">Level {getLevelFromXp(profile?.xp)}</p>
+            <p className="text-2xl font-black text-white">XP {Number(profile?.xp || 0)}</p>
+            <div className="rounded-3xl bg-white/10 p-2">
+              <ProgressBar value={getXpProgress(profile?.xp)} />
+            </div>
+          </div>
+        </div>
       </Card>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">

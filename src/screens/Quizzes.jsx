@@ -18,6 +18,7 @@ export default function Quizzes({ notify }) {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [attempts, setAttempts] = useState([]);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const filtered = useMemo(
     () => {
@@ -33,6 +34,23 @@ export default function Quizzes({ notify }) {
     [attempts],
   );
   const isQuizAttempted = activeQuiz ? attemptedQuizIds.has(activeQuiz.id) : false;
+
+  const playSuccessTone = useCallback(() => {
+    try {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(520, audioContext.currentTime);
+      gain.gain.setValueAtTime(0.08, audioContext.currentTime);
+      oscillator.connect(gain);
+      gain.connect(audioContext.destination);
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.12);
+    } catch (error) {
+      console.warn('Audio feedback not available', error);
+    }
+  }, []);
 
   const handleSubmit = useCallback(async () => {
     const userId = user?.uid || user?.id;
@@ -135,14 +153,43 @@ export default function Quizzes({ notify }) {
 
   const score = questions.reduce((total, item, index) => total + (answers[getQuestionId(item, index)] === item.answer ? 1 : 0), 0);
 
+  useEffect(() => {
+    if (submitted && questions.length > 0 && score === questions.length) {
+      setShowConfetti(true);
+      playSuccessTone();
+      const timeout = window.setTimeout(() => setShowConfetti(false), 4200);
+      return () => window.clearTimeout(timeout);
+    }
+    return undefined;
+  }, [submitted, score, questions.length, playSuccessTone]);
+
   if (activeQuiz) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 relative">
+        {showConfetti ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="pointer-events-none absolute inset-0 z-20 overflow-hidden"
+          >
+            {[...Array(16)].map((_, pieceIndex) => (
+              <motion.span
+                key={pieceIndex}
+                initial={{ opacity: 0, y: 0, x: 0, scale: 0 }}
+                animate={{ opacity: 1, y: [-10, -90, -180], x: [0, (pieceIndex % 5) * 14 - 28], scale: 1 }}
+                transition={{ duration: 1.6, ease: 'easeOut' }}
+                className="absolute h-3 w-3 rounded-full bg-cyan-400/90"
+                style={{ left: `${10 + (pieceIndex * 5)}%`, top: '80%' }}
+              />
+            ))}
+          </motion.div>
+        ) : null}
         <Card className="sticky top-[84px] z-20">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">{activeQuiz.subject}</p>
-              <h2 className="text-xl font-black text-slate-950 dark:text-white">{activeQuiz.title}</h2>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-300">{activeQuiz.subject}</p>
+              <h2 className="text-xl font-black text-slate-100">{activeQuiz.title}</h2>
             </div>
             <div className="flex items-center gap-2">
               <span className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-slate-100 px-3 text-sm font-black dark:bg-white/10">
@@ -159,9 +206,9 @@ export default function Quizzes({ notify }) {
           {submitted ? (
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
               <Card>
-                <CheckCircle2 className="text-blue-600" size={34} />
-                <h3 className="mt-3 text-2xl font-black text-slate-950 dark:text-white">Score: {score}/{questions.length}</h3>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                <CheckCircle2 className="text-cyan-300" size={34} />
+                <h3 className="mt-3 text-2xl font-black text-slate-100">Score: {score}/{questions.length}</h3>
+                <p className="mt-1 text-sm text-slate-400">
                   Time taken: {((activeQuiz.timerMinutes || activeQuiz.duration || 25) * 60) - seconds}s. Review the correct answers below.
                 </p>
                 <div className="mt-4 flex gap-2">
@@ -175,53 +222,96 @@ export default function Quizzes({ notify }) {
         <div className="space-y-3">
           {questions.map((item, index) => {
             const questionId = getQuestionId(item, index);
+            const answeredValue = answers[questionId];
+            const selectedCorrect = answeredValue === item.answer;
+            const hasAnswered = Boolean(answeredValue);
             return (
-            <Card key={questionId}>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Question {index + 1}</p>
-              <h3 className="mt-2 font-black text-slate-950 dark:text-white">{item.question}</h3>
-              {item.image || isImageUrl(item.question) ? (
-        <div className="mt-4 overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-950">
-          <img
-            src={normalizeImageUrl(item.image || item.question)}
-            alt={item.question && !isImageUrl(item.question) ? item.question : 'Quiz image'}
-            className="mx-auto max-h-[300px] w-full max-w-full object-contain"
-          />
-        </div>
-      ) : null}
-      <div className="mt-4 grid gap-2">
-                {(item.options || []).map((option, optionIndex) => {
-                  const optionValue = typeof option === 'object'
-                    ? option.value || option.text || option.label || option.image || ''
-                    : option;
-                  const picked = answers[questionId] === optionValue;
-                  const revealCorrect = submitted && optionValue === item.answer;
-                  const revealWrong = submitted && picked && optionValue !== item.answer;
-                  return (
-                    <button
-                      key={`${questionId}-${optionIndex}`}
-                      disabled={submitted}
-                      onClick={() => setAnswers((current) => ({ ...current, [questionId]: optionValue }))}
-                      className={classNames(
-                        'min-h-12 rounded-2xl border px-4 text-left text-sm font-bold transition',
-                        picked ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-500/10' : 'border-slate-200 dark:border-white/10',
-                        revealCorrect && 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10',
-                        revealWrong && 'border-rose-500 bg-rose-50 text-rose-700 dark:bg-rose-500/10',
-                      )}
+              <Card key={questionId} id={`question-card-${index}`}>
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">Question {index + 1}</p>
+                <h3 className="mt-2 font-black text-slate-950 dark:text-white">{item.question}</h3>
+                {item.image || isImageUrl(item.question) ? (
+                  <div className="mt-4 overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-950">
+                    <img
+                      src={normalizeImageUrl(item.image || item.question)}
+                      alt={item.question && !isImageUrl(item.question) ? item.question : 'Quiz image'}
+                      className="mx-auto max-h-[300px] w-full max-w-full object-contain"
+                    />
+                  </div>
+                ) : null}
+                <div className="mt-4 grid gap-2">
+                  {(item.options || []).map((option, optionIndex) => {
+                    const optionValue = typeof option === 'object'
+                      ? option.value || option.text || option.label || option.image || ''
+                      : option;
+                    const picked = answeredValue === optionValue;
+                    const correctOption = optionValue === item.answer;
+                    const showCorrect = hasAnswered && correctOption;
+                    const showWrong = picked && hasAnswered && !correctOption;
+                    const selectedAnswerIsCorrect = picked && correctOption;
+                    return (
+                      <motion.button
+                        key={`${questionId}-${optionIndex}`}
+                        type="button"
+                        disabled={submitted}
+                        whileHover={{ y: -2 }}
+                        animate={showWrong ? { x: [0, -6, 6, -4, 4, 0] } : selectedAnswerIsCorrect ? { scale: [1, 1.02, 1] } : undefined}
+                        transition={{ duration: 0.28, ease: 'easeOut' }}
+                        onClick={() => {
+                          setAnswers((current) => ({ ...current, [questionId]: optionValue }));
+                          if (optionValue === item.answer) playSuccessTone();
+                        }}
+                        className={classNames(
+                          'min-h-12 rounded-2xl border px-4 text-left text-sm font-bold transition',
+                          picked ? 'border-cyan-500 bg-cyan-500/10 text-cyan-700 dark:bg-cyan-500/10' : 'border-slate-200 dark:border-white/10',
+                          showCorrect && 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10',
+                          showWrong && 'border-rose-500 bg-rose-50 text-rose-700 dark:bg-rose-500/10',
+                        )}
+                      >
+                        {isImageUrl(optionValue) ? (
+                          <img
+                            src={normalizeImageUrl(optionValue)}
+                            alt={`Option ${optionIndex + 1}`}
+                            className="max-h-28 w-full object-contain"
+                          />
+                        ) : (
+                          optionValue
+                        )}
+                      </motion.button>
+                    );
+                  })}
+                </div>
+                <AnimatePresence>
+                  {hasAnswered ? (
+                    <motion.div
+                      initial={{ opacity: 0, y: 18 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 18 }}
+                      className="mt-4 rounded-3xl border border-cyan-500/20 bg-slate-950/90 p-4 text-sm text-slate-200"
                     >
-                      {isImageUrl(optionValue) ? (
-                        <img
-                          src={normalizeImageUrl(optionValue)}
-                          alt={`Option ${optionIndex + 1}`}
-                          className="max-h-28 w-full object-contain"
-                        />
-                      ) : (
-                        optionValue
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </Card>
+                      <p className="text-sm font-bold text-cyan-200">
+                        {selectedCorrect ? 'Correct answer unlocked' : 'Answer revealed'}
+                      </p>
+                      <p className="mt-2 text-sm text-slate-300">
+                        {selectedCorrect
+                          ? 'Nice call. Keep the momentum and finish strong.'
+                          : `Correct answer: ${item.answer}`}
+                      </p>
+                      <p className="mt-3 text-sm text-slate-400">{item.explanation || 'Review the correct concept and sharpen the next move.'}</p>
+                      {index < questions.length - 1 ? (
+                        <Button
+                          variant="secondary"
+                          className="mt-4"
+                          onClick={() => {
+                            document.getElementById(`question-card-${index + 1}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }}
+                        >
+                          Next question
+                        </Button>
+                      ) : null}
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+              </Card>
             );
           })}
         </div>
@@ -238,8 +328,8 @@ export default function Quizzes({ notify }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">Quiz arena</p>
-          <h2 className="text-2xl font-black text-slate-950 dark:text-white">Subject-wise sprints</h2>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-300">Quiz arena</p>
+          <h2 className="text-2xl font-black text-slate-100">Subject-wise sprints</h2>
         </div>
         <SlidersHorizontal className="text-slate-400" />
       </div>
@@ -265,7 +355,7 @@ export default function Quizzes({ notify }) {
             const quizAttempted = attemptedQuizIds.has(quiz.id);
             return (
               <Card key={quiz.id} interactive>
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-600">{quiz.subject}</p>
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-cyan-300">{quiz.subject}</p>
                 <h3 className="mt-2 text-lg font-black text-slate-950 dark:text-white">{quiz.title}</h3>
                 <div className="mt-4 grid grid-cols-3 gap-2 text-center">
                   <Badge label="MCQs" value={quiz.questions?.length || 0} />
