@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { CalendarClock, Flame, Play, Quote, TrendingUp, Trophy, Clock } from 'lucide-react';
 import { watchCollection, watchExamCountdown, watchSubjects, watchUserAttempts } from '../firebase';
 import AttemptReviewModal from '../components/AttemptReviewModal';
+import AnnouncementTicker from '../components/AnnouncementTicker';
 import { daysUntilExam, formatPercent, getDicebearAvatar, getDisplayName, getLevelFromXp, getXpProgress, getStreakMotivation } from '../utils';
 import { Button, Card, EmptyState, ProgressBar } from '../components/ui';
 
@@ -78,12 +79,14 @@ export default function Dashboard({ setActive, user, notify, openProfile }) {
   const countdownDisplay = getCountdownDisplay();
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <motion.section
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="rounded-[1.75rem] bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.22),transparent_35%),linear-gradient(180deg,#05070f_0%,#0d1221_100%)] p-5 text-white shadow-[0_30px_110px_-80px_rgba(14,165,233,0.35)] sm:p-7"
-      >
+    <>
+      <AnnouncementTicker />
+      <div className="space-y-4 sm:space-y-6">
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-[1.75rem] bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.22),transparent_35%),linear-gradient(180deg,#05070f_0%,#0d1221_100%)] p-5 text-white shadow-[0_30px_110px_-80px_rgba(14,165,233,0.35)] sm:p-7"
+        >
         <div className="grid gap-6 lg:grid-cols-[1.8fr_1fr]">
           <div className="space-y-5">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
@@ -319,7 +322,8 @@ export default function Dashboard({ setActive, user, notify, openProfile }) {
         )}
       </Card>
       <AttemptReviewModal attemptId={reviewAttemptId} onClose={() => setReviewAttemptId(null)} />
-    </div>
+      </div>
+    </>
   );
 }
 
