@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { LogOut, Settings, UserRound } from 'lucide-react';
+import { Copy, LogOut, Settings, UserRound } from 'lucide-react';
 import { logout, updateUser, watchCollection } from '../firebase';
 import { formatPercent, getDicebearAvatar, getDisplayName, getLevelFromXp, getXpProgress } from '../utils';
 import { Button, Card, Input, ProgressBar, Textarea } from '../components/ui';
@@ -25,7 +25,7 @@ const bannerOptions = [
   },
 ];
 
-const avatarStyles = ['bottts', 'pixel-art', 'identicon', 'avataaars'];
+const avatarStyles = ['bottts', 'pixel-art', 'identicon', 'avataaars', 'adventurer', 'lorelei', 'notionists'];
 
 export default function Profile({ user, notify }) {
   const [leaderboard, setLeaderboard] = useState([]);
@@ -81,6 +81,16 @@ export default function Profile({ user, notify }) {
     }
   };
 
+  const copyProfileLink = async () => {
+    const url = `${window.location.origin}/profile/${user.uid}`;
+    try {
+      await window.navigator.clipboard.writeText(url);
+      notify('Profile link copied.');
+    } catch {
+      notify(url);
+    }
+  };
+
   const achievements = user?.achievements || [];
 
   return (
@@ -102,6 +112,11 @@ export default function Profile({ user, notify }) {
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300">Cyber Scout</p>
                 <h1 className="text-4xl font-black tracking-tight sm:text-5xl">{name || getDisplayName(user)}</h1>
                 <p className="max-w-xl text-sm text-slate-300 sm:text-base">{bio || 'Keep your mission profile sharp with a new name, badge, and status message.'}</p>
+                <div className="flex flex-wrap gap-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                  <span>{user?.followers?.length || 0} followers</span>
+                  <span>{user?.following?.length || 0} following</span>
+                  <span>Joined {formatJoined(user?.createdAt)}</span>
+                </div>
               </div>
             </div>
             <div className="grid gap-3 sm:text-right">
@@ -130,9 +145,14 @@ export default function Profile({ user, notify }) {
                 <h2 className="text-xl font-black text-white">Edit profile</h2>
                 <p className="mt-1 text-sm text-slate-400">Refresh your persona, links, and avatar style for the cyber arena.</p>
               </div>
-              <Button variant="accent" onClick={handleSave} disabled={isSaving}>
-                {isSaving ? 'Saving...' : 'Save profile'}
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="secondary" onClick={copyProfileLink}>
+                  <Copy size={17} /> Copy profile link
+                </Button>
+                <Button variant="accent" onClick={handleSave} disabled={isSaving}>
+                  {isSaving ? 'Saving...' : 'Save profile'}
+                </Button>
+              </div>
             </div>
             <div className="mt-6 grid gap-4">
               <div className="grid gap-4 lg:grid-cols-2">
@@ -279,4 +299,9 @@ function Stat({ value, label, accent }) {
       <p className="mt-2 text-xs uppercase tracking-[0.18em] text-slate-400">{label}</p>
     </div>
   );
+}
+
+function formatJoined(value) {
+  const date = value?.toDate?.();
+  return date ? date.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) : 'recently';
 }

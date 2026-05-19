@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, Home, ShieldCheck, Trophy, UserRound } from 'lucide-react';
+import { BarChart3, BookOpen, Home, ShieldCheck, Trophy, UserRound, UsersRound } from 'lucide-react';
 import { classNames, confirmLeaveQuiz } from '../utils';
 
 function navigate(setActive, target) {
@@ -10,6 +10,7 @@ const items = [
   { id: 'dashboard', label: 'Home', icon: Home },
   { id: 'quizzes', label: 'Quiz', icon: BookOpen },
   { id: 'resources', label: 'Files', icon: ShieldCheck },
+  { id: 'community', label: 'Social', icon: UsersRound },
   { id: 'leaderboard', label: 'Ranks', icon: Trophy },
   { id: 'profile', label: 'Profile', icon: UserRound },
   { id: 'admin', label: 'Admin', icon: ShieldCheck },
@@ -25,7 +26,7 @@ export function BottomNav({ active, setActive, isAdmin }) {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-white/95 px-2 pb-3 pt-2 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/95 lg:hidden">
-      <div className={`mx-auto grid max-w-lg gap-1 ${isAdmin ? 'grid-cols-6' : 'grid-cols-5'}`}>
+      <div className={`mx-auto grid max-w-lg gap-1 ${isAdmin ? 'grid-cols-7' : 'grid-cols-6'}`}>
         {visibleItems.map((item) => {
           const Icon = item.icon;
           const isActive = active === item.id;

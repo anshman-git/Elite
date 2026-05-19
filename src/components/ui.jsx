@@ -56,7 +56,7 @@ export function IconButton({ label, children, className = '', ...props }) {
   );
 }
 
-export function TopBar({ dark, onToggleDark, onOpenNotifications, isAdmin, user }) {
+export function TopBar({ dark, onToggleDark, onOpenNotifications, isAdmin, user, unreadCount = 0 }) {
   return (
     <header className="sticky top-0 z-30 border-b border-slate-800/80 bg-slate-950/95 px-4 py-3 backdrop-blur-xl sm:px-6">
       <div className="mx-auto flex max-w-7xl items-center justify-between">
@@ -79,8 +79,13 @@ export function TopBar({ dark, onToggleDark, onOpenNotifications, isAdmin, user 
           )}
         </div>
         <div className="flex items-center gap-2">
-          <IconButton label="Notifications" onClick={onOpenNotifications}>
+          <IconButton label="Notifications" onClick={onOpenNotifications} className="relative">
             <Bell size={19} />
+            {unreadCount > 0 ? (
+              <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-violet-400 px-1 text-[10px] font-black text-slate-950 shadow-[0_0_20px_-6px_rgba(192,132,252,0.9)]">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            ) : null}
           </IconButton>
           <IconButton label="Toggle dark mode" onClick={onToggleDark} aria-pressed={dark}>
             {dark ? <Sun size={19} /> : <Moon size={19} />}

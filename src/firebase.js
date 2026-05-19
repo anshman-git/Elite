@@ -26,6 +26,7 @@ import {
   where,
   deleteDoc,
   Timestamp,
+  arrayRemove,
   arrayUnion,
   increment,
   updateDoc,
@@ -56,6 +57,34 @@ export const auth = app ? getAuth(app) : null;
 export const db = app ? getFirestore(app) : null;
 export const QUIZZES_COLLECTION = 'quizzes';
 
+const defaultProfileFields = {
+  bio: '',
+  website: '',
+  avatarStyle: 'bottts',
+  bannerStyle: 'cyber',
+  followers: [],
+  following: [],
+  achievements: [],
+};
+
+function getProfileDefaults(overrides = {}) {
+  return {
+    ...defaultProfileFields,
+    points: 0,
+    weeklyPoints: 0,
+    streak: 0,
+    bestStreak: 0,
+    xp: 0,
+    level: 1,
+    totalCorrectAnswers: 0,
+    quizzesAttempted: 0,
+    averageScore: 0,
+    lastActiveAt: serverTimestamp(),
+    lastAttemptDate: null,
+    lastQuizDate: null,
+    ...overrides,
+  };
+}
 
 if (auth) {
   setPersistence(auth, browserLocalPersistence);
@@ -83,25 +112,12 @@ export function watchAuth(callback) {
       const isAdmin = hasAdminClaim || profileData?.role === 'admin';
 
       if (!profileSnap.exists()) {
-        profileData = {
+        profileData = getProfileDefaults({
           name: sessionUser.displayName || 'Elite learner',
           email: sessionUser.email || '',
           role: isAdmin ? 'admin' : 'student',
-          points: 0,
-          weeklyPoints: 0,
-          streak: 0,
-          bestStreak: 0,
-          xp: 0,
-          level: 1,
-          totalCorrectAnswers: 0,
-          achievements: [],
-          quizzesAttempted: 0,
-          averageScore: 0,
           createdAt: serverTimestamp(),
-          lastActiveAt: serverTimestamp(),
-          lastAttemptDate: null,
-          lastQuizDate: null,
-        };
+        });
         await setDoc(doc(db, 'users', sessionUser.uid), profileData);
       } else {
         // Preserve Firestore role when it already indicates admin,
@@ -118,6 +134,12 @@ export function watchAuth(callback) {
         if (profileData.level === undefined) patches.level = 1;
         if (profileData.totalCorrectAnswers === undefined) patches.totalCorrectAnswers = 0;
         if (profileData.achievements === undefined) patches.achievements = [];
+        if (profileData.followers === undefined) patches.followers = [];
+        if (profileData.following === undefined) patches.following = [];
+        if (profileData.bio === undefined) patches.bio = '';
+        if (profileData.website === undefined) patches.website = '';
+        if (profileData.avatarStyle === undefined) patches.avatarStyle = 'bottts';
+        if (profileData.bannerStyle === undefined) patches.bannerStyle = 'cyber';
         if (profileData.lastQuizDate === undefined) patches.lastQuizDate = null;
         if (Object.keys(patches).length > 0) {
           await updateDoc(doc(db, 'users', sessionUser.uid), patches);
@@ -149,25 +171,12 @@ export async function signupWithEmail({ name, email, password }) {
   await updateProfile(credential.user, { displayName: cleanName });
 
   try {
-    await setDoc(doc(db, 'users', credential.user.uid), {
+    await setDoc(doc(db, 'users', credential.user.uid), getProfileDefaults({
       name: cleanName,
       email: cleanEmail,
       role: 'student',
-      points: 0,
-      weeklyPoints: 0,
-      streak: 0,
-      bestStreak: 0,
-      xp: 0,
-      level: 1,
-      totalCorrectAnswers: 0,
-      achievements: [],
-      quizzesAttempted: 0,
-      averageScore: 0,
       createdAt: serverTimestamp(),
-      lastActiveAt: serverTimestamp(),
-      lastAttemptDate: null,
-      lastQuizDate: null,
-    });
+    }));
   } catch (error) {
     console.error('Failed to create user profile:', error);
     return { credential, profileCreated: false, profileError: error };
@@ -570,7 +579,7 @@ export async function deleteResource(resourceId) {
 
 export async function createAnnouncement(payload) {
   if (!db) throw new Error('Firebase is not configured yet.');
-  return addDoc(collection(db, 'announcements'), { ...payload, createdAt: serverTimestamp() });
+  return addDoc(collection(db, 'announcements'), { ...payload, type: payload.type || 'announcement', createdAt: serverTimestamp() });
 }
 
 // Quiz CRUD functions
@@ -636,6 +645,110 @@ export function watchSubjects(callback, options = {}) {
 export async function updateUser(userId, payload) {
   if (!db) throw new Error('Firebase is not configured yet.');
   return updateDoc(doc(db, 'users', userId), { ...payload, updatedAt: serverTimestamp() });
+}
+
+export async function followUser(currentUserId, targetUserId, currentUserName = 'Someone') {
+  if (!db) throw new Error('Firebase is not configured yet.');
+  if (!currentUserId || !targetUserId) throw new Error('Missing user id.');
+  if (currentUserId === targetUserId) throw new Error('You cannot follow yourself.');
+
+  const currentRef = doc(db, 'users', currentUserId);
+  const targetRef = doc(db, 'users', targetUserId);
+  const currentSnap = await getDoc(currentRef);
+  const targetSnap = await getDoc(targetRef);
+
+  if (!targetSnap.exists()) throw new Error('Profile not found.');
+  const currentData = currentSnap.exists() ? currentSnap.data() : {};
+  const alreadyFollowing = Array.isArray(currentData.following) && currentData.following.includes(targetUserId);
+  if (alreadyFollowing) return { alreadyFollowing: true };
+
+  const batch = writeBatch(db);
+  batch.update(currentRef, {
+    following: arrayUnion(targetUserId),
+    lastActiveAt: serverTimestamp(),
+  });
+  batch.update(targetRef, {
+    followers: arrayUnion(currentUserId),
+    xp: increment(5),
+    lastActiveAt: serverTimestamp(),
+  });
+  batch.set(doc(collection(db, 'notifications')), {
+    targetUserId,
+    actorUserId: currentUserId,
+    type: 'follow',
+    title: 'New follower',
+    body: `${currentUserName} followed you.`,
+    read: false,
+    createdAt: serverTimestamp(),
+  });
+  await batch.commit();
+  return { followed: true };
+}
+
+export async function unfollowUser(currentUserId, targetUserId) {
+  if (!db) throw new Error('Firebase is not configured yet.');
+  if (!currentUserId || !targetUserId) throw new Error('Missing user id.');
+  if (currentUserId === targetUserId) throw new Error('You cannot unfollow yourself.');
+
+  const batch = writeBatch(db);
+  batch.update(doc(db, 'users', currentUserId), {
+    following: arrayRemove(targetUserId),
+    lastActiveAt: serverTimestamp(),
+  });
+  batch.update(doc(db, 'users', targetUserId), {
+    followers: arrayRemove(currentUserId),
+    lastActiveAt: serverTimestamp(),
+  });
+  await batch.commit();
+}
+
+export function watchUserNotifications(userId, callback, options = {}) {
+  const { take = 20, onError } = options;
+  if (!db || !userId) {
+    callback([]);
+    return () => {};
+  }
+
+  const notificationsQuery = query(
+    collection(db, 'notifications'),
+    where('targetUserId', '==', userId),
+    orderBy('createdAt', 'desc'),
+    limit(take),
+  );
+
+  return onSnapshot(
+    notificationsQuery,
+    (snapshot) => callback(snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))),
+    (error) => {
+      console.error('Error watching notifications:', error);
+      callback([]);
+      onError?.(error);
+    },
+  );
+}
+
+export async function markNotificationRead(notificationId) {
+  if (!db) throw new Error('Firebase is not configured yet.');
+  return updateDoc(doc(db, 'notifications', notificationId), {
+    read: true,
+    readAt: serverTimestamp(),
+  });
+}
+
+export async function markAllNotificationsRead(userId) {
+  if (!db || !userId) return;
+  const unreadQuery = query(
+    collection(db, 'notifications'),
+    where('targetUserId', '==', userId),
+    where('read', '==', false),
+    limit(25),
+  );
+  const snapshot = await getDocs(unreadQuery);
+  const batch = writeBatch(db);
+  snapshot.docs.forEach((item) => {
+    batch.update(item.ref, { read: true, readAt: serverTimestamp() });
+  });
+  await batch.commit();
 }
 
 export async function banUser(userId) {

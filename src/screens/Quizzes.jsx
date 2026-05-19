@@ -152,6 +152,9 @@ export default function Quizzes({ notify }) {
   }, [submitted]);
 
   const score = questions.reduce((total, item, index) => total + (answers[getQuestionId(item, index)] === item.answer ? 1 : 0), 0);
+  const answeredCount = questions.filter((item, index) => answers[getQuestionId(item, index)]).length;
+  const progressPercent = questions.length ? Math.round((answeredCount / questions.length) * 100) : 0;
+  const estimatedXp = score * 10 + (questions.length > 0 && score === questions.length ? 20 : 0);
 
   useEffect(() => {
     if (submitted && questions.length > 0 && score === questions.length) {
@@ -190,6 +193,13 @@ export default function Quizzes({ notify }) {
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-300">{activeQuiz.subject}</p>
               <h2 className="text-xl font-black text-slate-100">{activeQuiz.title}</h2>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-800">
+                <motion.div
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-violet-300 to-cyan-200"
+                  animate={{ width: `${progressPercent}%` }}
+                  transition={{ duration: 0.45, ease: 'easeOut' }}
+                />
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <span className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-slate-100 px-3 text-sm font-black dark:bg-white/10">
@@ -211,6 +221,13 @@ export default function Quizzes({ notify }) {
                 <p className="mt-1 text-sm text-slate-400">
                   Time taken: {((activeQuiz.timerMinutes || activeQuiz.duration || 25) * 60) - seconds}s. Review the correct answers below.
                 </p>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9, y: 8 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  className="mt-4 inline-flex rounded-2xl border border-cyan-300/30 bg-cyan-300/10 px-4 py-3 text-sm font-black text-cyan-100 shadow-[0_0_30px_-16px_rgba(34,211,238,0.9)]"
+                >
+                  +{estimatedXp} XP earned - {score === questions.length ? 'Perfect run.' : score > questions.length / 2 ? 'Solid push.' : 'Review and rebound.'}
+                </motion.div>
                 <div className="mt-4 flex gap-2">
                   <Button onClick={exitQuiz}>Back to quizzes</Button>
                 </div>

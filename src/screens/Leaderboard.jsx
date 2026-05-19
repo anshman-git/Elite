@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowUpRight, Crown, Flame, Timer } from 'lucide-react';
+import { ArrowUpRight, Crown, Flame, Timer, UsersRound, Zap } from 'lucide-react';
 import { watchCollection } from '../firebase';
-import { getDisplayName } from '../utils';
+import { getDicebearAvatar, getDisplayName } from '../utils';
 import { Card, EmptyState, Button, Input } from '../components/ui';
 
 export default function Leaderboard({ notify, openProfile }) {
@@ -44,6 +44,19 @@ export default function Leaderboard({ notify, openProfile }) {
     });
   }, [searchQuery, rankedLeaderboard]);
 
+  const gapByUserId = useMemo(() => {
+    const scoreField = isWeekly ? 'weeklyPoints' : 'points';
+    return rankedLeaderboard.reduce((map, person, index) => {
+      if (index === 0) {
+        map[person.id] = 0;
+        return map;
+      }
+      const previousScore = Number(rankedLeaderboard[index - 1][scoreField]) || 0;
+      map[person.id] = previousScore - (Number(person[scoreField]) || 0);
+      return map;
+    }, {});
+  }, [rankedLeaderboard, isWeekly]);
+
   return (
     <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-[minmax(320px,1fr)_auto] xl:grid-cols-[minmax(320px,1fr)_auto_260px]">
@@ -79,6 +92,29 @@ export default function Leaderboard({ notify, openProfile }) {
           />
         </div>
       </div>
+      {rankedLeaderboard.length >= 3 ? (
+        <div className="grid gap-3 md:grid-cols-3">
+          {rankedLeaderboard.slice(0, 3).map((person) => (
+            <Card
+              key={person.id}
+              interactive
+              onClick={() => openProfile?.(person.id)}
+              className={`overflow-hidden p-4 ${person.originalRank === 1 ? 'border-cyan-300/60 shadow-[0_0_45px_-18px_rgba(34,211,238,0.8)]' : 'border-violet-300/20'}`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <img src={getDicebearAvatar(person.id, person.avatarStyle)} alt="" className="h-14 w-14 rounded-2xl border border-slate-700 bg-slate-900" />
+                  <span className="absolute -right-2 -top-2 grid h-7 w-7 place-items-center rounded-full bg-cyan-300 text-xs font-black text-slate-950">#{person.originalRank}</span>
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate font-black text-white">{getDisplayName(person)}</p>
+                  <p className="text-sm font-bold text-cyan-300">{person.weeklyPoints || 0} weekly pts</p>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : null}
       <div className="space-y-3">
         {filteredLeaderboard.length ? (
           <AnimatePresence>
@@ -86,8 +122,7 @@ export default function Leaderboard({ notify, openProfile }) {
               const scoreField = isWeekly ? 'weeklyPoints' : 'points';
               const points = Number(person[scoreField]) || 0;
               const best = person.originalRank === 1;
-              const previousScore = index > 0 ? Number(filteredLeaderboard[index - 1][scoreField]) || 0 : 0;
-              const gapToAbove = index > 0 ? previousScore - points : 0;
+              const gapToAbove = gapByUserId[person.id] || 0;
               const badgeLabel = person.originalRank === 1 ? 'Gold' : person.originalRank === 2 ? 'Silver' : person.originalRank === 3 ? 'Bronze' : null;
               return (
                 <motion.div
@@ -107,6 +142,7 @@ export default function Leaderboard({ notify, openProfile }) {
                         <div className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-900 text-lg font-black text-cyan-300 shadow-[0_0_16px_-8px_rgba(14,165,233,0.5)]">
                           #{person.originalRank}
                         </div>
+                        <img src={getDicebearAvatar(person.id, person.avatarStyle)} alt="" className="h-12 w-12 rounded-2xl border border-slate-800 bg-slate-900" />
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-black text-slate-950 dark:text-white">{getDisplayName(person)}</span>
@@ -117,6 +153,8 @@ export default function Leaderboard({ notify, openProfile }) {
                           <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
                             <span className="inline-flex items-center gap-1"><Timer size={12} /> Active</span>
                             <span className="inline-flex items-center gap-1"><Flame size={12} /> {person.streak || 0}d</span>
+                            <span className="inline-flex items-center gap-1"><UsersRound size={12} /> {person.followers?.length || 0}</span>
+                            <span className="inline-flex items-center gap-1"><Zap size={12} /> XP {person.xp || 0}</span>
                             <span>{isWeekly ? 'Weekly' : 'All-time'}</span>
                           </div>
                         </div>

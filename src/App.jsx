@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { CheckCheck, Megaphone, X } from 'lucide-react';
 import { BottomNav, Sidebar } from './components/navigation';
 import { Button, Card, EmptyState, LoadingState, Toast, TopBar } from './components/ui';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -11,6 +11,7 @@ import { confirmLeaveQuiz } from './utils';
 import Admin from './screens/Admin';
 import Auth from './screens/Auth';
 import Dashboard from './screens/Dashboard';
+import Community from './screens/Community';
 import Leaderboard from './screens/Leaderboard';
 import Performance from './screens/Performance';
 import Profile from './screens/Profile';
@@ -19,7 +20,7 @@ import Quizzes from './screens/Quizzes';
 import Resources from './screens/Resources';
 
 function AppContent() {
-  const { user, dark, toggleDark, notifications, notify, toasts, isAdmin, loading } = useApp();
+  const { user, dark, toggleDark, notifications, announcements, unreadCount, markAllNotificationsRead, markNotificationRead, notify, toasts, isAdmin, loading } = useApp();
   const [active, setActive] = useState('dashboard');
   const [drawer, setDrawer] = useState(false);
   const [route, setRoute] = useState(() => parseRoute());
@@ -35,11 +36,11 @@ function AppContent() {
     setActive(next);
   };
 
-  const openProfile = (userId) => {
+  const openProfile = useCallback((userId) => {
     if (!confirmLeaveQuiz()) return;
     navigateToProfile(userId);
     setRoute({ view: 'public-profile', profileUserId: userId });
-  };
+  }, []);
 
   const closePublicProfile = () => {
     if (!confirmLeaveQuiz()) return;
@@ -56,6 +57,7 @@ function AppContent() {
       dashboard: <Dashboard {...props} />,
       quizzes: <Quizzes {...props} />,
       resources: <Resources {...props} />,
+      community: <Community {...props} />,
       leaderboard: <Leaderboard {...props} />,
       performance: <Performance {...props} />,
       profile: <Profile {...props} />,
@@ -77,7 +79,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 transition dark:bg-slate-950 dark:text-slate-100">
-      <TopBar dark={dark} onToggleDark={toggleDark} onOpenNotifications={() => setDrawer(true)} isAdmin={isAdmin} user={user} />
+      <TopBar dark={dark} onToggleDark={toggleDark} onOpenNotifications={() => setDrawer(true)} isAdmin={isAdmin} user={user} unreadCount={unreadCount} />
       <div className="mx-auto flex max-w-[1600px]">
         <Sidebar active={showingPublicProfile ? 'leaderboard' : safeActive} setActive={guardedSetActive} isAdmin={isAdmin} />
         <main className="min-w-0 flex-1 px-4 pb-28 pt-4 sm:px-6 lg:pb-8">
@@ -127,17 +129,28 @@ function AppContent() {
             >
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-black text-slate-950 dark:text-white">Notifications</h2>
-                <Button variant="ghost" className="h-10 w-10 p-0" onClick={() => setDrawer(false)}>
+                <div className="flex items-center gap-2">
+                  {unreadCount > 0 ? (
+                    <Button variant="ghost" className="h-10 px-3" onClick={() => markAllNotificationsRead(user.uid)}>
+                      <CheckCheck size={16} /> Read
+                    </Button>
+                  ) : null}
+                  <Button variant="ghost" className="h-10 w-10 p-0" onClick={() => setDrawer(false)}>
                   <X size={18} />
-                </Button>
+                  </Button>
+                </div>
               </div>
               {notifications.length ? (
                 <div className="mt-4 space-y-3">
                   {notifications.map((item) => (
-                    <Card key={item.id} className="p-4">
-                      <p className="font-black text-slate-950 dark:text-white">{item.title}</p>
+                    <Card
+                      key={item.id}
+                      className={`p-4 ${item.read ? 'opacity-75' : 'border-cyan-400/30 shadow-[0_0_25px_-18px_rgba(34,211,238,0.75)]'}`}
+                      onClick={() => !item.read && markNotificationRead(item.id)}
+                    >
+                      <p className="font-black text-slate-100">{item.title}</p>
                       <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{item.body}</p>
-                      <p className="mt-3 text-xs font-bold text-blue-600">{formatDate(item.createdAt)}</p>
+                      <p className="mt-3 text-xs font-bold text-cyan-300">{formatDate(item.createdAt)}</p>
                     </Card>
                   ))}
                 </div>
@@ -146,6 +159,21 @@ function AppContent() {
                   <EmptyState title="No notifications" body="Announcements will appear here when they are published." />
                 </div>
               )}
+              {announcements.length ? (
+                <div className="mt-5">
+                  <p className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-violet-300">
+                    <Megaphone size={14} /> Announcements
+                  </p>
+                  <div className="space-y-3">
+                    {announcements.slice(0, 3).map((item) => (
+                      <Card key={item.id} className="p-4">
+                        <p className="font-black text-slate-100">{item.title}</p>
+                        <p className="mt-1 text-sm text-slate-400">{item.body}</p>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </motion.div>
           </motion.aside>
         ) : null}

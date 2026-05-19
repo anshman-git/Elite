@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { watchAuth, watchCollection, watchDocument } from '../firebase';
+import { markAllNotificationsRead, markNotificationRead, watchAuth, watchCollection, watchDocument, watchUserNotifications } from '../firebase';
 import { AppContext } from './app-context';
 
 const THEME_STORAGE_KEY = 'theme';
@@ -18,6 +18,7 @@ export function AppProvider({ children }) {
   const [user, setUser] = useState(null);
   const [dark, setDark] = useState(getStoredTheme);
   const [notifications, setNotifications] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
   const [toasts, setToasts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -39,6 +40,7 @@ export function AppProvider({ children }) {
       setUser(sessionUser);
       if (!sessionUser) {
         setNotifications([]);
+        setAnnouncements([]);
       }
       setLoading(false);
     });
@@ -67,22 +69,29 @@ export function AppProvider({ children }) {
     localStorage.setItem(LEGACY_THEME_STORAGE_KEY, dark ? 'dark' : 'light');
   }, [dark]);
 
-  // Watch announcements
   useEffect(() => {
-    if (!user) {
+    if (!user?.uid) {
       return () => {};
     }
 
-    const unsubscribe = watchCollection('announcements', setNotifications, {
-      take: 10,
-      onError: (error) => {
-        console.error('Failed to load announcements:', error);
-        addToast('Could not load notifications', 'error');
-      },
-    });
+    const unsubscribers = [
+      watchUserNotifications(user.uid, setNotifications, {
+        take: 20,
+        onError: (error) => {
+          console.error('Failed to load notifications:', error);
+          addToast('Could not load notifications', 'error');
+        },
+      }),
+      watchCollection('announcements', setAnnouncements, {
+        take: 10,
+        onError: (error) => {
+          console.error('Failed to load announcements:', error);
+        },
+      }),
+    ];
 
-    return unsubscribe;
-  }, [user, addToast]);
+    return () => unsubscribers.forEach((unsubscribe) => unsubscribe?.());
+  }, [user?.uid, addToast]);
 
   // Alias for consistency
   const notify = addToast;
@@ -96,6 +105,10 @@ export function AppProvider({ children }) {
     dark,
     toggleDark,
     notifications,
+    announcements,
+    unreadCount: notifications.filter((item) => !item.read).length,
+    markNotificationRead,
+    markAllNotificationsRead,
     notify,
     toasts,
     loading,
