@@ -109,7 +109,10 @@ function AppContent() {
       {!showingPublicProfile ? (
         <BottomNav active={safeActive} setActive={guardedSetActive} isAdmin={isAdmin} />
       ) : null}
-      <Toast message={toasts.length > 0 ? toasts[0].message : ''} />
+      <Toast 
+        message={toasts.length > 0 ? toasts[0].message : ''} 
+        type={toasts.length > 0 ? toasts[0].type : 'info'} 
+      />
       <AnimatePresence>
         {drawer ? (
           <motion.aside

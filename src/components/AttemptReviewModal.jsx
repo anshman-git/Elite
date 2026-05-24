@@ -7,25 +7,21 @@ import { Button, Card, LoadingState } from './ui';
 
 export default function AttemptReviewModal({ attemptId, onClose }) {
   const [attempt, setAttempt] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loadedAttemptId, setLoadedAttemptId] = useState(null);
 
   useEffect(() => {
-    if (!attemptId) {
-      setAttempt(null);
-      setLoading(false);
-      return () => {};
-    }
+    if (!attemptId) return undefined;
 
-    setLoading(true);
     return watchDocument('attempts', attemptId, (doc) => {
       setAttempt(doc);
-      setLoading(false);
+      setLoadedAttemptId(attemptId);
     }, {
-      onError: () => setLoading(false),
+      onError: () => setLoadedAttemptId(attemptId),
     });
   }, [attemptId]);
 
   const reviewItems = useMemo(() => buildReviewItems(attempt), [attempt]);
+  const loading = Boolean(attemptId && loadedAttemptId !== attemptId);
 
   return (
     <AnimatePresence>

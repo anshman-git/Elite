@@ -1,15 +1,16 @@
 import { motion } from 'framer-motion';
-import { Bell, Loader2, Moon, Search, Sun } from 'lucide-react';
+import { Bell, Loader2, Moon, Search, Sun, AlertCircle, CheckCircle, Info, X } from 'lucide-react';
+import { TopBar as LayoutTopBar } from './layout/TopBar';
 import { classNames } from '../utils';
 
 export function Card({ children, className = '', interactive = false, ...props }) {
   return (
     <motion.section
       layout
-      whileHover={interactive ? { y: -2, scale: 1.01 } : undefined}
+      whileHover={interactive ? { y: -3, scale: 1.006 } : undefined}
       className={classNames(
-        'rounded-2xl border border-slate-800/80 bg-slate-950/95 p-4 shadow-[0_20px_80px_-40px_rgba(0,0,0,0.75)] backdrop-blur-xl transition-all duration-200',
-        interactive ? 'cursor-pointer hover:shadow-[0_0_30px_-8px_rgba(14,165,233,0.45)]' : '',
+        'rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_8px_30px_rgb(0,0,0,0.02)] backdrop-blur-xl transition-all duration-300 dark:border-zinc-800/80 dark:bg-zinc-900/90 dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)]',
+        interactive ? 'cursor-pointer hover:border-blue-500/50 hover:shadow-[0_8px_30px_rgba(59,130,246,0.06)] dark:hover:border-amber-500/40 dark:hover:shadow-[0_20px_50px_rgba(245,158,11,0.06)]' : '',
         className,
       )}
       {...props}
@@ -21,10 +22,10 @@ export function Card({ children, className = '', interactive = false, ...props }
 
 export function Button({ children, variant = 'primary', className = '', ...props }) {
   const styles = {
-    primary: 'bg-slate-900 text-slate-100 hover:bg-slate-800',
-    secondary: 'bg-slate-900/90 text-slate-300 hover:bg-slate-800',
-    ghost: 'bg-transparent text-slate-300 hover:bg-white/10',
-    accent: 'bg-[#0ea5e9] text-white hover:bg-[#22c7ff] shadow-[0_0_28px_-10px_rgba(14,165,233,0.75)]',
+    primary: 'bg-zinc-900 text-zinc-100 hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 shadow-sm',
+    secondary: 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800/80 dark:text-zinc-300 dark:hover:bg-zinc-700',
+    ghost: 'bg-transparent text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-200',
+    accent: 'bg-amber-500 text-zinc-950 hover:bg-amber-400 font-bold shadow-[0_4px_20px_rgba(245,158,11,0.22)] dark:bg-amber-500 dark:text-zinc-950 dark:hover:bg-amber-400',
   };
   return (
     <button
@@ -46,7 +47,7 @@ export function IconButton({ label, children, className = '', ...props }) {
       aria-label={label}
       title={label}
       className={classNames(
-        'grid h-11 w-11 place-items-center rounded-xl border border-slate-700/80 bg-slate-900 text-slate-200 transition hover:bg-slate-800',
+        'grid h-11 w-11 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800/80',
         className,
       )}
       {...props}
@@ -56,49 +57,11 @@ export function IconButton({ label, children, className = '', ...props }) {
   );
 }
 
-export function TopBar({ dark, onToggleDark, onOpenNotifications, isAdmin, user, unreadCount = 0 }) {
-  return (
-    <header className="sticky top-0 z-30 border-b border-slate-800/80 bg-slate-950/95 px-4 py-3 backdrop-blur-xl sm:px-6">
-      <div className="mx-auto flex max-w-7xl items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">EliteStudy</p>
-            <h1 className="text-lg font-black text-slate-100">Study command center</h1>
-          </div>
-          {user && (
-            <div className={`hidden items-center gap-2 rounded-full px-3 py-1 text-xs font-bold sm:flex ${
-              isAdmin 
-                ? 'bg-slate-800 text-amber-300' 
-                : 'bg-slate-800 text-cyan-300'
-            }`}>
-              <div className={`h-2 w-2 rounded-full ${
-                isAdmin ? 'bg-amber-300' : 'bg-cyan-300'
-              }`} />
-              {isAdmin ? 'Admin Mode' : 'Student Mode'}
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <IconButton label="Notifications" onClick={onOpenNotifications} className="relative">
-            <Bell size={19} />
-            {unreadCount > 0 ? (
-              <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-violet-400 px-1 text-[10px] font-black text-slate-950 shadow-[0_0_20px_-6px_rgba(192,132,252,0.9)]">
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            ) : null}
-          </IconButton>
-          <IconButton label="Toggle dark mode" onClick={onToggleDark} aria-pressed={dark}>
-            {dark ? <Sun size={19} /> : <Moon size={19} />}
-          </IconButton>
-        </div>
-      </div>
-    </header>
-  );
-}
+export const TopBar = LayoutTopBar;
 
 export function SearchInput({ value, onChange, placeholder = 'Search' }) {
   return (
-    <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-700 bg-slate-900 px-4 text-slate-300 shadow-[0_0_30px_-20px_rgba(14,165,233,0.45)]">
+    <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-500 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/15 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400 dark:focus-within:border-amber-500 dark:focus-within:ring-amber-500/15 transition-all">
       <Search size={18} />
       <input
         value={value}
@@ -112,25 +75,25 @@ export function SearchInput({ value, onChange, placeholder = 'Search' }) {
 
 export function ProgressBar({ value }) {
   return (
-    <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+    <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-zinc-800">
       <motion.div
         initial={{ width: 0 }}
         animate={{ width: `${value}%` }}
         transition={{ duration: 0.7, ease: 'easeOut' }}
-        className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-sky-500 to-blue-600"
+        className="h-full rounded-full bg-gradient-to-r from-blue-500 to-amber-500 dark:from-blue-500 dark:to-amber-400"
       />
     </div>
   );
 }
 
 export function Skeleton({ className = '' }) {
-  return <div className={classNames('animate-pulse rounded-xl bg-slate-200 dark:bg-white/10', className)} />;
+  return <div className={classNames('animate-pulse rounded-xl bg-slate-100 dark:bg-zinc-800/50', className)} />;
 }
 
 export function LoadingState() {
   return (
-    <div className="grid min-h-[280px] place-items-center text-slate-500">
-      <Loader2 className="animate-spin" />
+    <div className="grid min-h-[280px] place-items-center text-slate-400 dark:text-zinc-500">
+      <Loader2 className="animate-spin" size={24} />
     </div>
   );
 }
@@ -138,33 +101,53 @@ export function LoadingState() {
 export function EmptyState({ title, body, action }) {
   return (
     <Card className="grid place-items-center py-10 text-center">
-      <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-900 text-cyan-300 shadow-[0_0_30px_-18px_rgba(14,165,233,0.6)]">
+      <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-50 text-amber-500 shadow-[0_4px_20px_rgba(245,158,11,0.08)] dark:bg-zinc-800 dark:text-amber-400">
         <Search size={24} />
       </div>
-      <h3 className="mt-4 text-base font-bold text-slate-100">{title}</h3>
-      <p className="mt-1 max-w-sm text-sm text-slate-400">{body}</p>
+      <h3 className="mt-4 text-base font-bold text-slate-800 dark:text-white">{title}</h3>
+      <p className="mt-1 max-w-sm text-sm text-slate-500 dark:text-zinc-400">{body}</p>
       {action ? <div className="mt-4">{action}</div> : null}
     </Card>
   );
 }
 
-export function Toast({ message }) {
+export function Toast({ message, type = 'info' }) {
   if (!message) return null;
+
+  const styles = {
+    success: 'border-emerald-500/30 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/90 dark:text-emerald-300 dark:border-emerald-500/20 shadow-[0_10px_40px_-10px_rgba(16,185,129,0.15)]',
+    error: 'border-rose-500/30 bg-rose-50 text-rose-800 dark:bg-rose-950/90 dark:text-rose-300 dark:border-rose-500/20 shadow-[0_10px_40px_-10px_rgba(244,63,94,0.15)]',
+    warning: 'border-amber-500/30 bg-amber-50 text-amber-800 dark:bg-amber-950/90 dark:text-amber-300 dark:border-amber-500/20 shadow-[0_10px_40px_-10px_rgba(245,158,11,0.15)]',
+    info: 'border-blue-500/30 bg-blue-50 text-blue-850 dark:bg-zinc-950/95 dark:text-zinc-200 dark:border-zinc-800/80 shadow-[0_10px_40px_-10px_rgba(59,130,246,0.15)]',
+  };
+
+  const icons = {
+    success: <CheckCircle className="text-emerald-500 shrink-0" size={18} />,
+    error: <AlertCircle className="text-rose-500 shrink-0" size={18} />,
+    warning: <AlertCircle className="text-amber-500 shrink-0" size={18} />,
+    info: <Info className="text-blue-500 shrink-0" size={18} />,
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 24 }}
-      className="fixed bottom-24 left-4 right-4 z-50 mx-auto max-w-sm rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white shadow-glow dark:bg-white dark:text-slate-950"
+      initial={{ opacity: 0, y: 30, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 15, scale: 0.95 }}
+      transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+      className={classNames(
+        'fixed bottom-24 left-4 right-4 z-50 mx-auto flex max-w-sm items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-semibold shadow-2xl backdrop-blur-xl',
+        styles[type] || styles.info
+      )}
     >
-      {message}
+      {icons[type] || icons.info}
+      <span className="flex-1 truncate leading-snug">{message}</span>
     </motion.div>
   );
 }
 
 export function Input({ label, value, onChange, placeholder, type = 'text', className = '' }) {
   return (
-    <label className="grid gap-2 text-sm font-bold text-slate-200">
+    <label className="grid gap-2 text-sm font-bold text-slate-700 dark:text-zinc-300">
       {label}
       <input
         type={type}
@@ -172,7 +155,7 @@ export function Input({ label, value, onChange, placeholder, type = 'text', clas
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         className={classNames(
-          'min-h-12 rounded-2xl border border-slate-700 bg-slate-950 px-4 text-sm font-semibold text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/15',
+          'min-h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:border-amber-500 dark:focus:ring-amber-500/15',
           className,
         )}
       />
@@ -182,13 +165,13 @@ export function Input({ label, value, onChange, placeholder, type = 'text', clas
 
 export function Select({ label, value, onChange, children, className = '' }) {
   return (
-    <label className="grid gap-2 text-sm font-bold text-slate-200">
+    <label className="grid gap-2 text-sm font-bold text-slate-700 dark:text-zinc-300">
       {label}
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
         className={classNames(
-          'min-h-12 rounded-2xl border border-slate-700 bg-slate-950 px-4 text-sm font-semibold text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/15',
+          'min-h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-950 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:border-amber-500 dark:focus:ring-amber-500/15',
           className,
         )}
       >
@@ -200,7 +183,7 @@ export function Select({ label, value, onChange, children, className = '' }) {
 
 export function Textarea({ label, value, onChange, placeholder, className = '' }) {
   return (
-    <label className="grid gap-2 text-sm font-bold text-slate-200">
+    <label className="grid gap-2 text-sm font-bold text-slate-700 dark:text-zinc-300">
       {label}
       <textarea
         value={value}
@@ -208,7 +191,7 @@ export function Textarea({ label, value, onChange, placeholder, className = '' }
         placeholder={placeholder}
         rows={4}
         className={classNames(
-          'min-h-24 rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm font-semibold text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/15',
+          'min-h-24 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-950 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:border-amber-500 dark:focus:ring-amber-500/15',
           className,
         )}
       />

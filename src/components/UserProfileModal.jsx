@@ -7,25 +7,22 @@ import { Button, Card, LoadingState, ProgressBar } from './ui';
 
 export default function UserProfileModal({ userId, onClose }) {
   const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loadedUserId, setLoadedUserId] = useState(null);
 
   useEffect(() => {
-    if (!userId) {
-      setProfile(null);
-      setLoading(false);
-      return () => {};
-    }
+    if (!userId) return undefined;
 
-    setLoading(true);
     const unsubscribe = watchDocument('users', userId, (userDoc) => {
       setProfile(userDoc);
-      setLoading(false);
+      setLoadedUserId(userId);
     }, {
-      onError: () => setLoading(false),
+      onError: () => setLoadedUserId(userId),
     });
 
     return unsubscribe;
   }, [userId]);
+
+  const loading = Boolean(userId && loadedUserId !== userId);
 
   return (
     <AnimatePresence>

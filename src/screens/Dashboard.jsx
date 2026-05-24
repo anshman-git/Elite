@@ -1,11 +1,52 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { CalendarClock, Flame, Play, Quote, TrendingUp, Trophy, Clock } from 'lucide-react';
+import { Activity, BookOpen, Clock, Flame, TrendingUp, Trophy } from 'lucide-react';
 import { watchCollection, watchExamCountdown, watchSubjects, watchUserAttempts } from '../firebase';
 import AttemptReviewModal from '../components/AttemptReviewModal';
-import AnnouncementTicker from '../components/AnnouncementTicker';
-import { daysUntilExam, formatPercent, getDicebearAvatar, getDisplayName, getLevelFromXp, getXpProgress, getStreakMotivation } from '../utils';
-import { Button, Card, EmptyState, ProgressBar } from '../components/ui';
+import { ScrollReveal } from '../components/motion/ScrollReveal';
+import { TickerBar } from '../components/motion/TickerBar';
+import { CountUp } from '../components/motion/CountUp';
+import { SpotlightCard } from '../components/motion/SpotlightCard';
+import { MissionCard } from '../components/home/MissionCard';
+import { PlayerCard } from '../components/home/PlayerCard';
+import { StatGrid } from '../components/home/StatGrid';
+import { Roadmap } from '../components/home/Roadmap';
+import { DailyFocus } from '../components/home/DailyFocus';
+import {
+  daysUntilExam,
+  getDicebearAvatar,
+  getDisplayName,
+  getLevelFromXp,
+  getStreakMotivation,
+} from '../utils';
+
+function getCountdownDisplay(examCountdown) {
+  if (!examCountdown?.examDate) return null;
+
+  const examDate = examCountdown.examDate.toDate ? examCountdown.examDate.toDate() : new Date(examCountdown.examDate);
+  const now = new Date();
+  const diffTime = examDate - now;
+
+  if (diffTime <= 0) return { text: 'Exam passed', urgent: false };
+
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  const diffHours = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+  if (diffDays > 0) return { text: `${diffDays}D ${diffHours}H`, urgent: diffDays <= 7 };
+  if (diffHours > 0) return { text: `${diffHours}H`, urgent: true };
+  return { text: '<1H', urgent: true };
+}
+
+function getSubjectProgress(subject, attempts) {
+  const subjectAttempts = attempts.filter((attempt) => attempt.subject === subject.name);
+  if (!subjectAttempts.length) return 0;
+  return Math.round(subjectAttempts.reduce((sum, attempt) => sum + (attempt.accuracy || 0), 0) / subjectAttempts.length);
+}
+
+function formatAttemptDate(value) {
+  const date = value?.toDate?.();
+  return date ? date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Just now';
+}
 
 export default function Dashboard({ setActive, user, notify, openProfile }) {
   const [leaderboard, setLeaderboard] = useState([]);
@@ -19,325 +60,261 @@ export default function Dashboard({ setActive, user, notify, openProfile }) {
     () => [...leaderboard].sort((left, right) => (Number(right.weeklyPoints) || 0) - (Number(left.weeklyPoints) || 0)),
     [leaderboard],
   );
+
   const rank = sortedLeaderboard.findIndex((person) => person.id === user?.uid) + 1;
+  const displayRank = rank > 0 ? rank : null;
 
   useEffect(() => {
     const unsubscribers = [];
-    
+
     unsubscribers.push(watchCollection('users', setLeaderboard, {
       sortField: 'weeklyPoints',
       take: 5,
       onError: () => notify('Could not load leaderboard from Firestore.'),
     }));
-    
+
     unsubscribers.push(watchCollection('announcements', setActivities, {
       take: 4,
       onError: () => notify('Could not load recent activity from Firestore.'),
     }));
-    
+
     unsubscribers.push(watchExamCountdown(setExamCountdown));
-    
+
     if (!user?.uid) {
-      setAttempts([]);
-      return () => {};
+      const id = setTimeout(() => setAttempts([]), 0);
+      return () => clearTimeout(id);
     }
 
     unsubscribers.push(watchUserAttempts(user.uid, setAttempts, {
       take: 50,
       onError: () => notify('Could not load your attempt history.'),
     }));
-    
+
     unsubscribers.push(watchSubjects(setSubjects, {
       take: 10,
       onError: () => console.error('Could not load subjects.'),
     }));
-    
-    return () => unsubscribers.forEach(unsub => unsub?.());
+
+    return () => unsubscribers.forEach((unsubscribe) => unsubscribe?.());
   }, [notify, user?.uid]);
 
-  const getCountdownDisplay = () => {
-    if (!examCountdown?.examDate) return null;
-    
-    const examDate = examCountdown.examDate.toDate ? examCountdown.examDate.toDate() : new Date(examCountdown.examDate);
-    const now = new Date();
-    const diffTime = examDate - now;
-    
-    if (diffTime <= 0) return { text: 'Exam has passed', urgent: false };
-    
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    const diffHours = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    
-    if (diffDays > 0) {
-      return { text: `${diffDays} days ${diffHours} hours left`, urgent: diffDays <= 7 };
-    } else if (diffHours > 0) {
-      return { text: `${diffHours} hours left`, urgent: true };
-    } else {
-      return { text: 'Less than 1 hour left', urgent: true };
-    }
-  };
+  const countdownDisplay = getCountdownDisplay(examCountdown);
+  const level = getLevelFromXp(user?.xp);
+  const currentXp = Number(user?.xp || 0);
+  const nextLevelXp = (level + 1) * 100;
+  const weeklyPoints = Number(user?.weeklyPoints || 0);
+  const points = Number(user?.points || 0);
+  const streakDays = Number(user?.streak || 0);
 
-  const countdownDisplay = getCountdownDisplay();
+  const isDailyDone = attempts.some((attempt) => {
+    if (!attempt.completedAt) return false;
+    const date = attempt.completedAt.toDate ? attempt.completedAt.toDate() : new Date(attempt.completedAt);
+    return date.toDateString() === new Date().toDateString();
+  });
+
+  const topUser = sortedLeaderboard[0];
+  const pointsBehindLeader = topUser && topUser.id !== user?.uid
+    ? Math.max(0, (Number(topUser.weeklyPoints) || 0) - weeklyPoints)
+    : 0;
+
+  const roadmapSubjects = useMemo(() => subjects.slice(0, 5).map((subject, index) => {
+    const progress = getSubjectProgress(subject, attempts);
+    const status = progress >= 80 ? 'done' : index === 0 || progress > 0 ? 'active' : 'locked';
+    return { ...subject, progress, status };
+  }), [subjects, attempts]);
+
+  const statTiles = [
+    {
+      id: 'streak',
+      label: 'GRIND STREAK',
+      icon: Flame,
+      value: `${streakDays} days`,
+      sub: streakDays ? getStreakMotivation(streakDays) : 'First spark is waiting.',
+      color: 'amber',
+    },
+    {
+      id: 'exam',
+      label: 'EXAM TARGET',
+      icon: Clock,
+      value: countdownDisplay?.text || `${daysUntilExam()} days`,
+      sub: countdownDisplay?.urgent ? 'Tick. Tick. Tick.' : 'Keep the pressure steady.',
+      color: 'danger',
+    },
+    {
+      id: 'points',
+      label: 'TOTAL XP',
+      icon: TrendingUp,
+      value: points,
+      sub: `${Math.max(0, nextLevelXp - currentXp)} to next level`,
+      color: 'cyan',
+    },
+    {
+      id: 'rank',
+      label: 'GLOBAL RANK',
+      icon: Trophy,
+      value: displayRank ? `#${displayRank}` : '-',
+      sub: pointsBehindLeader ? `${pointsBehindLeader} XP behind #1` : 'Hold the line.',
+      color: 'amber',
+    },
+  ];
+
+  const tickerItems = activities.length
+    ? activities.map((item) => item.title || item.body || 'New command center update')
+    : ['Daily mission active', 'Rankings are live', 'Open the arena to keep your streak'];
 
   return (
     <>
-      <AnnouncementTicker />
-      <div className="space-y-4 sm:space-y-6">
-        <motion.section
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-[1.75rem] bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.22),transparent_35%),linear-gradient(180deg,#05070f_0%,#0d1221_100%)] p-5 text-white shadow-[0_30px_110px_-80px_rgba(14,165,233,0.35)] sm:p-7"
-        >
-        <div className="grid gap-6 lg:grid-cols-[1.8fr_1fr]">
-          <div className="space-y-5">
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-300">Study command center</p>
-                <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
-                  {user?.displayName || 'Elite learner'}
-                </h2>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 dark:text-slate-600">
-                  The mission for today: keep your streak, level up faster, and close the gap on your rivals.
-                </p>
-              </div>
-              <Button variant="accent" onClick={() => setActive('quizzes')} className="w-full sm:w-auto">
-                <Play size={18} /> Launch quiz
-              </Button>
-            </div>
+      <div className="space-y-8">
+        <ScrollReveal>
+          <TickerBar items={tickerItems} />
+        </ScrollReveal>
 
-            <div className="grid gap-4 rounded-[1.5rem] border border-slate-800/90 bg-slate-950/80 p-4 shadow-[0_0_60px_-30px_rgba(14,165,233,0.22)] backdrop-blur-xl">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300">Level</p>
-                  <div className="mt-2 flex items-center gap-3">
-                    <span className="rounded-2xl bg-cyan-500 px-3 py-1 text-sm font-black text-slate-950 shadow-[0_0_24px_-10px_rgba(14,165,233,0.55)]">LV {getLevelFromXp(user?.xp)}</span>
-                    <span className="text-sm font-semibold text-slate-200 dark:text-slate-400">XP {Number(user?.xp || 0)} / next</span>
-                  </div>
-                </div>
-                <div className="flex min-w-[160px] flex-col gap-2 rounded-3xl bg-slate-950/80 px-4 py-3 text-right text-white shadow-inner dark:bg-slate-800/90">
-                  <p className="text-xs uppercase tracking-[0.24em] text-cyan-200">Current rank</p>
-                  <p className="text-2xl font-black">#{rank || '-'}</p>
-                  <p className="text-xs text-slate-300">Weekly leaderboard pulse</p>
-                </div>
-              </div>
-              <div>
-                <div className="flex items-center justify-between gap-3 text-sm font-semibold text-slate-300">
-                  <span>XP progress</span>
-                  <span>{getXpProgress(user?.xp)} / 100</span>
-                </div>
-                <ProgressBar value={getXpProgress(user?.xp)} />
-              </div>
-              <div className="flex flex-wrap items-center gap-3 text-sm font-semibold text-cyan-200">
-                <Flame size={14} /> {user?.streak ? `🔥 ${user.streak} Day Streak` : 'Start your first streak today'}
-              </div>
-              <p className="text-sm text-slate-300">{getStreakMotivation(user?.streak)}</p>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <ScrollReveal className="lg:col-span-2" delay={0.05}>
+            <MissionCard
+              streakDays={streakDays}
+              isDailyDone={isDailyDone}
+              streakCopy={streakDays ? getStreakMotivation(streakDays) : 'Grind a quiz to spark your streak.'}
+              rewardXp={50}
+              onStart={() => setActive('quizzes')}
+            />
+          </ScrollReveal>
 
-          <div className="grid gap-4">
-            <div className="rounded-[1.5rem] border border-slate-800/80 bg-slate-950/90 p-4 text-white shadow-[0_0_40px_-20px_rgba(14,165,233,0.2)]">
-              <p className="text-xs uppercase tracking-[0.24em] text-cyan-300">Daily pulse</p>
-              <p className="mt-2 text-lg font-black">{user?.streak ? `Keep the flame at ${user.streak} days` : 'Take today’s quiz'}</p>
-              <p className="mt-2 text-sm text-slate-300">Complete one quiz to secure your streak, earn XP, and climb the weekly leaderboard.</p>
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              {sortedLeaderboard.slice(0, 3).map((person, index) => (
-                <button
-                  key={person.id}
-                  type="button"
-                  onClick={() => openProfile?.(person.id)}
-                  className="group rounded-[1.5rem] border border-slate-800/70 bg-slate-950/80 p-3 text-left transition hover:border-cyan-400/70 hover:bg-cyan-500/10"
-                >
-                  <div className="flex items-center gap-3">
-                    <img src={getDicebearAvatar(person.id)} alt="avatar" className="h-11 w-11 rounded-2xl border border-slate-700/70 object-cover" />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-black text-white">{getDisplayName(person)}</p>
-                      <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">#{index + 1}</p>
-                    </div>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between gap-2 text-xs font-semibold text-slate-300">
-                    <span>{person.weeklyPoints || 0} pts</span>
-                    <span className="rounded-full bg-cyan-500/20 px-2 py-1 text-cyan-200">{index === 0 ? 'Gold' : index === 1 ? 'Silver' : 'Bronze'}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
+          <ScrollReveal delay={0.15}>
+            <PlayerCard
+              name={getDisplayName(user) || 'Grinder'}
+              level={level}
+              xp={currentXp}
+              xpToNext={nextLevelXp}
+              rank={displayRank}
+              weeklyPoints={weeklyPoints}
+              avatarUrl={getDicebearAvatar(user?.uid, user?.avatarStyle)}
+            />
+          </ScrollReveal>
         </div>
-      </motion.section>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Metric icon={Flame} label="Streak" value={`${user?.streak || 0} days`} />
-        {examCountdown ? (
-          <Metric 
-            icon={Clock} 
-            label={examCountdown.title || "Exam Countdown"} 
-            value={countdownDisplay?.text || 'Calculating...'} 
-            urgent={countdownDisplay?.urgent}
-          />
-        ) : (
-          <Metric icon={CalendarClock} label="Exam in" value={`${daysUntilExam()} days`} />
-        )}
-        <Metric icon={TrendingUp} label="Points" value={user?.points || 0} />
-        <Metric icon={Trophy} label="Rank" value={rank || '-'} />
-      </div>
+        <ScrollReveal delay={0.1}>
+          <StatGrid tiles={statTiles} />
+        </ScrollReveal>
 
-      <div className="grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-300">Subjects</p>
-              <h3 className="mt-1 text-xl font-black text-slate-100">Preparation map</h3>
-            </div>
-            <Button variant="secondary" onClick={() => setActive('performance')}>View stats</Button>
-          </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {subjects.slice(0, 6).map((subject, index) => {
-              const subjectAttempts = attempts.filter((attempt) => attempt.subject === subject.name);
-              const progress = subjectAttempts.length
-                ? Math.round(subjectAttempts.reduce((sum, attempt) => sum + (attempt.accuracy || 0), 0) / subjectAttempts.length)
-                : 0;
-              const tones = ['bg-cyan-500', 'bg-slate-950 text-white', 'bg-sky-500', 'bg-violet-500', 'bg-cyan-600', 'bg-emerald-500'];
-              const tone = subject.tone || tones[index % tones.length];
-              return (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <ScrollReveal className="lg:col-span-2">
+            <Roadmap
+              subjects={roadmapSubjects}
+              onAnalytics={() => setActive('performance')}
+              onSubjectSelect={() => setActive('quizzes')}
+            />
+          </ScrollReveal>
+          <ScrollReveal delay={0.1}>
+            <DailyFocus />
+          </ScrollReveal>
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-6">
+          <ScrollReveal>
+            <SpotlightCard className="p-7" glow="cyan">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-cyan-400" />
+                  <p className="font-mono text-xs tracking-[0.3em] text-cyan-400">RECENT ATTEMPTS</p>
+                </div>
                 <button
-                  key={subject.id}
-                  onClick={() => setActive('quizzes')}
-                  className="rounded-2xl border border-slate-800/80 bg-slate-950/90 p-4 text-left transition hover:border-cyan-400/70 hover:bg-cyan-500/10"
+                  onClick={() => setActive('performance')}
+                  className="text-xs font-medium text-ink-400 hover:text-ink-100 transition-colors"
                 >
-                  <div className="flex items-center gap-3">
-                    <span className={`grid h-11 w-11 place-items-center rounded-2xl text-sm font-black text-white ${tone}`}>
-                      {subject.name.slice(0, 2)}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <h4 className="font-bold text-slate-100">{subject.name}</h4>
-                      <p className="truncate text-xs text-slate-500 dark:text-slate-400">{subject.description || 'No description'}</p>
-                    </div>
-                    <span className="text-sm font-black text-cyan-300">{formatPercent(progress)}</span>
-                  </div>
-                  <div className="mt-3">
-                    <ProgressBar value={progress} />
-                  </div>
+                  View All
                 </button>
-              );
-            })}
-            {subjects.length === 0 && (
-              <div className="col-span-full">
-                <EmptyState title="No subjects yet" body="Subjects will be added by administrators." />
               </div>
-            )}
-          </div>
-        </Card>
 
-        <div className="space-y-4">
-          <Card>
-            <div className="flex gap-3">
-              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-cyan-500/10 text-cyan-300">
-                <Quote size={20} />
+              {attempts.length ? (
+                <div className="mt-6 grid gap-3 md:grid-cols-3">
+                  {attempts.slice(0, 3).map((attempt, index) => (
+                    <motion.div
+                      key={attempt.id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05, duration: 0.35 }}
+                      className="rounded-xl border border-line bg-bg-inset p-4"
+                    >
+                      <p className="font-mono text-[10px] tracking-[0.2em] text-amber-400">{attempt.subject || 'SPRINT'}</p>
+                      <h4 className="mt-2 truncate font-display text-lg text-ink-100">{attempt.quizTitle || 'Quiz sprint'}</h4>
+                      <p className="mt-1 text-xs text-ink-400">
+                        Score {attempt.score}/{attempt.total} - {attempt.accuracy || 0}% accuracy
+                      </p>
+                      <div className="mt-4 flex items-center justify-between gap-3 border-t border-line pt-3">
+                        <span className="text-[10px] font-semibold text-ink-400">{formatAttemptDate(attempt.completedAt)}</span>
+                        <button
+                          onClick={() => setReviewAttemptId(attempt.id)}
+                          className="rounded-lg border border-line bg-bg-raised px-3 py-1.5 text-xs font-semibold text-ink-100 transition-[background-color,border-color,color] duration-200 hover:border-cyan-500/40"
+                        >
+                          Review
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-6 rounded-xl border border-line bg-bg-inset p-6 text-center">
+                  <Activity className="mx-auto h-8 w-8 text-ink-600" />
+                  <p className="mt-3 font-display text-lg text-ink-100">No attempts logged yet</p>
+                  <p className="mt-1 text-sm text-ink-400">The arena is quiet for now. One sprint changes that.</p>
+                </div>
+              )}
+            </SpotlightCard>
+          </ScrollReveal>
+
+          <ScrollReveal delay={0.1}>
+            <SpotlightCard className="p-7" glow="amber">
+              <div className="flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-amber-400" />
+                <p className="font-mono text-xs tracking-[0.3em] text-amber-500">GRIND MASTERS</p>
               </div>
-              <div>
-                <h3 className="font-black text-slate-100">Focus line</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                  Small daily wins compound faster than last-night panic. Keep the streak honest.
-                </p>
-              </div>
-            </div>
-          </Card>
-          <Card>
-            <h3 className="font-black text-slate-100">Leaderboard preview</h3>
-            {sortedLeaderboard.length ? (
-              <div className="mt-3 space-y-3">
-                {sortedLeaderboard.slice(0, 3).map((person, index) => (
-                  <button
-                    key={person.id}
-                    type="button"
-                    onClick={() => openProfile?.(person.id)}
-                    className="flex w-full items-center justify-between rounded-2xl border border-slate-800/80 bg-slate-950/90 p-3 text-left transition hover:border-cyan-400/70 hover:bg-cyan-500/10"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="grid h-8 w-8 place-items-center rounded-xl bg-slate-900 text-xs font-black text-cyan-300 shadow-sm">
-                        #{index + 1}
-                      </span>
-                      <span className="font-bold text-slate-100">{getDisplayName(person)}</span>
-                    </div>
-                    <span className="text-sm font-black text-cyan-300">{person.weeklyPoints || 0}</span>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="mt-3">
-                <EmptyState title="No rankings yet" body="Rankings will appear after members complete quizzes." />
-              </div>
-            )}
-          </Card>
+
+              {sortedLeaderboard.length ? (
+                <div className="mt-6 space-y-3">
+                  {sortedLeaderboard.slice(0, 5).map((person, index) => {
+                    const isYou = person.id === user?.uid;
+                    return (
+                      <button
+                        key={person.id}
+                        type="button"
+                        onClick={() => openProfile?.(person.id)}
+                        className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-[background-color,border-color,transform] duration-200 hover:-translate-y-0.5 ${
+                          isYou ? 'border-amber-500/50 bg-amber-500/10' : 'border-line bg-bg-inset hover:border-amber-500/30'
+                        }`}
+                      >
+                        <span className="grid h-8 w-8 place-items-center rounded-lg bg-bg-raised font-mono text-xs font-bold text-amber-400">
+                          {index + 1}
+                        </span>
+                        <img
+                          src={getDicebearAvatar(person.id, person.avatarStyle)}
+                          alt=""
+                          className="h-9 w-9 rounded-lg border border-line bg-bg-raised"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-display text-sm text-ink-100">{getDisplayName(person)}</p>
+                          <p className="text-[10px] uppercase tracking-wider text-ink-400">{isYou ? 'You' : 'Chasing the board'}</p>
+                        </div>
+                        <p className="font-mono text-sm font-bold text-amber-400">
+                          <CountUp to={Number(person.weeklyPoints) || 0} />
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="mt-6 rounded-xl border border-line bg-bg-inset p-6 text-center">
+                  <Trophy className="mx-auto h-8 w-8 text-ink-600" />
+                  <p className="mt-3 font-display text-lg text-ink-100">No rankings yet</p>
+                  <p className="mt-1 text-sm text-ink-400">Solve quizzes to wake the board.</p>
+                </div>
+              )}
+            </SpotlightCard>
+          </ScrollReveal>
         </div>
       </div>
 
-      <Card>
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="font-black text-slate-100">Attempt history</h3>
-          <Button variant="secondary" onClick={() => setActive('performance')}>View all</Button>
-        </div>
-        {attempts.length ? (
-          <div className="mt-3 space-y-3">
-            {attempts.slice(0, 6).map((attempt) => (
-              <div
-                key={attempt.id}
-                className="flex flex-col gap-3 rounded-2xl bg-slate-950/95 p-4 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div>
-                  <p className="font-bold text-slate-100">
-                    {attempt.quizTitle || attempt.subject || 'Quiz attempt'}
-                  </p>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    Score {attempt.score}/{attempt.total} · {attempt.accuracy || 0}% · {formatAttemptDate(attempt.completedAt)}
-                  </p>
-                </div>
-                <Button variant="accent" onClick={() => setReviewAttemptId(attempt.id)}>
-                  Review Attempt
-                </Button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="mt-3">
-            <EmptyState title="No attempts yet" body="Complete a quiz to see your attempt history here." />
-          </div>
-        )}
-      </Card>
-
-      <Card>
-        <h3 className="font-black text-slate-100">Recent activity</h3>
-        {activities.length ? (
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            {activities.map((activity) => (
-              <div key={activity.id} className="rounded-2xl bg-slate-950/90 px-4 py-3 text-sm font-semibold text-slate-300">
-                {activity.title}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="mt-3">
-            <EmptyState title="No activity yet" body="New activity will appear here after this member starts using the app." />
-          </div>
-        )}
-      </Card>
       <AttemptReviewModal attemptId={reviewAttemptId} onClose={() => setReviewAttemptId(null)} />
-      </div>
     </>
-  );
-}
-
-function formatAttemptDate(value) {
-  const date = value?.toDate?.();
-  return date ? date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Recently';
-}
-
-function Metric({ icon: Icon, label, value, urgent }) {
-  return (
-    <Card className={`p-4 ${urgent ? 'ring-2 ring-red-500/50 bg-slate-900/70' : 'bg-slate-950/95'}`}>
-      <Icon className={`text-cyan-300 ${urgent ? 'text-red-600' : ''}`} size={21} />
-      <p className={`mt-3 text-xs font-bold uppercase tracking-[0.12em] ${urgent ? 'text-red-600' : 'text-slate-400'}`}>{label}</p>
-      <p className={`mt-1 text-xl font-black ${urgent ? 'text-red-600' : 'text-slate-100'}`}>{value}</p>
-    </Card>
   );
 }

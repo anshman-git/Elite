@@ -51,32 +51,10 @@ export function BottomNav({ active, setActive, isAdmin }) {
   );
 }
 
-export function Sidebar({ active, setActive, isAdmin }) {
-  const visibleItems = isAdmin ? [...desktopItems, { id: 'admin', label: 'Admin', icon: ShieldCheck }] : desktopItems;
+import { Sidebar as LayoutSidebar } from './layout/Sidebar';
 
-  return (
-    <aside className="sticky top-[73px] hidden h-[calc(100vh-73px)] border-r border-slate-200 bg-slate-50 px-4 py-6 dark:border-white/10 dark:bg-slate-950 lg:block">
-      <div className="flex w-64 flex-col gap-2">
-        {visibleItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = active === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => navigate(setActive, item.id)}
-              className={classNames(
-                'flex min-h-12 items-center gap-3 rounded-2xl px-4 text-sm font-bold transition',
-                isActive
-                  ? 'bg-slate-950 text-white dark:bg-white dark:text-slate-950'
-                  : 'text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-white/10',
-              )}
-            >
-              <Icon size={18} />
-              {item.label}
-            </button>
-          );
-        })}
-      </div>
-    </aside>
-  );
+export function Sidebar({ active, setActive, isAdmin }) {
+  // Wrap the redesign Sidebar so existing callers that pass `setActive`
+  // continue to work without modifying `App.jsx`.
+  return <LayoutSidebar active={active} setActive={setActive} isAdmin={isAdmin} />;
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { 
   FilePlus2, 
   Megaphone, 
@@ -64,6 +65,52 @@ const blankQuestion = {
   explanation: '',
 };
 
+const PROGRESS_RING_RADIUS = 24;
+const PROGRESS_RING_STROKE = 4;
+
+function UploadProgressRing({ progress = 0, status = 'idle' }) {
+  const normalized = Math.min(100, Math.max(0, progress));
+  const circumference = 2 * Math.PI * PROGRESS_RING_RADIUS;
+  const offset = circumference - (normalized / 100) * circumference;
+  const color = status === 'success' ? '#22c55e' : status === 'error' ? '#ef4444' : '#38bdf8';
+
+  return (
+    <div className="inline-flex items-center gap-3 rounded-3xl bg-slate-50 px-3 py-2 text-left dark:bg-zinc-950">
+      <svg width={58} height={58} viewBox="0 0 58 58" className="overflow-visible text-slate-200 dark:text-zinc-800">
+        <circle
+          cx="29"
+          cy="29"
+          r={PROGRESS_RING_RADIUS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={PROGRESS_RING_STROKE}
+        />
+        <circle
+          cx="29"
+          cy="29"
+          r={PROGRESS_RING_RADIUS}
+          fill="none"
+          stroke={color}
+          strokeWidth={PROGRESS_RING_STROKE}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          transform="rotate(-90 29 29)"
+          style={{ transition: 'stroke-dashoffset 0.45s ease, stroke 0.25s ease' }}
+        />
+      </svg>
+      <div>
+        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          {status === 'success' ? 'Completed' : status === 'error' ? 'Failed' : `${normalized}%`}
+        </p>
+        <p className="text-xs text-slate-500 dark:text-zinc-400">
+          {status === 'success' ? 'Upload status' : status === 'error' ? 'Try again' : 'Processing'}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function Admin({ notify, user }) {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [resource, setResource] = useState({
@@ -84,6 +131,12 @@ export default function Admin({ notify, user }) {
   const [editingQuiz, setEditingQuiz] = useState(null);
   const [showQuizForm, setShowQuizForm] = useState(false);
   const [quizFile, setQuizFile] = useState(null);
+  const [resourceSaveState, setResourceSaveState] = useState('idle');
+  const [resourceDropState, setResourceDropState] = useState('idle');
+  const [resourceDropHint, setResourceDropHint] = useState('');
+  const [resourcesLoading, setResourcesLoading] = useState(true);
+  const [quizUploadProgress, setQuizUploadProgress] = useState(0);
+  const [quizUploadSummary, setQuizUploadSummary] = useState({ success: 0, warnings: 0 });
   const [announcement, setAnnouncement] = useState({ title: '', body: '', target: 'all' });
   const [busy, setBusy] = useState('');
   const [existingQuizzes, setExistingQuizzes] = useState([]);
@@ -105,56 +158,6 @@ export default function Admin({ notify, user }) {
   const [newSubject, setNewSubject] = useState({ name: '', description: '' });
   const [editingSubject, setEditingSubject] = useState(null);
   const [examTimer, setExamTimer] = useState({ title: '', examDate: '' });
-
-  useEffect(() => {
-    if (!user) return () => {};
-
-    const unsubscribers = [];
-
-    // Quizzes
-    unsubscribers.push(watchQuizzes(setExistingQuizzes, {
-      take: 100,
-      onError: (error) => console.error('Failed to load quizzes:', error),
-    }));
-
-    // Resources
-    unsubscribers.push(watchCollection('resources', setExistingResources, {
-      take: 100,
-      onError: (error) => console.error('Failed to load resources:', error),
-    }));
-
-    // Subjects
-    unsubscribers.push(watchSubjects(setSubjects, {
-      take: 100,
-      onError: (error) => console.error('Failed to load subjects:', error),
-    }));
-
-    // Users
-    unsubscribers.push(watchUsers(setUsers, {
-      take: 200,
-      onError: (error) => console.error('Failed to load users:', error),
-    }));
-
-    // Exam countdown
-    unsubscribers.push(watchExamCountdown(setExamCountdown));
-
-    return () => unsubscribers.forEach(unsub => unsub?.());
-  }, [user]);
-
-  useEffect(() => {
-    loadAnalytics();
-  }, [existingQuizzes, existingResources, subjects, users]);
-
-  useEffect(() => {
-    const subjectNames = subjects.map((item) => item.name);
-
-    if (resource.subject && !subjectNames.includes(resource.subject)) {
-      setResource((current) => ({ ...current, subject: '' }));
-    }
-    if (quiz.subject && !subjectNames.includes(quiz.subject)) {
-      setQuiz((current) => ({ ...current, subject: '' }));
-    }
-  }, [subjects, resource.subject, quiz.subject]);
 
   async function loadAnalytics() {
     try {
@@ -178,10 +181,101 @@ export default function Admin({ notify, user }) {
     }
   }
 
+  useEffect(() => {
+    if (!user) return () => {};
+
+    const unsubscribers = [];
+
+    // Quizzes
+    unsubscribers.push(watchQuizzes(setExistingQuizzes, {
+      take: 100,
+      onError: (error) => console.error('Failed to load quizzes:', error),
+    }));
+
+    // Resources
+    const handleResources = (items) => {
+      setExistingResources(items);
+      setResourcesLoading(false);
+    };
+
+    unsubscribers.push(watchCollection('resources', handleResources, {
+      take: 100,
+      onError: (error) => {
+        console.error('Failed to load resources:', error);
+        setResourcesLoading(false);
+      },
+    }));
+
+    // Subjects
+    unsubscribers.push(watchSubjects(setSubjects, {
+      take: 100,
+      onError: (error) => console.error('Failed to load subjects:', error),
+    }));
+
+    // Users
+    unsubscribers.push(watchUsers(setUsers, {
+      take: 200,
+      onError: (error) => console.error('Failed to load users:', error),
+    }));
+
+    // Exam countdown
+    unsubscribers.push(watchExamCountdown(setExamCountdown));
+
+    return () => unsubscribers.forEach(unsub => unsub?.());
+  }, [user]);
+
+  useEffect(() => {
+    const id = setTimeout(() => { loadAnalytics(); }, 0);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existingQuizzes, existingResources, subjects, users]);
+
+  const handleDropZoneDrag = (event) => {
+    event.preventDefault();
+    setResourceDropState('active');
+  };
+
+  const handleDropZoneLeave = () => {
+    setResourceDropState('idle');
+  };
+
+  const handleDropZoneDrop = (event) => {
+    event.preventDefault();
+    setResourceDropState('idle');
+    const plainText = event.dataTransfer.getData('text/plain') || event.dataTransfer.getData('text/uri-list');
+    if (event.dataTransfer.files?.length > 0) {
+      setResourceDropHint('Local files are not supported here. Paste a public hosted URL instead.');
+      return;
+    }
+
+    const normalizedUrl = parseHostUrl(plainText);
+    if (!normalizedUrl) {
+      setResourceDropHint('Drop a public link or paste a valid hosted URL.');
+      return;
+    }
+
+    setResource((current) => ({ ...current, url: normalizedUrl }));
+    setResourceDropHint('Link detected — ready to save.');
+  };
+
+  function parseHostUrl(value) {
+    try {
+      const trimmed = value?.toString().trim();
+      if (!trimmed) return null;
+      const parsed = new URL(trimmed);
+      if (!['http:', 'https:'].includes(parsed.protocol)) return null;
+      return parsed.toString();
+    } catch {
+      return null;
+    }
+  }
+
   async function submitResource(event) {
     event.preventDefault();
-    if (!resource.url?.trim()) {
-      notify('Paste a public file URL (Google Drive, GitHub raw, Dropbox, etc.).');
+    const normalizedUrl = parseHostUrl(resource.url);
+    if (!normalizedUrl) {
+      notify('Paste a valid public file URL (Google Drive, GitHub raw, Dropbox, etc.).');
+      setResourceDropHint('Looks like the URL is malformed. Try again with a hosted link.');
       return;
     }
     if (!resource.subject) {
@@ -189,26 +283,32 @@ export default function Admin({ notify, user }) {
       return;
     }
     setBusy('resource');
+    setResourceSaveState('saving');
+    setResourceDropHint('');
     try {
       await createResourceLink({
         title: resource.title,
         subject: resource.subject,
         type: resource.type,
-        url: resource.url,
+        url: normalizedUrl,
         createdBy: user?.uid,
       });
       notify('Resource link saved successfully.');
       setResource({ title: '', subject: '', type: 'Notes', url: '' });
+      setResourceSaveState('success');
+      setTimeout(() => setResourceSaveState('idle'), 1400);
     } catch (error) {
       console.error('Resource save failed:', error);
       notify(error.message || 'Could not save resource link.');
+      setResourceSaveState('error');
+      setTimeout(() => setResourceSaveState('idle'), 1400);
     } finally {
       setBusy('');
     }
   }
 
   async function handleDeleteResource(resourceId) {
-    if (!confirm('Delete this resource? This cannot be undone.')) return;
+    if (!window.confirm('Delete this resource? This cannot be undone.')) return;
     setBusy(`delete-resource-${resourceId}`);
     try {
       await deleteResource(resourceId);
@@ -290,7 +390,7 @@ export default function Admin({ notify, user }) {
   }
 
   async function handleDeleteQuiz(quizId) {
-    if (!confirm('Are you sure you want to delete this quiz? This action cannot be undone.')) return;
+    if (!window.confirm('Are you sure you want to delete this quiz? This action cannot be undone.')) return;
     
     setBusy(`delete-${quizId}`);
     try {
@@ -373,6 +473,8 @@ export default function Admin({ notify, user }) {
     }
 
     setBusy('quizFile');
+    setQuizUploadProgress(0);
+    setQuizUploadSummary({ success: 0, warnings: 0 });
     try {
       const text = await quizFile.text();
       const quizData = JSON.parse(text);
@@ -382,7 +484,12 @@ export default function Admin({ notify, user }) {
       }
 
       let uploadedCount = 0;
+      let processedCount = 0;
       for (const quiz of quizData) {
+        processedCount += 1;
+        const totalCount = quizData.length;
+        setQuizUploadProgress(Math.round((processedCount / totalCount) * 100));
+
         if (!quiz.title || !Array.isArray(quiz.questions) || quiz.questions.length === 0) {
           console.warn('Skipping invalid quiz:', quiz);
           continue;
@@ -413,6 +520,8 @@ export default function Admin({ notify, user }) {
         uploadedCount++;
       }
 
+      setQuizUploadProgress(100);
+      setQuizUploadSummary((current) => ({ ...current, success: uploadedCount }));
       notify(`Successfully uploaded ${uploadedCount} quiz(es).`);
       setQuizFile(null);
       event.currentTarget.reset();
@@ -467,12 +576,22 @@ export default function Admin({ notify, user }) {
   }
 
   async function handleDeleteSubject(subjectId) {
-    if (!confirm('Are you sure you want to delete this subject? This will affect existing quizzes and resources.')) return;
+    if (!window.confirm('Are you sure you want to delete this subject? This will affect existing quizzes and resources.')) return;
     
     setBusy(`delete-subject-${subjectId}`);
     try {
+      const subjectToDelete = subjects.find(s => s.id === subjectId);
       await deleteSubject(subjectId);
       notify('Subject deleted successfully.');
+      
+      if (subjectToDelete) {
+        if (resource.subject === subjectToDelete.name) {
+          setResource((current) => ({ ...current, subject: '' }));
+        }
+        if (quiz.subject === subjectToDelete.name) {
+          setQuiz((current) => ({ ...current, subject: '' }));
+        }
+      }
     } catch (error) {
       notify('Failed to delete subject.');
     } finally {
@@ -577,15 +696,7 @@ export default function Admin({ notify, user }) {
     { id: 'timer', label: 'Exam Timer', icon: Timer },
   ];
 
-  function Metric({ icon: Icon, label, value, urgent }) {
-    return (
-      <Card className={`p-4 ${urgent ? 'ring-2 ring-red-500/50 bg-red-50/50 dark:bg-red-500/5' : ''}`}>
-        <Icon className={`text-blue-600 ${urgent ? 'text-red-600' : ''}`} size={21} />
-        <p className={`mt-3 text-xs font-bold uppercase tracking-[0.12em] ${urgent ? 'text-red-600' : 'text-slate-400'}`}>{label}</p>
-        <p className={`mt-1 text-xl font-black ${urgent ? 'text-red-600' : 'text-slate-950 dark:text-white'}`}>{value}</p>
-      </Card>
-    );
-  }
+
 
   return (
     <div className="space-y-6">
@@ -885,6 +996,26 @@ export default function Admin({ notify, user }) {
               <Button variant="accent" disabled={busy === 'quizFile'} className="w-full">
                 <Upload size={17} /> {busy === 'quizFile' ? 'Uploading...' : 'Upload quizzes'}
               </Button>
+              <AnimatePresence mode="wait">
+                {(busy === 'quizFile' || quizUploadProgress > 0) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    className="mt-4 grid gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-zinc-800 dark:bg-zinc-950"
+                  >
+                    <UploadProgressRing
+                      progress={quizUploadProgress}
+                      status={busy === 'quizFile' ? 'uploading' : quizUploadSummary.success > 0 ? 'success' : 'idle'}
+                    />
+                    {quizUploadSummary.success > 0 && (
+                      <p className="text-sm text-slate-500 dark:text-zinc-400">
+                        {quizUploadSummary.success} quiz(es) added from the uploaded file.
+                      </p>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </form>
           </Card>
         </div>
@@ -975,7 +1106,7 @@ export default function Admin({ notify, user }) {
                   <Button
                     variant="secondary"
                     onClick={async () => {
-                      if (!confirm('Reset weekly leaderboard points for all users? This cannot be undone.')) return;
+                      if (!window.confirm('Reset weekly leaderboard points for all users? This cannot be undone.')) return;
                       setBusy('reset-weekly');
                       try {
                         await resetWeeklyLeaderboard();
@@ -993,7 +1124,7 @@ export default function Admin({ notify, user }) {
                   <Button
                     variant="secondary"
                     onClick={async () => {
-                      if (!confirm('RESET ALL USER SCORES AND STATS? This cannot be undone. Points, weekly points, attempts, and streaks will be reset to zero for ALL users.')) return;
+                      if (!window.confirm('RESET ALL USER SCORES AND STATS? This cannot be undone. Points, weekly points, attempts, and streaks will be reset to zero for ALL users.')) return;
                       setBusy('reset-all');
                       try {
                         await resetAllUserStats();
@@ -1144,43 +1275,125 @@ export default function Admin({ notify, user }) {
                   <option>Sample Paper</option>
                 </Select>
               </div>
-              <Input
-                label="File URL"
-                value={resource.url}
-                onChange={(value) => setResource({ ...resource, url: value })}
-                placeholder="https://drive.google.com/... or https://raw.githubusercontent.com/..."
-              />
-              <Button type="submit" variant="accent" disabled={busy === 'resource'} className="w-full">
-                <Upload size={17} /> {busy === 'resource' ? 'Saving...' : 'Save resource link'}
-              </Button>
+              <label className="grid gap-2 text-sm font-bold text-slate-700 dark:text-zinc-300">
+                File URL
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onDragOver={handleDropZoneDrag}
+                  onDragEnter={handleDropZoneDrag}
+                  onDragLeave={handleDropZoneLeave}
+                  onDrop={handleDropZoneDrop}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      setResourceDropHint('Paste a public hosted URL here.');
+                    }
+                  }}
+                  className={`min-h-[5rem] rounded-3xl border px-4 py-3 transition focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${resourceDropState === 'active' ? 'border-blue-500 bg-blue-50/70 dark:border-amber-400 dark:bg-amber-500/10' : 'border-slate-200 bg-white dark:border-zinc-800 dark:bg-zinc-950'}`}
+                >
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <span className="text-slate-500 dark:text-zinc-400">{resource.url || 'Drop a hosted URL here or paste one.'}</span>
+                      <span className="rounded-full border border-slate-200 px-2 py-1 text-[11px] uppercase tracking-[0.22em] text-slate-500 dark:border-zinc-700 dark:text-zinc-400">
+                        Link drop zone
+                      </span>
+                    </div>
+                    <Input
+                      value={resource.url}
+                      onChange={(value) => setResource({ ...resource, url: value })}
+                      placeholder="https://drive.google.com/... or https://raw.githubusercontent.com/..."
+                      className="bg-transparent px-0 py-0 text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-100 dark:placeholder:text-zinc-500"
+                    />
+                  </div>
+                </div>
+                <span className="text-xs text-slate-400">
+                  Drag a public link over this zone or paste the URL. Local files are not supported.
+                </span>
+                {resourceDropHint && <p className="text-xs text-rose-500">{resourceDropHint}</p>}
+              </label>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <Button type="submit" variant="accent" disabled={busy === 'resource'} className="w-full sm:w-auto">
+                  <Upload size={17} /> {busy === 'resource' ? 'Saving...' : 'Save resource link'}
+                </Button>
+                <AnimatePresence mode="wait">
+                  {resourceSaveState !== 'idle' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 6 }}
+                      className="rounded-3xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
+                    >
+                      {resourceSaveState === 'saving' ? 'Saving resource…' : resourceSaveState === 'success' ? 'Saved successfully' : 'Failed to save.'}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </form>
           </Card>
 
           <Card>
             <h3 className="font-black text-slate-950 dark:text-white">Recent Resources</h3>
-            <div className="mt-4 space-y-3">
-              {existingResources.slice(0, 10).map((item) => (
-                <div key={item.id} className="flex items-center justify-between rounded-2xl bg-slate-50 p-3 dark:bg-white/5">
-                  <div>
-                    <p className="font-bold text-slate-950 dark:text-white">{item.title}</p>
-                    <p className="text-sm text-slate-500">{item.subject} - {item.type}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="text-xs text-slate-400">{item.createdAt?.toDate?.()?.toLocaleDateString() || 'Recent'}</div>
-                    <Button variant="ghost" size="sm" onClick={() => window.open(item.url || item.fileUrl, '_blank', 'noopener,noreferrer')} disabled={!(item.url || item.fileUrl)}>
-                      <Eye size={14} />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => window.open(item.url || item.fileUrl, '_blank', 'noopener,noreferrer')} disabled={!(item.url || item.fileUrl)}>
-                      <Download size={14} />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDeleteResource(item.id)} disabled={busy === `delete-resource-${item.id}`} className="text-red-600 hover:text-red-700">
-                      <Trash2 size={14} />
-                    </Button>
-                  </div>
+            <div className="mt-4">
+              {resourcesLoading ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {Array.from({ length: 4 }).map((_, index) => (
+                    <div key={index} className="h-32 animate-pulse rounded-3xl bg-slate-100 dark:bg-zinc-900" />
+                  ))}
                 </div>
-              ))}
-              {existingResources.length === 0 && (
-                <p className="text-sm text-slate-500 dark:text-slate-400">No resources uploaded yet.</p>
+              ) : existingResources.length > 0 ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {existingResources.slice(0, 10).map((item) => (
+                    <Card key={item.id} interactive className="overflow-hidden rounded-3xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:border-zinc-800 dark:bg-zinc-950">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="font-semibold text-slate-950 dark:text-white">{item.title}</p>
+                          <p className="mt-1 text-sm text-slate-500 dark:text-zinc-400">{item.subject} · {item.type}</p>
+                          <p className="mt-2 text-xs uppercase tracking-[0.24em] text-slate-400 dark:text-zinc-500">{item.createdAt?.toDate?.()?.toLocaleDateString() || 'Recent'}</p>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          <div className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-600 dark:bg-zinc-800 dark:text-zinc-300">{item.type}</div>
+                          <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-zinc-400">
+                            <Upload size={12} />
+                            <span>{item.createdAt?.toDate?.()?.toLocaleDateString() || 'No date'}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => window.open(item.url || item.fileUrl, '_blank', 'noopener,noreferrer')}
+                          disabled={!(item.url || item.fileUrl)}
+                        >
+                          <Eye size={14} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => window.open(item.url || item.fileUrl, '_blank', 'noopener,noreferrer')}
+                          disabled={!(item.url || item.fileUrl)}
+                        >
+                          <Download size={14} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteResource(item.id)}
+                          disabled={busy === `delete-resource-${item.id}`}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center dark:border-zinc-800 dark:bg-zinc-950">
+                  <p className="font-semibold text-slate-900 dark:text-white">No resources uploaded yet.</p>
+                  <p className="mt-2 text-sm text-slate-500 dark:text-zinc-400">Use the link drop zone above to add your first file resource.</p>
+                </div>
               )}
             </div>
           </Card>
@@ -1262,5 +1475,15 @@ export default function Admin({ notify, user }) {
         </div>
       )}
     </div>
+  );
+}
+
+function Metric({ icon: Icon, label, value, urgent }) {
+  return (
+    <Card className={`p-4 ${urgent ? 'ring-2 ring-red-500/50 bg-red-50/50 dark:bg-red-500/5' : ''}`}>
+      <Icon className={`text-blue-600 ${urgent ? 'text-red-600' : ''}`} size={21} />
+      <p className={`mt-3 text-xs font-bold uppercase tracking-[0.12em] ${urgent ? 'text-red-600' : 'text-slate-400'}`}>{label}</p>
+      <p className={`mt-1 text-xl font-black ${urgent ? 'text-red-600' : 'text-slate-950 dark:text-white'}`}>{value}</p>
+    </Card>
   );
 }

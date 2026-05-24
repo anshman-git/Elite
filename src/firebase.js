@@ -30,7 +30,7 @@ import {
   arrayUnion,
   increment,
   updateDoc,
-  writeBatch,
+  writeBatch as firestoreWriteBatch,
 } from 'firebase/firestore';
 import {
   buildAttemptReviewData,
@@ -662,7 +662,7 @@ export async function followUser(currentUserId, targetUserId, currentUserName = 
   const alreadyFollowing = Array.isArray(currentData.following) && currentData.following.includes(targetUserId);
   if (alreadyFollowing) return { alreadyFollowing: true };
 
-  const batch = writeBatch(db);
+  const batch = firestoreWriteBatch(db);
   batch.update(currentRef, {
     following: arrayUnion(targetUserId),
     lastActiveAt: serverTimestamp(),
@@ -690,7 +690,7 @@ export async function unfollowUser(currentUserId, targetUserId) {
   if (!currentUserId || !targetUserId) throw new Error('Missing user id.');
   if (currentUserId === targetUserId) throw new Error('You cannot unfollow yourself.');
 
-  const batch = writeBatch(db);
+  const batch = firestoreWriteBatch(db);
   batch.update(doc(db, 'users', currentUserId), {
     following: arrayRemove(targetUserId),
     lastActiveAt: serverTimestamp(),
@@ -744,7 +744,7 @@ export async function markAllNotificationsRead(userId) {
     limit(25),
   );
   const snapshot = await getDocs(unreadQuery);
-  const batch = writeBatch(db);
+  const batch = firestoreWriteBatch(db);
   snapshot.docs.forEach((item) => {
     batch.update(item.ref, { read: true, readAt: serverTimestamp() });
   });
@@ -793,7 +793,7 @@ export async function resetWeeklyLeaderboard() {
   if (!db) throw new Error('Firebase is not configured yet.');
 
   const usersSnapshot = await getDocs(collection(db, 'users'));
-  const batch = writeBatch(db);
+  const batch = firestoreWriteBatch(db);
   usersSnapshot.docs.forEach((userDoc) => {
     batch.update(userDoc.ref, { weeklyPoints: 0 });
   });
@@ -804,7 +804,7 @@ export async function resetAllUserStats() {
   if (!db) throw new Error('Firebase is not configured yet.');
 
   const usersSnapshot = await getDocs(collection(db, 'users'));
-  const batch = writeBatch(db);
+  const batch = firestoreWriteBatch(db);
 
   usersSnapshot.docs.forEach((userDoc) => {
     batch.update(userDoc.ref, {
