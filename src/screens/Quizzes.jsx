@@ -185,7 +185,7 @@ function QuizWorkspace({ activeQuiz, answers, setAnswers, submitted, submitting,
                     key={idx}
                     onClick={() => setActiveIndex(idx)}
                     className={classNames(
-                      'flex h-10 w-10 items-center justify-center rounded-xl text-xs font-black transition-all',
+                      'flex h-10 w-10 items-center justify-center rounded-xl text-xs font-black transition-[background-color,color,box-shadow,transform] duration-200',
                       isActive
                         ? 'bg-cyan-500 text-slate-950 shadow-[0_0_16px_-4px_rgba(34,211,238,0.7)]'
                         : status === 'correct' ? 'bg-emerald-500/20 text-emerald-300'
@@ -363,7 +363,7 @@ function QuizCard({ quiz, attempted, onStart }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
       className={classNames(
-        'group relative overflow-hidden rounded-3xl border bg-slate-900/80 p-5 transition-all duration-300',
+        'group relative overflow-hidden rounded-3xl border bg-slate-900/80 p-5 transition-[background-color,border-color,box-shadow,transform,opacity] duration-300',
         attempted
           ? 'border-white/5'
           : 'border-white/10 hover:border-cyan-500/40 hover:shadow-[0_0_40px_-12px_rgba(34,211,238,0.3)]',
@@ -371,14 +371,14 @@ function QuizCard({ quiz, attempted, onStart }) {
     >
       {/* Gradient accent top-right */}
       {!attempted && (
-        <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-cyan-500/10 blur-2xl transition-all duration-500 group-hover:bg-cyan-500/20" />
+        <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-cyan-500/10 blur-2xl transition-[background-color,opacity,transform] duration-500 group-hover:bg-cyan-500/20" />
       )}
       <p className="text-[10px] font-bold uppercase tracking-widest text-cyan-400">{quiz.subject}</p>
       <h3 className="mt-1.5 text-base font-black text-white">{quiz.title}</h3>
       <div className="mt-4 grid grid-cols-3 gap-2">
         <Badge label="MCQs" value={quiz.questions?.length || 0} />
         <Badge label="Timer" value={`${quiz.timerMinutes || quiz.duration || 25}m`} icon={<Clock size={12} />} />
-        <Badge label="Daily" value={(quiz.dailyQuiz ?? quiz.isDaily) ? '⚡ Yes' : 'No'} />
+        <Badge label="Daily" value={(quiz.dailyQuiz ?? quiz.isDaily) ? 'Yes' : 'No'} icon={(quiz.dailyQuiz ?? quiz.isDaily) ? <Zap size={12} /> : null} />
       </div>
       <Button
         variant={attempted ? 'secondary' : 'accent'}
@@ -557,7 +557,7 @@ export default function Quizzes({ notify }) {
             whileTap={{ scale: 0.95 }}
             onClick={() => setSubject(item)}
             className={classNames(
-              'min-h-9 shrink-0 rounded-full px-4 text-sm font-bold transition-all duration-200',
+              'min-h-9 shrink-0 rounded-full px-4 text-sm font-bold transition-[background-color,color,box-shadow,transform] duration-200',
               subject === item
                 ? 'bg-cyan-500 text-slate-950 shadow-[0_0_16px_-4px_rgba(34,211,238,0.6)]'
                 : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white',
@@ -602,7 +602,7 @@ export default function Quizzes({ notify }) {
           <p className="text-xs text-slate-500">Completed</p>
         </div>
         <div className="text-center">
-          <p className="text-2xl font-black text-violet-300">{filtered.length - [...attemptedQuizIds].filter(id => filtered.some(q => q.id === id)).length}</p>
+          <p className="text-2xl font-black text-amber-300">{filtered.length - [...attemptedQuizIds].filter(id => filtered.some(q => q.id === id)).length}</p>
           <p className="text-xs text-slate-500">Remaining</p>
         </div>
         <div className="text-center">

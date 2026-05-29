@@ -56,7 +56,7 @@ export default function AnnouncementTicker({ announcements = null }) {
             >
               {loopItems.map((item, index) => (
                 <span key={`${item}-${index}`} className="inline-flex items-center gap-3">
-                  <span className="h-1.5 w-1.5 rounded-full bg-violet-300 shadow-[0_0_14px_rgba(196,181,253,0.9)]" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-300 shadow-[0_0_14px_rgba(251,191,36,0.75)]" />
                   {item}
                 </span>
               ))}

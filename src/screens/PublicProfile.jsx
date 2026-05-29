@@ -231,7 +231,7 @@ export default function PublicProfile({ profileUserId, onBack, notify }) {
           <Card>
             <div className="flex items-center justify-between gap-3">
               <h3 className="text-lg font-black text-white">Achievements</h3>
-              <span className="rounded-full border border-violet-300/20 bg-violet-300/10 px-3 py-1 text-xs font-bold text-violet-200">
+              <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs font-bold text-cyan-200">
                 {achievements.length} earned
               </span>
             </div>

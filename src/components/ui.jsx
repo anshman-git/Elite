@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Bell, Loader2, Moon, Search, Sun, AlertCircle, CheckCircle, Info, X } from 'lucide-react';
+import { Bell, Loader2, Moon, Search, Sun, AlertCircle, CheckCircle, Info, Sparkles, X } from 'lucide-react';
 import { TopBar as LayoutTopBar } from './layout/TopBar';
 import { classNames } from '../utils';
 
@@ -9,7 +9,7 @@ export function Card({ children, className = '', interactive = false, ...props }
       layout
       whileHover={interactive ? { y: -3, scale: 1.006 } : undefined}
       className={classNames(
-        'rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_8px_30px_rgb(0,0,0,0.02)] backdrop-blur-xl transition-all duration-300 dark:border-zinc-800/80 dark:bg-zinc-900/90 dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)]',
+        'rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_8px_30px_rgb(0,0,0,0.02)] backdrop-blur-xl transition-[transform,opacity,border-color,background-color,box-shadow] duration-300 dark:border-zinc-800/80 dark:bg-zinc-900/90 dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)]',
         interactive ? 'cursor-pointer hover:border-blue-500/50 hover:shadow-[0_8px_30px_rgba(59,130,246,0.06)] dark:hover:border-amber-500/40 dark:hover:shadow-[0_20px_50px_rgba(245,158,11,0.06)]' : '',
         className,
       )}
@@ -30,7 +30,7 @@ export function Button({ children, variant = 'primary', className = '', ...props
   return (
     <button
       className={classNames(
-        'inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60',
+        'inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 disabled:cursor-not-allowed disabled:opacity-60',
         styles[variant],
         className,
       )}
@@ -47,7 +47,7 @@ export function IconButton({ label, children, className = '', ...props }) {
       aria-label={label}
       title={label}
       className={classNames(
-        'grid h-11 w-11 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800/80',
+        'grid h-11 w-11 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-200 hover:bg-slate-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800/80',
         className,
       )}
       {...props}
@@ -61,7 +61,7 @@ export const TopBar = LayoutTopBar;
 
 export function SearchInput({ value, onChange, placeholder = 'Search' }) {
   return (
-    <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-500 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/15 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400 dark:focus-within:border-amber-500 dark:focus-within:ring-amber-500/15 transition-all">
+    <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-500 transition-[background-color,border-color,color,box-shadow] duration-200 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/15 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400 dark:focus-within:border-amber-500 dark:focus-within:ring-amber-500/15">
       <Search size={18} />
       <input
         value={value}
@@ -74,35 +74,52 @@ export function SearchInput({ value, onChange, placeholder = 'Search' }) {
 }
 
 export function ProgressBar({ value }) {
+  const pct = Math.max(0, Math.min(1, Number(value || 0) / 100));
   return (
     <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-zinc-800">
       <motion.div
-        initial={{ width: 0 }}
-        animate={{ width: `${value}%` }}
+        initial={{ scaleX: 0 }}
+        animate={{ scaleX: pct }}
         transition={{ duration: 0.7, ease: 'easeOut' }}
-        className="h-full rounded-full bg-gradient-to-r from-blue-500 to-amber-500 dark:from-blue-500 dark:to-amber-400"
+        className="h-full origin-left rounded-full bg-gradient-to-r from-cyan-500 to-amber-500 dark:from-cyan-500 dark:to-amber-400"
       />
     </div>
   );
 }
 
 export function Skeleton({ className = '' }) {
-  return <div className={classNames('animate-pulse rounded-xl bg-slate-100 dark:bg-zinc-800/50', className)} />;
+  return (
+    <div
+      className={classNames(
+        'relative overflow-hidden rounded-xl bg-slate-100 dark:bg-zinc-800/50',
+        'before:absolute before:inset-0 before:animate-shimmer before:bg-[linear-gradient(110deg,transparent_25%,rgba(255,255,255,0.16)_45%,transparent_65%)] before:bg-[length:220%_100%]',
+        className,
+      )}
+      aria-hidden="true"
+    />
+  );
 }
 
 export function LoadingState() {
   return (
     <div className="grid min-h-[280px] place-items-center text-slate-400 dark:text-zinc-500">
-      <Loader2 className="animate-spin" size={24} />
+      <div className="grid gap-4 text-center">
+        <Loader2 className="mx-auto animate-spin text-amber-400" size={24} />
+        <div className="space-y-2">
+          <Skeleton className="mx-auto h-3 w-40" />
+          <Skeleton className="mx-auto h-3 w-28" />
+        </div>
+      </div>
     </div>
   );
 }
 
-export function EmptyState({ title, body, action }) {
+export function EmptyState({ title, body, action, icon: Icon = Sparkles }) {
   return (
-    <Card className="grid place-items-center py-10 text-center">
-      <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-50 text-amber-500 shadow-[0_4px_20px_rgba(245,158,11,0.08)] dark:bg-zinc-800 dark:text-amber-400">
-        <Search size={24} />
+    <Card className="grid place-items-center overflow-hidden py-10 text-center">
+      <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent" />
+      <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-amber-500/20 bg-amber-500/10 text-amber-400 shadow-[0_4px_20px_rgba(245,158,11,0.08)]">
+        <Icon size={24} />
       </div>
       <h3 className="mt-4 text-base font-bold text-slate-800 dark:text-white">{title}</h3>
       <p className="mt-1 max-w-sm text-sm text-slate-500 dark:text-zinc-400">{body}</p>

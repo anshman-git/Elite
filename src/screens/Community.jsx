@@ -6,9 +6,9 @@ import { getDicebearAvatar, getDisplayName, getLevelFromXp } from '../utils';
 import { Button, Card, EmptyState, Skeleton } from '../components/ui';
 import { useReducedMotion } from '../components/motion/useReducedMotion';
 
-function formatRecentActivity(date) {
+function formatRecentActivity(date, now) {
   if (!date) return 'No recent activity';
-  const diff = Date.now() - date.getTime();
+  const diff = now - date.getTime();
   if (diff < 60_000) return 'Active now';
   if (diff < 3_600_000) return `${Math.round(diff / 60_000)}m ago`;
   if (diff < 86_400_000) return `${Math.round(diff / 3_600_000)}h ago`;
@@ -44,7 +44,7 @@ function buildActivityInfo(person) {
     return {
       title: `Crowd magnet with ${followers} fans`,
       badge: 'Fan favorite',
-      tone: 'from-violet-400 to-fuchsia-500',
+      tone: 'from-cyan-400 to-amber-500',
       summary,
     };
   }
@@ -69,10 +69,11 @@ const ActivityCard = memo(function ActivityCard({
   onReact,
   onOpenProfile,
   reducedMotion,
+  now,
 }) {
   const { title, badge, tone, summary } = buildActivityInfo(person);
   const lastActiveAt = getActiveTimestamp(person);
-  const activityLabel = formatRecentActivity(lastActiveAt);
+  const activityLabel = formatRecentActivity(lastActiveAt, now);
   const activeNow = activityLabel === 'Active now';
 
   return (
@@ -162,6 +163,7 @@ const ActivityCard = memo(function ActivityCard({
 
 export default function Community({ notify, openProfile }) {
   const reducedMotion = useReducedMotion();
+  const [now] = useState(() => Date.now());
   const [users, setUsers] = useState([]);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -184,9 +186,9 @@ export default function Community({ notify, openProfile }) {
   const liveCount = useMemo(() => {
     return users.filter((person) => {
       const lastActive = getActiveTimestamp(person);
-      return lastActive && Date.now() - lastActive.getTime() < 6 * 60_000;
+      return lastActive && now - lastActive.getTime() < 6 * 60_000;
     }).length;
-  }, [users]);
+  }, [users, now]);
 
   const rankedUsers = useMemo(() => {
     return [...users]
@@ -310,6 +312,7 @@ export default function Community({ notify, openProfile }) {
                   onReact={() => handleCheer(person.id)}
                   onOpenProfile={openProfile}
                   reducedMotion={reducedMotion}
+                  now={now}
                 />
               );
             })}

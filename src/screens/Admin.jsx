@@ -916,7 +916,7 @@ export default function Admin({ notify, user }) {
                         onChange={(event) => setQuiz((prev) => ({ ...prev, weeklyTest: event.target.checked }))}
                         className="h-4 w-4 accent-blue-600"
                       />
-                      Weekly Test 🏆
+                      Weekly Test
                     </label>
                   </div>
                 </div>

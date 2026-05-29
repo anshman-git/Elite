@@ -48,14 +48,17 @@
 
 @layer components {
   .cmd-card {
-    @apply relative rounded-xl bg-bg-surface border border-line shadow-card overflow-hidden;
+    @apply relative rounded-xl bg-bg-surface border border-line shadow-card overflow-visible;
+    isolation: isolate;
+    transform: translateZ(0);
     transition-property: transform, opacity, border-color, background-color, box-shadow;
     transition-duration: 300ms;
     transition-timing-function: ease-out;
   }
 
   .cmd-card:hover {
-    @apply border-line-strong shadow-card-hover -translate-y-0.5;
+    @apply border-line-strong shadow-card-hover;
+    transform: translateY(-0.125rem) translateZ(0);
   }
 
   .grid-bg {

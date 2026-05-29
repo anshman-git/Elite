@@ -4,6 +4,7 @@ import { CheckCheck, Megaphone, X } from 'lucide-react';
 import { BottomNav, Sidebar } from './components/navigation';
 import { Button, Card, EmptyState, LoadingState, Toast, TopBar } from './components/ui';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { OnboardingTour } from './components/OnboardingTour';
 import { AppProvider } from './context/AppContext';
 import { useApp } from './context/useApp';
 import { navigateHome, navigateToProfile, parseRoute } from './routing';
@@ -16,6 +17,7 @@ import Leaderboard from './screens/Leaderboard';
 import Performance from './screens/Performance';
 import Profile from './screens/Profile';
 import PublicProfile from './screens/PublicProfile';
+import NotFound from './screens/NotFound';
 import Quizzes from './screens/Quizzes';
 import Resources from './screens/Resources';
 
@@ -24,6 +26,10 @@ function AppContent() {
   const [active, setActive] = useState('dashboard');
   const [drawer, setDrawer] = useState(false);
   const [route, setRoute] = useState(() => parseRoute());
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('elitestudy-onboarding-seen') !== 'true';
+  });
 
   useEffect(() => {
     const syncRoute = () => setRoute(parseRoute());
@@ -48,8 +54,14 @@ function AppContent() {
     setRoute(parseRoute('/'));
   };
 
+  const completeOnboarding = () => {
+    localStorage.setItem('elitestudy-onboarding-seen', 'true');
+    setShowOnboarding(false);
+  };
+
   const safeActive = active === 'admin' && user?.role !== 'admin' ? 'dashboard' : active;
   const showingPublicProfile = Boolean(route.profileUserId);
+  const showingNotFound = route.view === 'not-found';
 
   const page = useMemo(() => {
     const props = { setActive: guardedSetActive, user, notify, openProfile };
@@ -86,13 +98,15 @@ function AppContent() {
           <div className="mx-auto max-w-7xl">
             <AnimatePresence mode="wait">
               <motion.div
-                key={showingPublicProfile ? `profile-${route.profileUserId}` : safeActive}
+                key={showingNotFound ? 'not-found' : showingPublicProfile ? `profile-${route.profileUserId}` : safeActive}
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.22, ease: 'easeOut' }}
               >
-                {showingPublicProfile ? (
+                {showingNotFound ? (
+                  <NotFound />
+                ) : showingPublicProfile ? (
                   <PublicProfile
                     profileUserId={route.profileUserId}
                     onBack={closePublicProfile}
@@ -106,9 +120,10 @@ function AppContent() {
           </div>
         </main>
       </div>
-      {!showingPublicProfile ? (
+      {!showingPublicProfile && !showingNotFound ? (
         <BottomNav active={safeActive} setActive={guardedSetActive} isAdmin={isAdmin} />
       ) : null}
+      <OnboardingTour open={!showingNotFound && showOnboarding} onDone={completeOnboarding} />
       <Toast 
         message={toasts.length > 0 ? toasts[0].message : ''} 
         type={toasts.length > 0 ? toasts[0].type : 'info'} 
@@ -164,7 +179,7 @@ function AppContent() {
               )}
               {announcements.length ? (
                 <div className="mt-5">
-                  <p className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-violet-300">
+                  <p className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-cyan-300">
                     <Megaphone size={14} /> Announcements
                   </p>
                   <div className="space-y-3">

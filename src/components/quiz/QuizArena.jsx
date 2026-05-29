@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, ImageIcon, X, Zap } from 'lucide-react';
+import { Check, Flame, ImageIcon, X, Zap } from 'lucide-react';
 import { fireConfetti } from '../motion/ConfettiBurst';
 import { useReducedMotion } from '../motion/useReducedMotion';
 
@@ -71,9 +71,9 @@ export function QuizArena({
                 initial={{ opacity: 0, scale: 0.82, y: 6 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.92, y: -4 }}
-                className="rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 font-mono text-xs font-bold text-amber-400 shadow-glow-amber"
+                className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 font-mono text-xs font-bold text-amber-400 shadow-glow-amber"
               >
-                🔥 {combo}x COMBO
+                <Flame className="h-3.5 w-3.5" /> {combo}x COMBO
               </motion.span>
             )}
           </AnimatePresence>

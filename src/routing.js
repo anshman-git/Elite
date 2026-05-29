@@ -3,6 +3,9 @@ export function parseRoute(pathname = window.location.pathname) {
   if (profileMatch) {
     return { view: 'public-profile', profileUserId: profileMatch[1] };
   }
+  if (pathname !== '/') {
+    return { view: 'not-found', profileUserId: null };
+  }
   return { view: 'app', profileUserId: null };
 }
 

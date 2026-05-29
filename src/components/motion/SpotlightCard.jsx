@@ -13,7 +13,12 @@ export function SpotlightCard({ children, className = '', glow = 'amber' }) {
   const tint = glow === 'cyan' ? 'rgba(34,211,238,0.10)' : 'rgba(255,165,0,0.10)';
 
   return (
-    <div ref={ref} onMouseMove={onMove} className={clsx('cmd-card group p-6', className)} style={{ '--spot': tint }}>
+    <div
+      ref={ref}
+      onMouseMove={onMove}
+      className={clsx('cmd-card group p-6 transform-gpu', className)}
+      style={{ '--spot': tint, isolation: 'isolate', transform: 'translateZ(0)' }}
+    >
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"

@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import CalendarHeatmap from 'react-calendar-heatmap';
 import 'react-calendar-heatmap/dist/styles.css';
-import { Copy, LogOut, Settings, Sparkles, Trophy, UserRound, Zap } from 'lucide-react';
+import { Copy, Flame, Globe2, LogOut, Moon, Settings, Sparkles, Star, Sunrise, Trophy, UserRound, Zap } from 'lucide-react';
 import { logout, updateUser, watchCollection, watchUserAttempts } from '../firebase';
 import { CountUp } from '../components/motion/CountUp';
 import { useReducedMotion } from '../components/motion/useReducedMotion';
@@ -26,19 +26,19 @@ const bannerOptions = [
     value: 'aurora',
     label: 'Aurora Pulse',
     gradient:
-      'radial-gradient(circle at center, rgba(168,85,247,0.14), transparent 28%), linear-gradient(135deg, rgba(7,10,25,0.92), rgba(15,23,42,0.9))',
+      'radial-gradient(circle at center, rgba(34,211,238,0.14), transparent 28%), linear-gradient(135deg, rgba(7,10,25,0.92), rgba(15,23,42,0.9))',
   },
 ];
 
 const avatarStyles = ['bottts', 'pixel-art', 'identicon', 'avataaars', 'adventurer', 'lorelei', 'notionists'];
 
 const ACHIEVEMENT_DEFINITIONS = [
-  { id: 'Perfect Score', title: 'Perfect Score', description: 'Flawless quiz completion.', icon: '🔥' },
-  { id: 'Streak Master', title: 'Streak Master', description: 'Maintain a daily streak for a week.', icon: '⚡' },
-  { id: 'Quiz Explorer', title: 'Quiz Explorer', description: 'Attempt quizzes in 5 different subjects.', icon: '🌍' },
-  { id: 'Early Bird', title: 'Early Bird', description: 'Finish a quiz before 8 AM.', icon: '🌅' },
-  { id: 'Night Owl', title: 'Night Owl', description: 'Complete a quiz after 11 PM.', icon: '🌙' },
-  { id: 'Rising Star', title: 'Rising Star', description: 'Gain 500 XP in a single week.', icon: '⭐' },
+  { id: 'Perfect Score', title: 'Perfect Score', description: 'Flawless quiz completion.', icon: Flame },
+  { id: 'Streak Master', title: 'Streak Master', description: 'Maintain a daily streak for a week.', icon: Zap },
+  { id: 'Quiz Explorer', title: 'Quiz Explorer', description: 'Attempt quizzes in 5 different subjects.', icon: Globe2 },
+  { id: 'Early Bird', title: 'Early Bird', description: 'Finish a quiz before 8 AM.', icon: Sunrise },
+  { id: 'Night Owl', title: 'Night Owl', description: 'Complete a quiz after 11 PM.', icon: Moon },
+  { id: 'Rising Star', title: 'Rising Star', description: 'Gain 500 XP in a single week.', icon: Star },
 ];
 
 function formatDateKey(date) {
@@ -315,6 +315,7 @@ export default function Profile({ user, notify }) {
               <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {ACHIEVEMENT_DEFINITIONS.map((item) => {
                   const unlocked = achievements.includes(item.id);
+                  const Icon = item.icon;
                   return (
                     <motion.div
                       key={item.id}
@@ -331,7 +332,7 @@ export default function Profile({ user, notify }) {
                         <span className={`grid h-11 w-11 place-items-center rounded-2xl text-xl ${
                           unlocked ? 'bg-cyan-500/15 text-cyan-300' : 'bg-white/5 text-slate-500'
                         }`}>
-                          {item.icon}
+                          <Icon size={20} />
                         </span>
                         <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${
                           unlocked ? 'bg-emerald-400/10 text-emerald-300' : 'bg-white/5 text-slate-500'
@@ -367,7 +368,7 @@ export default function Profile({ user, notify }) {
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 <Stat value={user?.xp || 0} label="Total XP" accent="cyan" />
                 <Stat value={user?.weeklyPoints || 0} label="Weekly points" accent="amber" />
-                <Stat value={user?.quizzesAttempted || 0} label="Quizzes" accent="violet" />
+                <Stat value={user?.quizzesAttempted || 0} label="Quizzes" accent="amber" />
                 <Stat value={rank} label="Rank" accent="blue" />
               </div>
             </Card>
@@ -455,10 +456,8 @@ export default function Profile({ user, notify }) {
 function Stat({ value, label, accent }) {
   const accentClasses = {
     cyan: 'text-cyan-300',
-    violet: 'text-violet-300',
     blue: 'text-sky-300',
     teal: 'text-emerald-300',
-    purple: 'text-fuchsia-300',
     amber: 'text-amber-300',
   };
 
@@ -480,3 +479,4 @@ function formatJoined(value) {
   const date = value?.toDate?.();
   return date ? date.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) : 'recently';
 }
+

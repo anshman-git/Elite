@@ -18,15 +18,16 @@ const tone = {
 
 export function StatGrid({ tiles }) {
   return (
-    <StaggerList className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <StaggerList className="-m-2 grid grid-cols-2 gap-4 overflow-visible p-2 lg:grid-cols-4">
       {tiles.map((tile) => {
         const Icon = tile.icon || iconMap[tile.id] || TrendingUp;
         return (
           <motion.div
             key={tile.id}
-            whileHover={{ y: -4 }}
+            whileHover={{ y: -2 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="cmd-card p-5"
+            className="cmd-card p-5 transform-gpu"
+            style={{ isolation: 'isolate', transform: 'translateZ(0)' }}
             data-testid={`stat-${tile.id}`}
           >
             <div className={`inline-flex items-center justify-center h-9 w-9 rounded-lg border ${tone[tile.color] || tone.cyan}`}>

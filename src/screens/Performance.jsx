@@ -71,10 +71,10 @@ function SubjectBar({ subject, delay }) {
       </div>
       <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/5">
         <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${subject.progress}%` }}
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: Math.max(0, Math.min(1, subject.progress / 100)) }}
           transition={{ delay: delay + 0.1, duration: 0.6, ease: 'easeOut' }}
-          className={`h-full rounded-full bg-gradient-to-r ${col.bar}`}
+          className={`h-full origin-left rounded-full bg-gradient-to-r ${col.bar}`}
         />
       </div>
     </motion.div>
@@ -87,7 +87,7 @@ export default function Performance({ notify }) {
   const [attempts, setAttempts] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [reviewAttemptId, setReviewAttemptId] = useState(null);
-  const [attemptsLoaded, setAttemptsLoaded] = useState(false);
+  const [loadedAttemptsUserId, setLoadedAttemptsUserId] = useState(null);
   const [subjectsLoaded, setSubjectsLoaded] = useState(false);
 
   useEffect(() => {
@@ -96,12 +96,10 @@ export default function Performance({ notify }) {
     if (user?.uid) {
       unsubscribers.push(watchUserAttempts(user.uid, (items) => {
         setAttempts(items);
-        setAttemptsLoaded(true);
+        setLoadedAttemptsUserId(user.uid);
       }, {
         onError: () => globalNotify('Could not load your attempts from Firestore.'),
       }));
-    } else {
-      setAttemptsLoaded(true);
     }
 
     unsubscribers.push(watchSubjects((items) => {
@@ -115,6 +113,7 @@ export default function Performance({ notify }) {
     return () => unsubscribers.forEach((unsub) => unsub?.());
   }, [user?.uid, globalNotify]);
 
+  const attemptsLoaded = user?.uid ? loadedAttemptsUserId === user.uid : true;
   const loading = !attemptsLoaded || !subjectsLoaded;
 
   const averageAccuracy = useMemo(() => (
