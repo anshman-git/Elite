@@ -2,55 +2,106 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Design Tokens ─────────────────────────────────────────────────────────── */
+/* Light mode (default) */
+:root {
+  /* Background surfaces */
+  --color-bg-base:    244 246 251;   /* #f4f6fb */
+  --color-bg-surface: 255 255 255;  /* #ffffff */
+  --color-bg-raised:  238 241 248;  /* #eef1f8 */
+  --color-bg-inset:   228 232 245;  /* #e4e8f5 */
+
+  /* Border / divider lines */
+  --color-line-subtle: rgba(0, 0, 0, 0.05);
+  --color-line:        rgba(0, 0, 0, 0.09);
+  --color-line-strong: rgba(0, 0, 0, 0.16);
+
+  /* Text */
+  --color-ink-100: 17 24 39;    /* #111827 */
+  --color-ink-200: 55 65 81;    /* #374151 */
+  --color-ink-400: 107 114 128; /* #6b7280 */
+  --color-ink-600: 156 163 175; /* #9ca3af */
+
+  /* Shadows */
+  --shadow-card:       0 1px 3px rgba(0,0,0,0.07), 0 4px 16px -4px rgba(0,0,0,0.10);
+  --shadow-card-hover: 0 1px 3px rgba(0,0,0,0.10), 0 8px 24px -6px rgba(0,0,0,0.15);
+
+  /* Grid background line */
+  --grid-line: rgba(0, 0, 0, 0.05);
+
+  /* Scrollbar */
+  --scrollbar-thumb: rgba(0, 0, 0, 0.14);
+  --scrollbar-thumb-hover: rgba(255, 165, 0, 0.50);
+}
+
+/* Dark mode */
+.dark {
+  --color-bg-base:    7 9 18;     /* #070912 */
+  --color-bg-surface: 14 18 32;  /* #0E1220 */
+  --color-bg-raised:  22 27 46;  /* #161B2E */
+  --color-bg-inset:   10 14 26;  /* #0A0E1A */
+
+  --color-line-subtle: rgba(255, 255, 255, 0.06);
+  --color-line:        rgba(255, 255, 255, 0.10);
+  --color-line-strong: rgba(255, 255, 255, 0.16);
+
+  --color-ink-100: 245 247 251; /* #F5F7FB */
+  --color-ink-200: 201 209 225; /* #C9D1E1 */
+  --color-ink-400: 124 135 156; /* #7C879C */
+  --color-ink-600: 74 84 107;   /* #4A546B */
+
+  --shadow-card:       0 1px 0 rgba(255,255,255,0.04) inset, 0 24px 48px -24px rgba(0,0,0,0.6);
+  --shadow-card-hover: 0 1px 0 rgba(255,255,255,0.08) inset, 0 32px 60px -24px rgba(0,0,0,0.7);
+
+  --grid-line: rgba(255, 255, 255, 0.04);
+
+  --scrollbar-thumb: rgba(255, 255, 255, 0.08);
+  --scrollbar-thumb-hover: rgba(255, 165, 0, 0.35);
+}
+
+/* ─── Base layer ─────────────────────────────────────────────────────────────── */
 @layer base {
-  html {
-    color-scheme: dark;
-  }
+  /* Let the OS/app decide colour scheme, not force dark */
+  html.dark  { color-scheme: dark; }
+  html:not(.dark) { color-scheme: light; }
 
   body {
     @apply bg-bg-base text-ink-200 font-sans antialiased;
+    /* Subtle ambient gradients — intentionally low opacity to work on both modes  */
     background-image:
-      radial-gradient(1200px 600px at 80% -10%, rgba(34,211,238,0.08), transparent 60%),
-      radial-gradient(1000px 500px at -10% 10%, rgba(255,165,0,0.06), transparent 60%);
-    background-attachment: fixed;
+      radial-gradient(1200px 600px at 80% -10%, rgba(34,211,238,0.06), transparent 60%),
+      radial-gradient(1000px 500px at -10% 10%, rgba(255,165,0,0.04), transparent 60%);
+    /* NOTE: background-attachment:fixed removed — causes repaints on mobile/iOS */
   }
 
-  h1,
-  h2,
-  h3,
-  h4 {
+  h1, h2, h3, h4 {
     @apply font-display text-ink-100;
   }
 
   ::selection {
-    background: rgba(255,165,0,0.35);
-    color: #fff;
+    background: rgba(255, 165, 0, 0.3);
+    color: inherit;
   }
 
-  ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
+  ::-webkit-scrollbar       { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.08);
+    background: var(--scrollbar-thumb);
     border-radius: 8px;
   }
-
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255,165,0,0.35);
+    background: var(--scrollbar-thumb-hover);
   }
 }
 
+/* ─── Component layer ────────────────────────────────────────────────────────── */
 @layer components {
   .cmd-card {
-    @apply relative rounded-xl bg-bg-surface border border-line shadow-card overflow-visible;
+    @apply relative rounded-xl bg-bg-surface border border-line shadow-card;
+    /* overflow-visible kept intentionally for tooltips / focus rings
+       — use .cmd-card-clip when you need contained children (e.g. blur accents) */
+    overflow: visible;
     isolation: isolate;
-    transform: translateZ(0);
     transition-property: transform, opacity, border-color, background-color, box-shadow;
     transition-duration: 300ms;
     transition-timing-function: ease-out;
@@ -58,13 +109,18 @@
 
   .cmd-card:hover {
     @apply border-line-strong shadow-card-hover;
-    transform: translateY(-0.125rem) translateZ(0);
+    transform: translateY(-0.125rem);
+  }
+
+  /* Clipped variant — use when decorative blur/gradient must not bleed outside */
+  .cmd-card-clip {
+    @apply cmd-card overflow-hidden;
   }
 
   .grid-bg {
     background-image:
-      linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
     background-size: 32px 32px;
     mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 30%, transparent 80%);
   }
@@ -79,20 +135,15 @@
   }
 
   .btn-game {
-    @apply inline-flex items-center gap-2 px-5 py-3 rounded-lg font-display font-semibold;
+    @apply inline-flex items-center gap-2 px-4 py-2.5 sm:px-5 sm:py-3 rounded-lg font-display font-semibold;
     @apply bg-amber-500 text-bg-base shadow-glow-amber;
     transition-property: transform, opacity, filter, box-shadow, background-color;
     transition-duration: 200ms;
     transition-timing-function: ease-out;
   }
 
-  .btn-game:hover {
-    @apply -translate-y-0.5 brightness-110;
-  }
-
-  .btn-game:active {
-    @apply translate-y-0 scale-95 brightness-95;
-  }
+  .btn-game:hover   { @apply -translate-y-0.5 brightness-110; }
+  .btn-game:active  { @apply translate-y-0 scale-95 brightness-95; }
 
   .btn-ghost {
     @apply inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium;
@@ -101,58 +152,23 @@
     transition-duration: 200ms;
   }
 
-  .btn-ghost:hover {
-    @apply border-line-strong bg-bg-surface;
-  }
+  .btn-ghost:hover { @apply border-line-strong bg-bg-surface; }
 }
 
+/* ─── Heatmap ────────────────────────────────────────────────────────────────── */
 @layer components {
-  .heatmap-day {
-    transition: fill 250ms ease, stroke 250ms ease;
-  }
-
-  .heatmap-day-empty {
-    fill: rgba(148, 163, 184, 0.25);
-  }
-
-  .heatmap-day-1 {
-    fill: rgba(6, 182, 212, 0.45);
-  }
-
-  .heatmap-day-2 {
-    fill: rgba(56, 189, 248, 0.65);
-  }
-
-  .heatmap-day-3 {
-    fill: rgba(251, 191, 36, 0.75);
-  }
-
-  .heatmap-day-4 {
-    fill: rgba(251, 191, 36, 1);
-  }
-
-  .heatmap-legend {
-    @apply flex flex-wrap items-center gap-2 text-[11px] text-slate-400;
-  }
-
-  .heatmap-legend-dot {
-    @apply h-3 w-3 rounded-full inline-block;
-  }
+  .heatmap-day          { transition: fill 250ms ease, stroke 250ms ease; }
+  .heatmap-day-empty    { fill: rgba(148, 163, 184, 0.20); }
+  .heatmap-day-1        { fill: rgba(6, 182, 212, 0.40); }
+  .heatmap-day-2        { fill: rgba(56, 189, 248, 0.60); }
+  .heatmap-day-3        { fill: rgba(251, 191, 36, 0.70); }
+  .heatmap-day-4        { fill: rgba(251, 191, 36, 1); }
+  .heatmap-legend       { @apply flex flex-wrap items-center gap-2 text-[11px] text-slate-400; }
+  .heatmap-legend-dot   { @apply h-3 w-3 rounded-full inline-block; }
 }
 
-/* legacy */
-:root {
-  color-scheme: light;
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-}
-
-.dark {
-  color-scheme: dark;
-}
-
-* {
-  box-sizing: border-box;
-}
+/* ─── Global reset & legacy compatibility ────────────────────────────────────── */
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
@@ -160,15 +176,15 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
+  /* Prevent horizontal scroll from overflowing children */
+  overflow-x: hidden;
 }
 
-button,
-input,
-select,
-textarea {
-  font: inherit;
-}
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
 
-button {
-  cursor: pointer;
+/* Prevent any child element from causing horizontal scroll */
+#root {
+  overflow-x: hidden;
+  min-height: 100vh;
 }

@@ -13,7 +13,7 @@ export default {
       },
       fontSize: {
         'display-xl': ['clamp(2.5rem, 5vw, 4rem)', { lineHeight: '1.05', letterSpacing: '-0.03em' }],
-        'display-lg': ['clamp(2rem, 4vw, 3rem)', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
+        'display-lg': ['clamp(1.25rem, 3.5vw, 3rem)', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
         h1: ['1.875rem', { lineHeight: '1.15', letterSpacing: '-0.02em' }],
         h2: ['1.5rem', { lineHeight: '1.2', letterSpacing: '-0.01em' }],
       },
@@ -30,26 +30,28 @@ export default {
         glow: '0 18px 60px rgba(37, 99, 235, 0.20)',
         'glow-amber': '0 0 0 1px rgba(255,165,0,0.4), 0 8px 32px -8px rgba(255,165,0,0.45)',
         'glow-cyan': '0 0 0 1px rgba(34,211,238,0.4), 0 8px 32px -8px rgba(34,211,238,0.45)',
-        card: '0 1px 0 rgba(255,255,255,0.04) inset, 0 24px 48px -24px rgba(0,0,0,0.6)',
-        'card-hover': '0 1px 0 rgba(255,255,255,0.08) inset, 0 32px 60px -24px rgba(0,0,0,0.7)',
+        /* Theme-aware shadows via CSS variables */
+        card: 'var(--shadow-card)',
+        'card-hover': 'var(--shadow-card-hover)',
       },
       colors: {
+        /* Theme-aware design tokens — values come from CSS variables in styles.css */
         bg: {
-          base: '#070912',
-          surface: '#0E1220',
-          raised: '#161B2E',
-          inset: '#0A0E1A',
+          base: 'rgb(var(--color-bg-base) / <alpha-value>)',
+          surface: 'rgb(var(--color-bg-surface) / <alpha-value>)',
+          raised: 'rgb(var(--color-bg-raised) / <alpha-value>)',
+          inset: 'rgb(var(--color-bg-inset) / <alpha-value>)',
         },
         line: {
-          subtle: 'rgba(255,255,255,0.06)',
-          DEFAULT: 'rgba(255,255,255,0.10)',
-          strong: 'rgba(255,255,255,0.16)',
+          subtle: 'var(--color-line-subtle)',
+          DEFAULT: 'var(--color-line)',
+          strong: 'var(--color-line-strong)',
         },
         ink: {
-          100: '#F5F7FB',
-          200: '#C9D1E1',
-          400: '#7C879C',
-          600: '#4A546B',
+          100: 'rgb(var(--color-ink-100) / <alpha-value>)',
+          200: 'rgb(var(--color-ink-200) / <alpha-value>)',
+          400: 'rgb(var(--color-ink-400) / <alpha-value>)',
+          600: 'rgb(var(--color-ink-600) / <alpha-value>)',
           DEFAULT: '#101828',
         },
         accent: {

@@ -1,5 +1,12 @@
-import { useCallback, useEffect, useState } from 'react';
-import { markAllNotificationsRead, markNotificationRead, watchAuth, watchCollection, watchDocument, watchUserNotifications } from '../firebase';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  markAllNotificationsRead,
+  markNotificationRead,
+  watchAuth,
+  watchCollection,
+  watchDocument,
+  watchUserNotifications,
+} from '../firebase';
 import { AppContext } from './app-context';
 
 const THEME_STORAGE_KEY = 'theme';
@@ -7,61 +14,35 @@ const LEGACY_THEME_STORAGE_KEY = 'elitestudy-theme';
 
 function getStoredTheme() {
   if (typeof window === 'undefined') return false;
-
-  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || localStorage.getItem(LEGACY_THEME_STORAGE_KEY);
-  if (savedTheme) return savedTheme === 'dark';
-
+  const saved =
+    localStorage.getItem(THEME_STORAGE_KEY) ||
+    localStorage.getItem(LEGACY_THEME_STORAGE_KEY);
+  if (saved) return saved === 'dark';
   return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
 }
 
 export function AppProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [dark, setDark] = useState(getStoredTheme);
+  const [user, setUser]                 = useState(null);
+  const [dark, setDark]                 = useState(getStoredTheme);
   const [notifications, setNotifications] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
-  const [toasts, setToasts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [toasts, setToasts]             = useState([]);
+  const [loading, setLoading]           = useState(true);
 
-  // Toast notification system
+  // ── Toast system ─────────────────────────────────────────────────────────
   const addToast = useCallback((message, type = 'info', duration = 3200) => {
     const id = Date.now();
     setToasts((prev) => [...prev, { id, message, type }]);
-
     const timer = setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, duration);
-
     return () => clearTimeout(timer);
   }, []);
 
-  // Watch auth state
-  useEffect(() => {
-    const unsubscribe = watchAuth((sessionUser) => {
-      setUser(sessionUser);
-      if (!sessionUser) {
-        setNotifications([]);
-        setAnnouncements([]);
-      }
-      setLoading(false);
-    });
-    return unsubscribe;
-  }, []);
+  const clearToasts = useCallback(() => setToasts([]), []);
 
-  useEffect(() => {
-    if (!user?.uid) return () => {};
-
-    const unsubscribe = watchDocument('users', user.uid, (userDoc) => {
-      if (!userDoc) return;
-      const { id, ...data } = userDoc;
-      setUser((current) => ({ ...current, uid: id, ...data }));
-    }, {
-      onError: (error) => {
-        console.error('Failed to sync user profile:', error);
-      },
-    });
-
-    return unsubscribe;
-  }, [user?.uid]);
+  // ── Theme sync ───────────────────────────────────────────────────────────
+  const toggleDark = useCallback(() => setDark((v) => !v), []);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
@@ -69,58 +50,81 @@ export function AppProvider({ children }) {
     localStorage.setItem(LEGACY_THEME_STORAGE_KEY, dark ? 'dark' : 'light');
   }, [dark]);
 
+  // ── Auth listener ────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!user?.uid) {
-      return () => {};
-    }
+    return watchAuth((sessionUser) => {
+      setUser(sessionUser);
+      if (!sessionUser) {
+        setNotifications([]);
+        setAnnouncements([]);
+      }
+      setLoading(false);
+    });
+  }, []);
 
-    const unsubscribers = [
+  // ── Live user profile sync ───────────────────────────────────────────────
+  useEffect(() => {
+    if (!user?.uid) return () => {};
+    return watchDocument('users', user.uid, (userDoc) => {
+      if (!userDoc) return;
+      const { id, ...data } = userDoc;
+      setUser((current) => ({ ...current, uid: id, ...data }));
+    }, {
+      onError: (err) => console.error('Failed to sync user profile:', err),
+    });
+  }, [user?.uid]);
+
+  // ── Notifications + announcements ────────────────────────────────────────
+  useEffect(() => {
+    if (!user?.uid) return () => {};
+    const unsubs = [
       watchUserNotifications(user.uid, setNotifications, {
         take: 20,
-        onError: (error) => {
-          console.error('Failed to load notifications:', error);
+        onError: (err) => {
+          console.error('Failed to load notifications:', err);
           addToast('Could not load notifications', 'error');
         },
       }),
       watchCollection('announcements', setAnnouncements, {
         take: 10,
-        onError: (error) => {
-          console.error('Failed to load announcements:', error);
-        },
+        onError: (err) => console.error('Failed to load announcements:', err),
       }),
     ];
-
-    return () => unsubscribers.forEach((unsubscribe) => unsubscribe?.());
+    return () => unsubs.forEach((u) => u?.());
   }, [user?.uid, addToast]);
 
-  // Alias for consistency
-  const notify = addToast;
-
-  const toggleDark = useCallback(() => {
-    setDark((current) => !current);
-  }, []);
-
-  const value = {
-    user,
-    dark,
-    toggleDark,
-    notifications,
-    announcements,
-    unreadCount: notifications.filter((item) => !item.read).length,
-    markNotificationRead,
-    markAllNotificationsRead,
-    notify,
-    toasts,
-    loading,
-    isAdmin: user?.role === 'admin',
-    isAuthenticated: !!user,
-    clearToasts: () => setToasts([]),
-  };
-
-  return (
-    <AppContext.Provider value={value}>
-      {children}
-    </AppContext.Provider>
+  // ── Derived values (stable references) ──────────────────────────────────
+  const unreadCount = useMemo(
+    () => notifications.filter((n) => !n.read).length,
+    [notifications],
   );
-}
 
+  const isAdmin = useMemo(() => user?.role === 'admin', [user?.role]);
+  const isAuthenticated = useMemo(() => !!user, [user]);
+
+  // ── Context value — memoised so consumers only re-render on real changes ─
+  const value = useMemo(
+    () => ({
+      user,
+      dark,
+      toggleDark,
+      notifications,
+      announcements,
+      unreadCount,
+      markNotificationRead,
+      markAllNotificationsRead,
+      notify: addToast,
+      toasts,
+      loading,
+      isAdmin,
+      isAuthenticated,
+      clearToasts,
+    }),
+    [
+      user, dark, toggleDark, notifications, announcements, unreadCount,
+      addToast, toasts, loading, isAdmin, isAuthenticated, clearToasts,
+    ],
+  );
+
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+}
