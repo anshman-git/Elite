@@ -11,14 +11,16 @@ export function LevelUpModal({ open, level, onClose }) {
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-bg-base/80 backdrop-blur-md"
+          className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md"
+          style={{ backgroundColor: 'rgb(var(--color-bg-base) / 0.8)' }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
         >
           <motion.div
-            className="relative px-12 py-10 rounded-2xl border border-amber-500/50 bg-bg-surface text-center shadow-glow-amber"
+            className="relative px-12 py-10 rounded-2xl border border-amber-500/50 text-center shadow-glow-amber"
+            style={{ backgroundColor: 'rgb(var(--color-bg-surface))' }}
             initial={{ scale: 0.7, y: 40 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0 }}

@@ -241,9 +241,9 @@ export default function Performance({ notify }) {
               </div>
             ) : radarData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <RadarChart data={radarData} outerRadius="75%">
+                <RadarChart data={radarData} outerRadius="65%" margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                   <PolarGrid stroke="#334155" radialLines={false} />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 11 }} />
                   <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
                   <Radar
                     name="Progress"
@@ -256,7 +256,7 @@ export default function Performance({ notify }) {
                   <Tooltip
                     contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(148,163,184,0.18)', borderRadius: 18, color: '#fff' }}
                     labelStyle={{ color: '#fff' }}
-                    formatter={(value) => [`${value}%`, 'Accuracy']}
+                    formatter={(value) => [`${value}%`, 'Score']}
                   />
                 </RadarChart>
               </ResponsiveContainer>

@@ -37,10 +37,10 @@ export default {
       colors: {
         /* Theme-aware design tokens — values come from CSS variables in styles.css */
         bg: {
-          base: 'rgb(var(--color-bg-base) / <alpha-value>)',
-          surface: 'rgb(var(--color-bg-surface) / <alpha-value>)',
-          raised: 'rgb(var(--color-bg-raised) / <alpha-value>)',
-          inset: 'rgb(var(--color-bg-inset) / <alpha-value>)',
+          base: 'var(--color-bg-base)',
+          surface: 'var(--color-bg-surface)',
+          raised: 'var(--color-bg-raised)',
+          inset: 'var(--color-bg-inset)',
         },
         line: {
           subtle: 'var(--color-line-subtle)',
@@ -48,10 +48,10 @@ export default {
           strong: 'var(--color-line-strong)',
         },
         ink: {
-          100: 'rgb(var(--color-ink-100) / <alpha-value>)',
-          200: 'rgb(var(--color-ink-200) / <alpha-value>)',
-          400: 'rgb(var(--color-ink-400) / <alpha-value>)',
-          600: 'rgb(var(--color-ink-600) / <alpha-value>)',
+          100: 'rgb(var(--color-ink-100))',
+          200: 'rgb(var(--color-ink-200))',
+          400: 'rgb(var(--color-ink-400))',
+          600: 'rgb(var(--color-ink-600))',
           DEFAULT: '#101828',
         },
         accent: {

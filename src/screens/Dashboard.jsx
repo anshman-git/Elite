@@ -276,7 +276,7 @@ export default function Dashboard({ setActive, user, notify, openProfile }) {
                 </div>
                 <button
                   onClick={() => setActive('performance')}
-                  className="text-xs font-medium text-ink-400 hover:text-ink-100 transition-colors shrink-0"
+                  className="text-xs font-medium text-ink-400 hover:text-ink-100 transition-all duration-200 ease-in-out shrink-0"
                 >
                   View All
                 </button>
@@ -290,7 +290,8 @@ export default function Dashboard({ setActive, user, notify, openProfile }) {
                       initial={{ opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05, duration: 0.35 }}
-                      className="rounded-xl border border-line bg-bg-inset p-4 min-w-0"
+                      className="rounded-xl border border-line p-4 min-w-0"
+                      style={{ backgroundColor: 'rgb(var(--color-bg-inset))' }}
                     >
                       <p className="font-mono text-[10px] tracking-[0.2em] text-amber-400 truncate">
                         {attempt.subject || 'SPRINT'}
@@ -307,7 +308,8 @@ export default function Dashboard({ setActive, user, notify, openProfile }) {
                         </span>
                         <button
                           onClick={() => setReviewAttemptId(attempt.id)}
-                          className="rounded-lg border border-line bg-bg-raised px-3 py-1.5 text-xs font-semibold text-ink-100 transition-[background-color,border-color] duration-200 hover:border-cyan-500/40 shrink-0"
+                          className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-ink-100 transition-all duration-200 ease-in-out hover:border-cyan-500/40 shrink-0"
+                          style={{ backgroundColor: 'rgb(var(--color-bg-raised))' }}
                         >
                           Review
                         </button>
@@ -317,7 +319,8 @@ export default function Dashboard({ setActive, user, notify, openProfile }) {
                 </div>
               ) : (
                 /* Empty state — must be visible on all screen sizes */
-                <div className="mt-5 rounded-xl border border-line bg-bg-inset p-6 text-center">
+                <div className="mt-5 rounded-xl border border-line p-6 text-center"
+                     style={{ backgroundColor: 'rgb(var(--color-bg-inset))' }}>
                   <Activity className="mx-auto h-8 w-8 text-ink-600" />
                   <p className="mt-3 font-display text-base sm:text-lg text-ink-100">
                     No attempts logged yet
@@ -327,7 +330,7 @@ export default function Dashboard({ setActive, user, notify, openProfile }) {
                   </p>
                   <button
                     onClick={() => setActive('quizzes')}
-                    className="btn-game mt-4 text-sm"
+                    className="btn-game mt-4 text-sm transition-all duration-200 ease-in-out"
                   >
                     Enter the Arena
                   </button>
@@ -355,19 +358,22 @@ export default function Dashboard({ setActive, user, notify, openProfile }) {
                         key={person.id}
                         type="button"
                         onClick={() => openProfile?.(person.id)}
-                        className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-[background-color,border-color,transform] duration-200 hover:-translate-y-0.5 ${
+                        className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-all duration-200 ease-in-out hover:-translate-y-0.5 ${
                           isYou
                             ? 'border-amber-500/50 bg-amber-500/10'
-                            : 'border-line bg-bg-inset hover:border-amber-500/30'
+                            : 'border-line hover:border-amber-500/30'
                         }`}
+                        style={isYou ? undefined : { backgroundColor: 'rgb(var(--color-bg-inset))' }}
                       >
-                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-bg-raised font-mono text-xs font-bold text-amber-400">
+                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg font-mono text-xs font-bold text-amber-400"
+                              style={{ backgroundColor: 'rgb(var(--color-bg-raised))' }}>
                           {index + 1}
                         </span>
                         <img
                           src={getDicebearAvatar(person.id, person.avatarStyle)}
                           alt=""
-                          className="h-9 w-9 shrink-0 rounded-lg border border-line bg-bg-raised"
+                          className="h-9 w-9 shrink-0 rounded-lg border border-line"
+                          style={{ backgroundColor: 'rgb(var(--color-bg-raised))' }}
                         />
                         <div className="min-w-0 flex-1">
                           <p className="truncate font-display text-sm text-ink-100">
@@ -385,7 +391,8 @@ export default function Dashboard({ setActive, user, notify, openProfile }) {
                   })}
                 </div>
               ) : (
-                <div className="mt-5 rounded-xl border border-line bg-bg-inset p-6 text-center">
+                <div className="mt-5 rounded-xl border border-line p-6 text-center"
+                     style={{ backgroundColor: 'rgb(var(--color-bg-inset))' }}>
                   <Trophy className="mx-auto h-8 w-8 text-ink-600" />
                   <p className="mt-3 font-display text-base sm:text-lg text-ink-100">
                     No rankings yet

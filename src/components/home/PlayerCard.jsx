@@ -44,8 +44,8 @@ export function PlayerCard({ name, level, xp, xpToNext, rank, weeklyPoints, avat
 
       <motion.div
         whileHover={{ y: -2 }}
-        className="relative mt-6 flex items-center justify-between rounded-lg border border-line bg-bg-inset p-4 transform-gpu overflow-visible"
-        style={{ isolation: 'isolate', transform: 'translateZ(0)' }}
+        className="relative mt-6 flex items-center justify-between rounded-lg border border-line p-4 transform-gpu overflow-visible"
+        style={{ backgroundColor: 'rgb(var(--color-bg-inset))', isolation: 'isolate', transform: 'translateZ(0)' }}
       >
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">

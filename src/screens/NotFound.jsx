@@ -6,7 +6,8 @@ import { navigateHome } from '../routing';
 export default function NotFound() {
   return (
     <div className="grid min-h-[70vh] place-items-center px-4">
-      <div className="relative w-full max-w-xl overflow-hidden rounded-2xl border border-line bg-bg-surface p-8 text-center shadow-card">
+      <div className="relative w-full max-w-xl overflow-hidden rounded-2xl border border-line p-8 text-center shadow-card"
+           style={{ backgroundColor: 'rgb(var(--color-bg-surface))' }}>
         <div className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
         <motion.div
           aria-hidden

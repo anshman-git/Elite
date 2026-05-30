@@ -30,7 +30,8 @@ export function TopBar({
   const toggleTheme = onToggleDark || onTheme || (() => {});
 
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-bg-base/90 backdrop-blur-md">
+    <header className="sticky top-0 z-30 border-b border-line backdrop-blur-md"
+            style={{ backgroundColor: 'rgb(var(--color-bg-base) / 0.9)' }}>
       <div className="flex items-center justify-between gap-2 px-4 py-2.5 sm:px-6 sm:py-3">
 
         {/* Left: hamburger (mobile) + wordmark + admin badge */}

@@ -33,6 +33,14 @@ export default function Resources({ notify }) {
     [query, resources, type],
   );
 
+  const typeCounts = useMemo(() => {
+    const counts = { 'All': resources.length };
+    ['PYQ', 'Notes', 'Sample Paper'].forEach((t) => {
+      counts[t] = resources.filter((item) => item.type === t).length;
+    });
+    return counts;
+  }, [resources]);
+
   return (
     <div className="space-y-4">
       <div>
@@ -54,7 +62,7 @@ export default function Resources({ notify }) {
               type === item ? 'bg-slate-950 text-white dark:bg-white dark:text-slate-950' : 'bg-white text-slate-600 dark:bg-slate-900 dark:text-slate-300'
             }`}
           >
-            {item}
+            {item} <span className="ml-1.5 rounded-full bg-slate-200 dark:bg-slate-700 px-2 py-0.5 text-xs">{typeCounts[item] || 0}</span>
           </button>
         ))}
       </div>
@@ -81,7 +89,12 @@ export default function Resources({ notify }) {
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{item.type} - {item.subject}</p>
                   <h3 className="mt-1 truncate font-black text-slate-950 dark:text-white">{item.title}</h3>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Uploaded {formatDate(item.createdAt)}</p>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Uploaded {formatDate(item.createdAt)}</p>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-slate-600 dark:text-slate-300">
+                      {getFileExtension(item.url || item.fileUrl)} • {formatFileSize(item.fileSize)}
+                    </span>
+                  </div>
                 </div>
               </div>
               <div className="mt-4 grid grid-cols-2 gap-2">
@@ -105,4 +118,18 @@ export default function Resources({ notify }) {
 function formatDate(value) {
   const date = value?.toDate?.() || null;
   return date ? date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'just now';
+}
+
+function formatFileSize(bytes) {
+  if (!bytes || bytes === 0) return 'Unknown size';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+function getFileExtension(url) {
+  if (!url) return 'FILE';
+  const match = url.match(/\.([0-9a-z]+)(?:[?#]|$)/i);
+  return match ? match[1].toUpperCase() : 'FILE';
 }

@@ -37,9 +37,10 @@ export function Roadmap({ subjects, onAnalytics, onSubjectSelect }) {
               <span className={clsx(
                 'absolute left-0 top-0 grid place-items-center h-8 w-8 rounded-full border-2',
                 subject.status === 'done' && 'border-success bg-success/15 text-success',
-                subject.status === 'active' && 'border-amber-500 bg-amber-500 text-bg-base animate-pulse-glow',
-                subject.status === 'locked' && 'border-line bg-bg-inset text-ink-600',
-              )}>
+                subject.status === 'active' && 'border-amber-500 bg-amber-500 text-white animate-pulse-glow',
+                subject.status === 'locked' && 'border-line text-ink-600',
+              )}
+              style={subject.status === 'locked' ? { backgroundColor: 'rgb(var(--color-bg-inset))' } : undefined}>
                 {subject.status === 'done' ? <Check className="w-4 h-4" /> :
                   subject.status === 'locked' ? <Lock className="w-3.5 h-3.5" /> :
                     <span className="font-mono text-xs font-bold">{index + 1}</span>}
@@ -59,7 +60,8 @@ export function Roadmap({ subjects, onAnalytics, onSubjectSelect }) {
             </motion.li>
           )) : (
             <li className="relative pl-12">
-              <span className="absolute left-0 top-0 grid h-8 w-8 place-items-center rounded-full border-2 border-line bg-bg-inset text-ink-600">
+              <span className="absolute left-0 top-0 grid h-8 w-8 place-items-center rounded-full border-2 border-line text-ink-600"
+                    style={{ backgroundColor: 'rgb(var(--color-bg-inset))' }}>
                 <Lock className="w-3.5 h-3.5" />
               </span>
               <div className="cmd-card p-4">

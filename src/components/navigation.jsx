@@ -21,7 +21,8 @@ export function BottomNav({ active, setActive, isAdmin }) {
   const visibleItems = isAdmin ? items : items.filter((item) => item.id !== 'admin');
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-line bg-bg-base/95 px-2 pb-3 pt-2 backdrop-blur-md lg:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-line px-2 pb-3 pt-2 backdrop-blur-md lg:hidden"
+         style={{ backgroundColor: 'rgb(var(--color-bg-base) / 0.95)' }}>
       <div className={`mx-auto grid max-w-lg gap-1 ${isAdmin ? 'grid-cols-7' : 'grid-cols-6'}`}>
         {visibleItems.map((item) => {
           const Icon = item.icon;
@@ -34,7 +35,7 @@ export function BottomNav({ active, setActive, isAdmin }) {
                 'flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl text-[10px] font-bold transition-[background-color,color] duration-200',
                 isActive
                   ? 'bg-amber-500/15 text-amber-500'
-                  : 'text-ink-400 hover:bg-bg-raised hover:text-ink-100',
+                  : 'text-ink-400 hover:text-ink-100',
               )}
             >
               <Icon size={18} />
@@ -51,7 +52,7 @@ export function BottomNav({ active, setActive, isAdmin }) {
  * Sidebar — thin wrapper that passes all props (incl. mobile drawer props)
  * to the layout Sidebar so App.jsx callers don't need direct imports.
  */
-export function Sidebar({ active, setActive, isAdmin, isOpen, onClose }) {
+export function Sidebar({ active, setActive, isAdmin, isOpen, onClose, collapsed, onToggleCollapse }) {
   return (
     <LayoutSidebar
       active={active}
@@ -59,6 +60,8 @@ export function Sidebar({ active, setActive, isAdmin, isOpen, onClose }) {
       isAdmin={isAdmin}
       isOpen={isOpen}
       onClose={onClose}
+      collapsed={collapsed}
+      onToggleCollapse={onToggleCollapse}
     />
   );
 }

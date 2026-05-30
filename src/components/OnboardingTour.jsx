@@ -37,7 +37,8 @@ export function OnboardingTour({ open, onDone }) {
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[70] grid place-items-center bg-bg-base/85 p-4 backdrop-blur-md"
+          className="fixed inset-0 z-[70] grid place-items-center p-4 backdrop-blur-md"
+          style={{ backgroundColor: 'rgb(var(--color-bg-base) / 0.85)' }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -46,13 +47,15 @@ export function OnboardingTour({ open, onDone }) {
             type="button"
             aria-label="Skip onboarding"
             onClick={finish}
-            className="absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-xl border border-line bg-bg-raised text-ink-200 transition-[background-color,border-color,color] duration-200 hover:border-amber-500/40 hover:text-ink-100"
+            className="absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-xl border border-line text-ink-200 transition-[background-color,border-color,color] duration-200 hover:border-amber-500/40 hover:text-ink-100"
+            style={{ backgroundColor: 'rgb(var(--color-bg-raised))' }}
           >
             <X size={18} />
           </button>
 
           <motion.div
-            className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-line bg-bg-surface p-6 shadow-card"
+            className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-line p-6 shadow-card"
+            style={{ backgroundColor: 'rgb(var(--color-bg-surface))' }}
             initial={reduceMotion ? false : { opacity: 0, y: 18, scale: 0.96 }}
             animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.98 }}
@@ -84,7 +87,8 @@ export function OnboardingTour({ open, onDone }) {
                   <button
                     type="button"
                     onClick={() => setStep((value) => value - 1)}
-                    className="rounded-xl border border-line bg-bg-raised px-4 py-2 text-sm font-semibold text-ink-200 transition-[background-color,border-color,color] duration-200 hover:border-cyan-400/40 hover:text-ink-100"
+                    className="rounded-xl border border-line px-4 py-2 text-sm font-semibold text-ink-200 transition-[background-color,border-color,color] duration-200 hover:border-cyan-400/40 hover:text-ink-100"
+                    style={{ backgroundColor: 'rgb(var(--color-bg-raised))' }}
                   >
                     Back
                   </button>
@@ -92,7 +96,8 @@ export function OnboardingTour({ open, onDone }) {
                 <button
                   type="button"
                   onClick={() => (isLast ? finish() : setStep((value) => value + 1))}
-                  className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-bold text-bg-base shadow-glow-amber transition-[filter,transform,opacity] duration-200 hover:brightness-110 active:scale-95"
+                  className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-bold shadow-glow-amber transition-[filter,transform,opacity] duration-200 hover:brightness-110 active:scale-95"
+                  style={{ color: 'rgb(var(--color-bg-base))' }}
                 >
                   {isLast ? 'Enter Base' : 'Next'}
                 </button>

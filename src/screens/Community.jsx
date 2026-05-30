@@ -131,16 +131,24 @@ const ActivityCard = memo(function ActivityCard({
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <Button
+          <motion.button
             type="button"
-            variant="secondary"
             onClick={onReact}
             disabled={isPending}
-            className="min-w-[8rem]"
+            className="min-w-[8rem] inline-flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-sm font-semibold text-slate-300 transition-all duration-200 hover:border-cyan-500/30 hover:bg-slate-900 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            animate={isPending ? { scale: [1, 1.1, 1] } : {}}
+            transition={isPending ? { duration: 0.3, times: [0, 0.5, 1] } : {}}
           >
-            <Sparkles size={14} />
+            <motion.span
+              animate={isPending ? { rotate: [0, 360] } : {}}
+              transition={{ duration: 0.5, ease: "easeInOut" }}
+            >
+              <Sparkles size={14} />
+            </motion.span>
             {isPending ? 'Cheering…' : 'Cheer'}
-          </Button>
+          </motion.button>
           <div className="rounded-full bg-slate-900/80 px-3 py-2 text-sm font-semibold text-slate-300">
             {reactionCount} cheers
           </div>

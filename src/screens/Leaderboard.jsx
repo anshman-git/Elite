@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowUpRight, Crown, Flame, Medal, Search, Trophy, UsersRound, Zap } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpRight, Crown, Flame, Medal, Search, Trophy, UsersRound, Zap } from 'lucide-react';
 import { watchCollection } from '../firebase';
 import { getDicebearAvatar, getDisplayName } from '../utils';
 import { useApp } from '../context/useApp';
@@ -27,6 +27,7 @@ function PodiumCard({ person, rank, scoreField, openProfile }) {
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
       onClick={() => openProfile?.(person.id)}
       className={`group relative w-full overflow-hidden rounded-3xl border bg-gradient-to-br p-5 text-left transition-[transform,opacity,border-color,box-shadow] duration-200 ${cfg.color} ${cfg.border} ${cfg.glow}`}
+      style={{ height: rank === 1 ? 'auto' : rank === 2 ? 'calc(100% - 24px)' : 'calc(100% - 48px)' }}
     >
       <div
         className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-30 blur-2xl"
@@ -54,11 +55,20 @@ function PodiumCard({ person, rank, scoreField, openProfile }) {
   );
 }
 
-function LeaderRowBase({ person, rank, scoreField, isYou, gapToAbove, openProfile }) {
+function LeaderRowBase({ person, rank, scoreField, isYou, gapToAbove, rankChange, openProfile }) {
   const reduceMotion = useReducedMotion();
   const score = Number(person[scoreField]) || 0;
   const Icon = rank === 1 ? Crown : rank === 2 || rank === 3 ? Medal : Trophy;
   const podiumColor = rank === 1 ? 'text-amber-400' : rank === 2 ? 'text-cyan-300' : rank === 3 ? 'text-amber-500' : 'text-slate-400';
+
+  const rankChangeIndicator = rankChange !== 0 ? (
+    <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+      rankChange > 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
+    }`}>
+      {rankChange > 0 ? <ArrowUp size={10} /> : <ArrowDown size={10} />}
+      {Math.abs(rankChange)}
+    </span>
+  ) : null;
 
   return (
     <motion.button
@@ -79,8 +89,13 @@ function LeaderRowBase({ person, rank, scoreField, isYou, gapToAbove, openProfil
     >
       <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border ${
         isYou ? 'border-amber-300/50 bg-amber-500/15 text-amber-200' : 'border-white/10 bg-slate-950 text-slate-300'
-      } font-black text-sm`}>
+      } font-black text-sm relative`}>
         {rank <= 3 ? RANK_MARK[rank] : `#${rank}`}
+        {rankChangeIndicator && (
+          <span className="absolute -top-1 -right-1">
+            {rankChangeIndicator}
+          </span>
+        )}
       </div>
 
       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950/80 text-slate-300 shadow-sm">
@@ -116,6 +131,7 @@ const LeaderRow = memo(LeaderRowBase, (prevProps, nextProps) => (
   prevProps.scoreField === nextProps.scoreField &&
   prevProps.isYou === nextProps.isYou &&
   prevProps.gapToAbove === nextProps.gapToAbove &&
+  prevProps.rankChange === nextProps.rankChange &&
   prevProps.person.id === nextProps.person.id &&
   prevProps.person.xp === nextProps.person.xp &&
   prevProps.person.streak === nextProps.person.streak &&
@@ -153,6 +169,15 @@ export default function Leaderboard({ notify, openProfile }) {
     () => sortedLeaderboard.map((person, index) => ({ ...person, originalRank: index + 1 })),
     [sortedLeaderboard],
   );
+
+  const rankChanges = useMemo(() => {
+    const changes = {};
+    rankedLeaderboard.forEach((person, currentRank) => {
+      const previousRank = person.previousRank || currentRank + 1;
+      changes[person.id] = previousRank - (currentRank + 1);
+    });
+    return changes;
+  }, [rankedLeaderboard]);
 
   const filteredLeaderboard = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -251,6 +276,7 @@ export default function Leaderboard({ notify, openProfile }) {
                 scoreField={scoreField}
                 isYou={person.id === currentUserId}
                 gapToAbove={gapByUserId[person.id] || 0}
+                rankChange={rankChanges[person.id] || 0}
                 openProfile={openProfile}
               />
             ))}

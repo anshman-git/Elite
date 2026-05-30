@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, FileText, Home, Shield, Trophy, User, Users } from 'lucide-react';
+import { BarChart3, BookOpen, ChevronLeft, ChevronRight, FileText, Home, Shield, Trophy, User, Users } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import clsx from 'clsx';
 
@@ -13,7 +13,7 @@ const nav = [
   { id: 'performance', label: 'Performance',  icon: BarChart3,testId: 'nav-perf-btn' },
 ];
 
-function NavList({ items, active, handler }) {
+function NavList({ items, active, handler, collapsed }) {
   return (
     <nav className="flex flex-col gap-1">
       {items.map((item, index) => {
@@ -28,25 +28,21 @@ function NavList({ items, active, handler }) {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.04 * index, duration: 0.35 }}
             className={clsx(
-              'group relative flex items-center gap-3 px-4 py-3 rounded-lg text-left',
-              'transition-[background-color,color] duration-200',
-              isActive ? 'text-bg-base' : 'text-ink-200 hover:bg-bg-raised hover:text-ink-100',
+              'group flex items-center gap-3 rounded-xl px-3 py-2 transition-colors',
+              collapsed ? 'justify-center px-2' : 'px-3',
+              isActive 
+                ? 'bg-slate-800 text-white' 
+                : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
             )}
+            title={collapsed ? item.label : undefined}
           >
-            {isActive && (
-              <motion.span
-                layoutId="nav-pill"
-                className="absolute inset-0 rounded-lg bg-ink-100"
-                transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-              />
-            )}
             <Icon
               className={clsx(
-                'relative z-10 w-4 h-4 shrink-0',
-                isActive ? 'text-bg-base' : 'text-ink-400 group-hover:text-amber-400',
+                'w-4 h-4 shrink-0',
+                isActive ? 'text-white' : 'text-slate-300 group-hover:text-white'
               )}
             />
-            <span className="relative z-10 font-medium">{item.label}</span>
+            {!collapsed && <span className="font-medium">{item.label}</span>}
           </motion.button>
         );
       })}
@@ -61,10 +57,12 @@ function NavList({ items, active, handler }) {
  *   active    — current screen id
  *   onSelect / setActive — navigation handler
  *   isAdmin   — show admin item
+ *   collapsed — desktop collapsed state (controlled by parent)
+ *   onToggleCollapse — toggle desktop collapsed state
  *   isOpen    — mobile drawer open state (controlled by parent)
- *   onClose   — close mobile drawer
+ *   onClose   — close mobile drawer,collapsed = false, onToggleCollapse 
  */
-export function Sidebar({ active, onSelect, setActive, isAdmin = false, isOpen = false, onClose }) {
+export function Sidebar({ active, onSelect, setActive, isAdmin = false, isOpen = false, onClose, collapsed = false, onToggleCollapse }) {
   const navigate = onSelect || setActive || (() => {});
 
   const handler = (id) => {
@@ -77,8 +75,29 @@ export function Sidebar({ active, onSelect, setActive, isAdmin = false, isOpen =
   return (
     <>
       {/* ── Desktop rail (always visible on md+) ─────────────────────────── */}
-      <aside className="hidden md:flex flex-col w-60 shrink-0 border-r border-line bg-bg-base/40 backdrop-blur-sm py-6 px-3">
-        <NavList items={visibleNav} active={active} handler={handler} />
+      <aside className={clsx(
+        'hidden md:flex flex-col border-r border-line backdrop-blur-sm py-6 px-3 transition-all duration-300',
+        collapsed ? 'w-20' : 'w-64'
+      )}
+        style={{ backgroundColor: 'rgb(var(--color-bg-base) / 0.4)' }}
+      >
+        {/* Header with toggle button */}
+        <div className="flex items-center justify-between mb-4">
+          {!collapsed && (
+            <p className="font-mono text-[9px] tracking-[0.3em] text-amber-500">ELITESTUDY</p>
+          )}
+          <button
+            onClick={onToggleCollapse}
+            className={clsx(
+              'flex items-center justify-center w-10 h-10 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-colors',
+              collapsed ? 'mx-auto' : 'ml-auto'
+            )}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {collapsed ? <ChevronRight className="w-4 h-4 text-slate-400" /> : <ChevronLeft className="w-4 h-4 text-slate-400" />}
+          </button>
+        </div>
+        <NavList items={visibleNav} active={active} handler={handler} collapsed={collapsed} />
       </aside>
 
       {/* ── Mobile drawer (slide in from left) ───────────────────────────── */}
@@ -104,7 +123,8 @@ export function Sidebar({ active, onSelect, setActive, isAdmin = false, isOpen =
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed inset-y-0 left-0 z-50 flex flex-col w-64 border-r border-line bg-bg-base shadow-xl py-6 px-3 md:hidden"
+              className="fixed inset-y-0 left-0 z-50 flex flex-col w-64 border-r border-line shadow-xl py-6 px-3 md:hidden"
+              style={{ backgroundColor: 'rgb(var(--color-bg-base))' }}
             >
               {/* Branding strip */}
               <div className="mb-6 px-4">

@@ -1,32 +1,40 @@
+/* tailwindcss */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Design Tokens ─────────────────────────────────────────────────────────── */
-/* Light mode (default) */
-:root {
-  /* Background surfaces */
-  --color-bg-base:    244 246 251;   /* #f4f6fb */
-  --color-bg-surface: 255 255 255;  /* #ffffff */
-  --color-bg-raised:  238 241 248;  /* #eef1f8 */
-  --color-bg-inset:   228 232 245;  /* #e4e8f5 */
+/* ─────────────────────────────────────────────────────────────
+   DESIGN TOKENS
+───────────────────────────────────────────────────────────── */
 
-  /* Border / divider lines */
+:root {
+  /* Backgrounds */
+  --color-bg-base: 244 246 251;
+  --color-bg-surface: 255 255 255;
+  --color-bg-raised: 238 241 248;
+  --color-bg-inset: 228 232 245;
+
+  /* Borders */
   --color-line-subtle: rgba(0, 0, 0, 0.05);
-  --color-line:        rgba(0, 0, 0, 0.09);
+  --color-line: rgba(0, 0, 0, 0.09);
   --color-line-strong: rgba(0, 0, 0, 0.16);
 
   /* Text */
-  --color-ink-100: 17 24 39;    /* #111827 */
-  --color-ink-200: 55 65 81;    /* #374151 */
-  --color-ink-400: 107 114 128; /* #6b7280 */
-  --color-ink-600: 156 163 175; /* #9ca3af */
+  --color-ink-100: 17 24 39;
+  --color-ink-200: 55 65 81;
+  --color-ink-400: 107 114 128;
+  --color-ink-600: 156 163 175;
 
   /* Shadows */
-  --shadow-card:       0 1px 3px rgba(0,0,0,0.07), 0 4px 16px -4px rgba(0,0,0,0.10);
-  --shadow-card-hover: 0 1px 3px rgba(0,0,0,0.10), 0 8px 24px -6px rgba(0,0,0,0.15);
+  --shadow-card:
+    0 1px 3px rgba(0, 0, 0, 0.07),
+    0 4px 16px -4px rgba(0, 0, 0, 0.10);
 
-  /* Grid background line */
+  --shadow-card-hover:
+    0 1px 3px rgba(0, 0, 0, 0.10),
+    0 8px 24px -6px rgba(0, 0, 0, 0.15);
+
+  /* Grid */
   --grid-line: rgba(0, 0, 0, 0.05);
 
   /* Scrollbar */
@@ -34,24 +42,29 @@
   --scrollbar-thumb-hover: rgba(255, 165, 0, 0.50);
 }
 
-/* Dark mode */
+/* Dark Mode */
 .dark {
-  --color-bg-base:    7 9 18;     /* #070912 */
-  --color-bg-surface: 14 18 32;  /* #0E1220 */
-  --color-bg-raised:  22 27 46;  /* #161B2E */
-  --color-bg-inset:   10 14 26;  /* #0A0E1A */
+  --color-bg-base: 7 9 18;
+  --color-bg-surface: 14 18 32;
+  --color-bg-raised: 22 27 46;
+  --color-bg-inset: 10 14 26;
 
   --color-line-subtle: rgba(255, 255, 255, 0.06);
-  --color-line:        rgba(255, 255, 255, 0.10);
+  --color-line: rgba(255, 255, 255, 0.10);
   --color-line-strong: rgba(255, 255, 255, 0.16);
 
-  --color-ink-100: 245 247 251; /* #F5F7FB */
-  --color-ink-200: 201 209 225; /* #C9D1E1 */
-  --color-ink-400: 124 135 156; /* #7C879C */
-  --color-ink-600: 74 84 107;   /* #4A546B */
+  --color-ink-100: 245 247 251;
+  --color-ink-200: 201 209 225;
+  --color-ink-400: 124 135 156;
+  --color-ink-600: 74 84 107;
 
-  --shadow-card:       0 1px 0 rgba(255,255,255,0.04) inset, 0 24px 48px -24px rgba(0,0,0,0.6);
-  --shadow-card-hover: 0 1px 0 rgba(255,255,255,0.08) inset, 0 32px 60px -24px rgba(0,0,0,0.7);
+  --shadow-card:
+    0 1px 0 rgba(255,255,255,0.04) inset,
+    0 24px 48px -24px rgba(0,0,0,0.6);
+
+  --shadow-card-hover:
+    0 1px 0 rgba(255,255,255,0.08) inset,
+    0 32px 60px -24px rgba(0,0,0,0.7);
 
   --grid-line: rgba(255, 255, 255, 0.04);
 
@@ -59,132 +72,360 @@
   --scrollbar-thumb-hover: rgba(255, 165, 0, 0.35);
 }
 
-/* ─── Base layer ─────────────────────────────────────────────────────────────── */
-@layer base {
-  /* Let the OS/app decide colour scheme, not force dark */
-  html.dark  { color-scheme: dark; }
-  html:not(.dark) { color-scheme: light; }
+/* ─────────────────────────────────────────────────────────────
+   BASE
+───────────────────────────────────────────────────────────── */
 
-  body {
-    @apply bg-bg-base text-ink-200 font-sans antialiased;
-    /* Subtle ambient gradients — intentionally low opacity to work on both modes  */
-    background-image:
-      radial-gradient(1200px 600px at 80% -10%, rgba(34,211,238,0.06), transparent 60%),
-      radial-gradient(1000px 500px at -10% 10%, rgba(255,165,0,0.04), transparent 60%);
-    /* NOTE: background-attachment:fixed removed — causes repaints on mobile/iOS */
-  }
-
-  h1, h2, h3, h4 {
-    @apply font-display text-ink-100;
-  }
-
-  ::selection {
-    background: rgba(255, 165, 0, 0.3);
-    color: inherit;
-  }
-
-  ::-webkit-scrollbar       { width: 8px; height: 8px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb {
-    background: var(--scrollbar-thumb);
-    border-radius: 8px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--scrollbar-thumb-hover);
-  }
+html.dark {
+  color-scheme: dark;
 }
 
-/* ─── Component layer ────────────────────────────────────────────────────────── */
-@layer components {
-  .cmd-card {
-    @apply relative rounded-xl bg-bg-surface border border-line shadow-card;
-    /* overflow-visible kept intentionally for tooltips / focus rings
-       — use .cmd-card-clip when you need contained children (e.g. blur accents) */
-    overflow: visible;
-    isolation: isolate;
-    transition-property: transform, opacity, border-color, background-color, box-shadow;
-    transition-duration: 300ms;
-    transition-timing-function: ease-out;
-  }
-
-  .cmd-card:hover {
-    @apply border-line-strong shadow-card-hover;
-    transform: translateY(-0.125rem);
-  }
-
-  /* Clipped variant — use when decorative blur/gradient must not bleed outside */
-  .cmd-card-clip {
-    @apply cmd-card overflow-hidden;
-  }
-
-  .grid-bg {
-    background-image:
-      linear-gradient(var(--grid-line) 1px, transparent 1px),
-      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-    background-size: 32px 32px;
-    mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 30%, transparent 80%);
-  }
-
-  .shimmer-text {
-    background: linear-gradient(110deg, #FFA500 30%, #FFE7A8 50%, #FFA500 70%);
-    background-size: 200% 100%;
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    @apply animate-shimmer;
-  }
-
-  .btn-game {
-    @apply inline-flex items-center gap-2 px-4 py-2.5 sm:px-5 sm:py-3 rounded-lg font-display font-semibold;
-    @apply bg-amber-500 text-bg-base shadow-glow-amber;
-    transition-property: transform, opacity, filter, box-shadow, background-color;
-    transition-duration: 200ms;
-    transition-timing-function: ease-out;
-  }
-
-  .btn-game:hover   { @apply -translate-y-0.5 brightness-110; }
-  .btn-game:active  { @apply translate-y-0 scale-95 brightness-95; }
-
-  .btn-ghost {
-    @apply inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium;
-    @apply bg-bg-raised border border-line text-ink-100;
-    transition-property: transform, opacity, border-color, background-color, color;
-    transition-duration: 200ms;
-  }
-
-  .btn-ghost:hover { @apply border-line-strong bg-bg-surface; }
+html:not(.dark) {
+  color-scheme: light;
 }
 
-/* ─── Heatmap ────────────────────────────────────────────────────────────────── */
-@layer components {
-  .heatmap-day          { transition: fill 250ms ease, stroke 250ms ease; }
-  .heatmap-day-empty    { fill: rgba(148, 163, 184, 0.20); }
-  .heatmap-day-1        { fill: rgba(6, 182, 212, 0.40); }
-  .heatmap-day-2        { fill: rgba(56, 189, 248, 0.60); }
-  .heatmap-day-3        { fill: rgba(251, 191, 36, 0.70); }
-  .heatmap-day-4        { fill: rgba(251, 191, 36, 1); }
-  .heatmap-legend       { @apply flex flex-wrap items-center gap-2 text-[11px] text-slate-400; }
-  .heatmap-legend-dot   { @apply h-3 w-3 rounded-full inline-block; }
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
-
-/* ─── Global reset & legacy compatibility ────────────────────────────────────── */
-* { box-sizing: border-box; }
 
 body {
+  font-family: "Manrope", Inter, ui-sans-serif, system-ui, sans-serif;
+
+  background-color: rgb(var(--color-bg-base));
+  color: rgb(var(--color-ink-200));
+
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: geometricPrecision;
-  /* Prevent horizontal scroll from overflowing children */
+
   overflow-x: hidden;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  text-rendering: optimizeLegibility;
+
+  backface-visibility: hidden;
+  transform: translateZ(0);
+
+  background-image:
+    radial-gradient(
+      1200px 600px at 80% -10%,
+      rgba(34, 211, 238, 0.05),
+      transparent 60%
+    ),
+    radial-gradient(
+      1000px 500px at -10% 10%,
+      rgba(255, 165, 0, 0.04),
+      transparent 60%
+    );
 }
 
-button, input, select, textarea { font: inherit; }
-button { cursor: pointer; }
+h1,
+h2,
+h3,
+h4 {
+  font-family: "Space Grotesk", system-ui, sans-serif;
 
-/* Prevent any child element from causing horizontal scroll */
+  color: rgb(var(--color-ink-100));
+}
+
+img {
+  max-width: 100%;
+  image-rendering: auto;
+  backface-visibility: hidden;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+::selection {
+  background: rgba(255, 165, 0, 0.3);
+  color: inherit;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
 #root {
   overflow-x: hidden;
   min-height: 100vh;
+  isolation: isolate;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   COMPONENTS
+───────────────────────────────────────────────────────────── */
+
+.cmd-card {
+  position: relative;
+
+  border-radius: 1rem;
+
+  border: 1px solid var(--color-line);
+
+  background-color: rgb(var(--color-bg-surface));
+
+  box-shadow: var(--shadow-card);
+
+  overflow: visible;
+
+  isolation: isolate;
+
+  transition-property:
+    transform,
+    opacity,
+    border-color,
+    background-color,
+    box-shadow;
+
+  transition-duration: 250ms;
+  transition-timing-function: ease-out;
+
+  will-change: transform;
+
+  transform: translateZ(0);
+
+  backface-visibility: hidden;
+}
+
+.cmd-card:hover {
+  border-color: var(--color-line-strong);
+
+  box-shadow: var(--shadow-card-hover);
+
+  transform: translateY(-2px);
+}
+
+.cmd-card-clip {
+  overflow: hidden;
+}
+
+/* Grid Background */
+.grid-bg::before {
+  content: '';
+
+  position: absolute;
+  inset: 0;
+
+  border-radius: inherit;
+
+  pointer-events: none;
+
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+
+  background-size: 32px 32px;
+
+  opacity: 0.7;
+
+  -webkit-mask-image:
+    radial-gradient(
+      ellipse 80% 60% at 50% 30%,
+      black 30%,
+      transparent 80%
+    );
+
+  mask-image:
+    radial-gradient(
+      ellipse 80% 60% at 50% 30%,
+      black 30%,
+      transparent 80%
+    );
+}
+
+/* Shimmer */
+.shimmer-text {
+  background:
+    linear-gradient(
+      110deg,
+      #ffa500 30%,
+      #ffe7a8 50%,
+      #ffa500 70%
+    );
+
+  background-size: 200% 100%;
+
+  -webkit-background-clip: text;
+  background-clip: text;
+
+  color: transparent;
+
+  animation: shimmer 2.4s linear infinite;
+}
+
+/* Main Button */
+.btn-game {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  padding: 0.625rem 1rem;
+
+  border-radius: 0.75rem;
+
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-weight: 600;
+
+  background-color: #FFA500;
+
+  color: rgb(var(--color-bg-base));
+
+  box-shadow:
+    0 0 0 1px rgba(255,165,0,0.4),
+    0 8px 32px -8px rgba(255,165,0,0.45);
+
+  transition:
+    transform 180ms ease-out,
+    opacity 180ms ease-out,
+    filter 180ms ease-out,
+    box-shadow 180ms ease-out,
+    background-color 180ms ease-out;
+
+  transform: translateZ(0);
+}
+
+.btn-game:hover {
+  filter: brightness(1.08);
+
+  transform: translateY(-1px);
+}
+
+.btn-game:active {
+  transform: scale(0.97);
+
+  filter: brightness(0.95);
+}
+
+/* Ghost Button */
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  padding: 0.625rem 1rem;
+
+  border-radius: 0.75rem;
+
+  border: 1px solid var(--color-line);
+
+  background-color: rgb(var(--color-bg-raised));
+
+  color: rgb(var(--color-ink-100));
+
+  font-weight: 500;
+
+  transition:
+    transform 180ms ease-out,
+    border-color 180ms ease-out,
+    background-color 180ms ease-out,
+    color 180ms ease-out;
+}
+
+.btn-ghost:hover {
+  border-color: var(--color-line-strong);
+
+  background-color: rgb(var(--color-bg-surface));
+}
+
+/* GPU Layer */
+.gpu-layer {
+  transform: translateZ(0);
+
+  backface-visibility: hidden;
+
+  will-change: transform;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   HEATMAP
+───────────────────────────────────────────────────────────── */
+
+.heatmap-day {
+  transition:
+    fill 250ms ease,
+    stroke 250ms ease;
+}
+
+.heatmap-day-empty {
+  fill: rgba(148, 163, 184, 0.20);
+}
+
+.heatmap-day-1 {
+  fill: rgba(6, 182, 212, 0.40);
+}
+
+.heatmap-day-2 {
+  fill: rgba(56, 189, 248, 0.60);
+}
+
+.heatmap-day-3 {
+  fill: rgba(251, 191, 36, 0.70);
+}
+
+.heatmap-day-4 {
+  fill: rgba(251, 191, 36, 1);
+}
+
+.heatmap-legend {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  align-items: center;
+
+  gap: 0.5rem;
+
+  font-size: 11px;
+
+  color: rgb(148 163 184);
+}
+
+.heatmap-legend-dot {
+  display: inline-block;
+
+  width: 0.75rem;
+
+  height: 0.75rem;
+
+  border-radius: 9999px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ANIMATIONS
+───────────────────────────────────────────────────────────── */
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }

@@ -31,6 +31,7 @@ function AppContent() {
   const [active, setActive] = useState('dashboard');
   const [drawer, setDrawer] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [route, setRoute] = useState(() => parseRoute());
   const [showOnboarding, setShowOnboarding] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -86,7 +87,7 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-bg-base text-ink-200">
+      <div className="min-h-screen bg-[rgb(var(--color-bg-base))] text-ink-200">
         <LoadingState />
       </div>
     );
@@ -97,7 +98,7 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-bg-base text-ink-200 transition-colors duration-300">
+    <div className="min-h-screen bg-[rgb(var(--color-bg-base))] text-ink-200 transition-colors duration-300">
       <TopBar
         dark={dark}
         onToggleDark={toggleDark}
@@ -116,9 +117,11 @@ function AppContent() {
           isAdmin={isAdmin}
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
         />
 
-        <main className="min-w-0 flex-1 px-4 pb-28 pt-4 sm:px-6 lg:pb-8">
+        <main className="min-w-0 flex-1 px-4 pb-28 pt-4 sm:px-6 lg:pb-8 transition-all duration-300">
           <div className="mx-auto max-w-7xl">
             <AnimatePresence mode="wait">
               <motion.div
@@ -177,7 +180,8 @@ function AppContent() {
               animate={{ x: 0 }}
               exit={{ x: 360 }}
               transition={{ type: 'spring', damping: 30, stiffness: 260 }}
-              className="ml-auto h-full w-full max-w-sm overflow-y-auto rounded-3xl bg-bg-surface border border-line p-4 shadow-xl"
+              className="ml-auto h-full w-full max-w-sm overflow-y-auto rounded-3xl border border-line p-4 shadow-xl"
+              style={{ backgroundColor: 'rgb(var(--color-bg-surface))' }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between">

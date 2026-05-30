@@ -365,8 +365,8 @@ function QuizCard({ quiz, attempted, onStart }) {
       className={classNames(
         'group relative overflow-hidden rounded-3xl border bg-slate-900/80 p-5 transition-[background-color,border-color,box-shadow,transform,opacity] duration-300',
         attempted
-          ? 'border-white/5'
-          : 'border-white/10 hover:border-cyan-500/40 hover:shadow-[0_0_40px_-12px_rgba(34,211,238,0.3)]',
+          ? 'border-white/5 opacity-60 cursor-not-allowed'
+          : 'border-white/10 hover:border-cyan-500/40 hover:shadow-[0_0_40px_-12px_rgba(34,211,238,0.3)] cursor-pointer',
       )}
     >
       {/* Gradient accent top-right */}
@@ -382,7 +382,7 @@ function QuizCard({ quiz, attempted, onStart }) {
       </div>
       <Button
         variant={attempted ? 'secondary' : 'accent'}
-        className="mt-4 w-full"
+        className={classNames('mt-4 w-full', attempted ? 'opacity-50' : '')}
         disabled={attempted}
         onClick={onStart}
       >
@@ -416,6 +416,14 @@ export default function Quizzes({ notify }) {
     },
     [quizzes, subject],
   );
+
+  const subjectCounts = useMemo(() => {
+    const counts = { 'All': quizzes.filter((q) => q.published !== false).length };
+    subjects.forEach((s) => {
+      counts[s.name] = quizzes.filter((q) => (q.subject === s.name || q.subject === 'All') && q.published !== false).length;
+    });
+    return counts;
+  }, [quizzes, subjects]);
 
   const questions = useMemo(() => activeQuiz?.questions || [], [activeQuiz]);
   const attemptedQuizIds = useMemo(
@@ -563,7 +571,7 @@ export default function Quizzes({ notify }) {
                 : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white',
             )}
           >
-            {item}
+            {item} <span className="ml-1.5 rounded-full bg-white/20 px-2 py-0.5 text-xs">{subjectCounts[item] || 0}</span>
           </motion.button>
         ))}
       </div>

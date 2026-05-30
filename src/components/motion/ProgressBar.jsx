@@ -7,7 +7,8 @@ export function ProgressBar({ value, max = 100, color = 'amber', className = '' 
     : 'linear-gradient(90deg, #FFA500, #FFC233)';
 
   return (
-    <div className={`relative h-2 rounded-full bg-bg-inset overflow-hidden ${className}`}>
+    <div className={`relative h-2 rounded-full overflow-hidden ${className}`}
+         style={{ backgroundColor: 'rgb(var(--color-bg-inset))' }}>
       <motion.div
         className="absolute inset-0 rounded-full origin-left"
         style={{ background: grad }}
