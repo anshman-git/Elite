@@ -33,7 +33,7 @@ export function QuizArena({
     : 0;
 
   const motionProps =
-    !reduceMotion && !selectedAnswer
+    !reduceMotion && !locked
       ? {
           whileHover: { scale: 1.01 },
           whileTap: { scale: 0.98 },
@@ -45,22 +45,8 @@ export function QuizArena({
     : { duration: 0.9, ease: 'linear' };
 
   const choose = (option, event) => {
-    if (locked || selectedAnswer) return;
-
-    const isCorrect = option.value === correctAnswer;
-
-    if (isCorrect && event?.currentTarget) {
-      const rect = event.currentTarget.getBoundingClientRect();
-
-      fireConfetti({
-        x: (rect.left + rect.width / 2) / window.innerWidth,
-        y: (rect.top + rect.height / 2) / window.innerHeight,
-      });
-    } else if (!isCorrect) {
-      shakeScreen();
-    }
-
-    onChoose(option.value, isCorrect);
+    if (locked) return;
+    onChoose(option.value);
   };
 
   return (
@@ -120,19 +106,25 @@ export function QuizArena({
         {/* Options */}
         <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
           {options.map((option, index) => {
-            const isPicked = selectedAnswer === option.value;
+            const isAnswered = selectedAnswer === option.value;
             const isCorrect = option.value === correctAnswer;
 
-            const state =
-              !selectedAnswer
-                ? 'idle'
-                : isPicked && isCorrect
-                ? 'right'
-                : isPicked && !isCorrect
-                ? 'wrong'
-                : isCorrect
-                ? 'reveal'
-                : 'idle';
+            let state;
+            if (!locked) {
+              // During quiz: only show selection state
+              state = isAnswered ? 'selected' : 'idle';
+            } else {
+              // After final submission: show correct/wrong state
+              if (isAnswered && isCorrect) {
+                state = 'right';
+              } else if (isAnswered && !isCorrect) {
+                state = 'wrong';
+              } else if (isCorrect) {
+                state = 'reveal';
+              } else {
+                state = 'idle';
+              }
+            }
 
             return (
               <motion.button
@@ -146,14 +138,17 @@ export function QuizArena({
                   state === 'idle' &&
                     'border-line hover:border-amber-500/50',
 
+                  state === 'selected' &&
+                    'border-slate-500 bg-slate-700',
+
                   state === 'right' &&
-                    'border-success bg-success/10 text-success',
+                    'border-green-600 bg-green-600 text-white',
 
                   state === 'wrong' &&
-                    'border-danger bg-danger/10 text-danger',
+                    'border-red-600 bg-red-600 text-white',
 
                   state === 'reveal' &&
-                    'border-success/40 bg-success/5 text-success',
+                    'border-green-600 bg-green-600 text-white',
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -215,7 +210,7 @@ export function QuizArena({
 
         {/* Explanation */}
         <AnimatePresence>
-          {selectedAnswer && (
+          {locked && selectedAnswer && (
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}

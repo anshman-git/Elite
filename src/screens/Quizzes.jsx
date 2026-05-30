@@ -98,16 +98,10 @@ function QuizWorkspace({ activeQuiz, answers, setAnswers, submitted, submitting,
     };
   });
 
-  const handleChooseAnswer = useCallback((value, isCorrect) => {
-    if (!questionId || answeredValue || submitted) return;
+  const handleChooseAnswer = useCallback((value) => {
+    if (!questionId || submitted) return;
     setAnswers((current) => ({ ...current, [questionId]: value }));
-    if (isCorrect) {
-      setCombo((current) => current + 1);
-      playSuccessTone();
-    } else {
-      setCombo(0);
-    }
-  }, [answeredValue, playSuccessTone, questionId, setAnswers, submitted]);
+  }, [questionId, submitted, setAnswers]);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -188,8 +182,10 @@ function QuizWorkspace({ activeQuiz, answers, setAnswers, submitted, submitting,
                       'flex h-10 w-10 items-center justify-center rounded-xl text-xs font-black transition-[background-color,color,box-shadow,transform] duration-200',
                       isActive
                         ? 'bg-cyan-500 text-slate-950 shadow-[0_0_16px_-4px_rgba(34,211,238,0.7)]'
-                        : status === 'correct' ? 'bg-emerald-500/20 text-emerald-300'
+                        : submitted ? (status === 'correct' ? 'bg-emerald-500/20 text-emerald-300'
                         : status === 'wrong' ? 'bg-rose-500/20 text-rose-300'
+                        : status === 'answered' ? 'bg-cyan-500/20 text-cyan-300'
+                        : 'bg-white/5 text-slate-400')
                         : status === 'answered' ? 'bg-cyan-500/20 text-cyan-300'
                         : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white',
                     )}
