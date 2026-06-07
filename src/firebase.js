@@ -336,7 +336,7 @@ export async function submitAttempt(userId, quizId, quizData, answers) {
   }, 0);
 
   const accuracy = questions.length > 0 ? Math.round((score / questions.length) * 100) : 0;
-  const pointsGained = Math.min(100, score * 10);
+  const pointsGained = score * 10;
   const isWeeklyQuiz = quizData.weeklyTest === true;
   const weeklyPointsGained = pointsGained;
 
