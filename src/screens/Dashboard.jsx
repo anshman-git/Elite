@@ -1,6 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Activity, BookOpen, Clock, Flame, TrendingUp, Trophy } from 'lucide-react';
+import {
+  Activity,
+  ArrowRight,
+  BarChart3,
+  BookOpen,
+  Clock,
+  Flame,
+  Sparkles,
+  Target,
+  TrendingUp,
+  Trophy,
+  Zap,
+} from 'lucide-react';
 import { watchCollection, watchExamCountdown, watchSubjects, watchUserAttempts } from '../firebase';
 import AttemptReviewModal from '../components/AttemptReviewModal';
 import { ScrollReveal } from '../components/motion/ScrollReveal';
@@ -49,6 +61,204 @@ function formatAttemptDate(value) {
   return date
     ? date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
     : 'Just now';
+}
+
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+function getTodayAttempts(attempts) {
+  return attempts.filter((attempt) => {
+    if (!attempt.completedAt) return false;
+    const date = attempt.completedAt.toDate ? attempt.completedAt.toDate() : new Date(attempt.completedAt);
+    return date.toDateString() === new Date().toDateString();
+  }).length;
+}
+
+function getAverageAccuracy(attempts) {
+  if (!attempts.length) return 0;
+  return Math.round(attempts.reduce((sum, attempt) => sum + (Number(attempt.accuracy) || 0), 0) / attempts.length);
+}
+
+function MiniMetric({ icon: Icon, label, value, tone = 'amber' }) {
+  const toneClass = tone === 'cyan'
+    ? 'border-cyan-500/20 bg-cyan-500/10 text-cyan-400'
+    : tone === 'success'
+      ? 'border-success/20 bg-success/10 text-success'
+      : 'border-amber-500/20 bg-amber-500/10 text-amber-400';
+
+  return (
+    <div className="rounded-xl border border-line bg-bg-surface/70 p-3 shadow-soft backdrop-blur-md">
+      <div className="flex items-center gap-3">
+        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg border ${toneClass}`}>
+          <Icon className="h-4 w-4" />
+        </span>
+        <div className="min-w-0">
+          <p className="truncate text-[10px] font-bold uppercase tracking-[0.18em] text-ink-400">{label}</p>
+          <p className="mt-0.5 truncate font-display text-lg font-black text-ink-100">{value}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DashboardHero({
+  displayName,
+  streakDays,
+  isDailyDone,
+  averageAccuracy,
+  attemptsToday,
+  weeklyPoints,
+  countdownText,
+  onStart,
+  onAnalytics,
+}) {
+  const dailyProgress = Math.min(100, attemptsToday * 50);
+
+  return (
+    <SpotlightCard className="overflow-hidden p-0" glow="amber">
+      <div className="absolute inset-0 grid-bg opacity-80" aria-hidden />
+      <div className="pointer-events-none absolute -right-28 -top-28 h-72 w-72 rounded-full bg-amber-radial blur-2xl opacity-80" aria-hidden />
+      <div className="pointer-events-none absolute -bottom-32 left-1/4 h-72 w-72 rounded-full bg-cyan-radial blur-2xl opacity-70" aria-hidden />
+
+      <div className="relative grid gap-6 p-5 sm:p-7 lg:grid-cols-[1fr_360px] lg:p-8">
+        <div className="flex min-w-0 flex-col justify-between">
+          <div>
+            <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-amber-500 backdrop-blur-md">
+              <Sparkles className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate text-xs font-bold uppercase tracking-[0.18em]">
+                Command center online
+              </span>
+            </div>
+
+            <h1 className="mt-5 max-w-3xl font-display text-3xl font-black leading-tight text-ink-100 sm:text-4xl lg:text-5xl">
+              {getGreeting()}, {displayName}.
+              <span className="block bg-gradient-to-r from-amber-500 via-yellow-500 to-cyan-500 bg-clip-text text-transparent">
+                Keep the streak alive.
+              </span>
+            </h1>
+
+            <p className="mt-4 max-w-2xl text-sm leading-6 text-ink-200 sm:text-base">
+              Your study pulse, rank pressure, and daily practice targets are gathered here so the next move is always obvious.
+            </p>
+          </div>
+
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <button onClick={onStart} className="btn-game justify-center px-5 py-3 text-sm">
+              <Zap className="h-4 w-4" />
+              {isDailyDone ? 'Practice More' : 'Start Daily Sprint'}
+              <ArrowRight className="h-4 w-4" />
+            </button>
+            <button onClick={onAnalytics} className="btn-ghost justify-center px-5 py-3 text-sm">
+              <BarChart3 className="h-4 w-4" />
+              View Analytics
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-line bg-bg-surface/75 p-5 shadow-soft backdrop-blur-xl">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-amber-500">Today</p>
+              <h2 className="mt-2 font-display text-3xl font-black text-ink-100">{streakDays} day streak</h2>
+              <p className="mt-1 text-sm text-ink-400">
+                {isDailyDone ? 'Daily sprint cleared.' : 'Two focused sprints complete the loop.'}
+              </p>
+            </div>
+            <div className="relative grid h-20 w-20 shrink-0 place-items-center rounded-full border border-amber-500/30 bg-amber-500/10">
+              <div
+                className="absolute inset-1 rounded-full"
+                style={{
+                  background: `conic-gradient(#FFA500 ${dailyProgress * 3.6}deg, rgba(148,163,184,0.18) 0deg)`,
+                }}
+              />
+              <div className="relative grid h-14 w-14 place-items-center rounded-full border border-line bg-bg-surface">
+                <Flame className="h-6 w-6 text-amber-500" />
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <MiniMetric icon={Target} label="Accuracy" value={`${averageAccuracy}%`} tone="success" />
+            <MiniMetric icon={Activity} label="Sprints" value={`${attemptsToday}/2`} tone="cyan" />
+            <MiniMetric icon={Trophy} label="Weekly XP" value={weeklyPoints} />
+            <MiniMetric icon={Clock} label="Exam" value={countdownText} tone="cyan" />
+          </div>
+        </div>
+      </div>
+    </SpotlightCard>
+  );
+}
+
+function ProgressSnapshot({ subjects, averageAccuracy, attempts, onAnalytics }) {
+  const activeSubjects = subjects.filter((subject) => subject.status !== 'locked').length;
+
+  return (
+    <SpotlightCard className="p-5 sm:p-7" glow="cyan">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Target className="h-4 w-4 text-cyan-400" />
+          <p className="font-mono text-xs tracking-[0.3em] text-cyan-400">PROGRESS PULSE</p>
+        </div>
+        <button
+          onClick={onAnalytics}
+          className="inline-flex items-center gap-1 text-xs font-semibold text-ink-400 transition-colors hover:text-ink-100"
+        >
+          Full report <ArrowRight className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      <div className="mt-5 grid gap-4 md:grid-cols-[220px_1fr]">
+        <div className="rounded-2xl border border-line bg-bg-inset/70 p-5 text-center">
+          <div
+            className="mx-auto grid h-32 w-32 place-items-center rounded-full"
+            style={{
+              background: `conic-gradient(#22D3EE ${averageAccuracy * 3.6}deg, rgba(148,163,184,0.18) 0deg)`,
+            }}
+          >
+            <div className="grid h-24 w-24 place-items-center rounded-full border border-line bg-bg-surface">
+              <div>
+                <p className="font-display text-3xl font-black text-ink-100">{averageAccuracy}%</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink-400">Average</p>
+              </div>
+            </div>
+          </div>
+          <p className="mt-4 text-sm font-semibold text-ink-200">{attempts.length} attempts analyzed</p>
+          <p className="mt-1 text-xs text-ink-400">{activeSubjects} subjects currently moving</p>
+        </div>
+
+        <div className="grid content-start gap-3">
+          {subjects.length ? subjects.slice(0, 4).map((subject) => (
+            <div key={subject.id} className="rounded-xl border border-line bg-bg-surface/70 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate font-display text-base font-bold text-ink-100">{subject.name}</p>
+                  <p className="mt-0.5 truncate text-xs text-ink-400">{subject.description || 'Practice momentum'}</p>
+                </div>
+                <span className="shrink-0 font-mono text-sm font-bold text-cyan-400">{subject.progress}%</span>
+              </div>
+              <div className="mt-3 h-2 overflow-hidden rounded-full border border-line-subtle bg-bg-inset">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${subject.progress}%` }}
+                  transition={{ duration: 0.8, ease: 'easeOut' }}
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-amber-500"
+                />
+              </div>
+            </div>
+          )) : (
+            <div className="rounded-xl border border-line bg-bg-surface/70 p-5">
+              <p className="font-display text-lg text-ink-100">No subjects yet</p>
+              <p className="mt-1 text-sm text-ink-400">Your mastery pulse appears as soon as subjects are available.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </SpotlightCard>
+  );
 }
 
 /**
@@ -145,11 +355,9 @@ export default function Dashboard({ setActive, user, notify, openProfile }) {
     [user?.streak, user?.lastAttemptDate],
   );
 
-  const isDailyDone = attempts.some((a) => {
-    if (!a.completedAt) return false;
-    const date = a.completedAt.toDate ? a.completedAt.toDate() : new Date(a.completedAt);
-    return date.toDateString() === new Date().toDateString();
-  });
+  const attemptsToday = useMemo(() => getTodayAttempts(attempts), [attempts]);
+  const averageAccuracy = useMemo(() => getAverageAccuracy(attempts), [attempts]);
+  const isDailyDone = attemptsToday >= 2;
 
   const topUser = sortedLeaderboard[0];
   const pointsBehindLeader =
@@ -214,6 +422,20 @@ export default function Dashboard({ setActive, user, notify, openProfile }) {
           <TickerBar items={tickerItems} />
         </ScrollReveal>
 
+        <ScrollReveal delay={0.03}>
+          <DashboardHero
+            displayName={getDisplayName(user) || 'Grinder'}
+            streakDays={streakDays}
+            isDailyDone={isDailyDone}
+            averageAccuracy={averageAccuracy}
+            attemptsToday={attemptsToday}
+            weeklyPoints={weeklyPoints}
+            countdownText={countdownDisplay?.text || `${daysUntilExam()} days`}
+            onStart={() => setActive('quizzes')}
+            onAnalytics={() => setActive('performance')}
+          />
+        </ScrollReveal>
+
         {/* Mission card + Player card */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           <ScrollReveal className="lg:col-span-2" delay={0.05}>
@@ -246,6 +468,15 @@ export default function Dashboard({ setActive, user, notify, openProfile }) {
         {/* Stat tiles */}
         <ScrollReveal delay={0.1}>
           <StatGrid tiles={statTiles} />
+        </ScrollReveal>
+
+        <ScrollReveal delay={0.12}>
+          <ProgressSnapshot
+            subjects={roadmapSubjects}
+            averageAccuracy={averageAccuracy}
+            attempts={attempts}
+            onAnalytics={() => setActive('performance')}
+          />
         </ScrollReveal>
 
         {/* Roadmap + Daily focus */}

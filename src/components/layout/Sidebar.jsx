@@ -15,7 +15,7 @@ const nav = [
 
 function NavList({ items, active, handler, collapsed }) {
   return (
-    <nav className="flex flex-col gap-1">
+    <nav className="flex flex-col gap-1.5 mt-4">
       {items.map((item, index) => {
         const Icon = item.icon;
         const isActive = active === item.id;
@@ -28,21 +28,21 @@ function NavList({ items, active, handler, collapsed }) {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.04 * index, duration: 0.35 }}
             className={clsx(
-              'group flex items-center gap-3 rounded-xl px-3 py-2 transition-colors',
-              collapsed ? 'justify-center px-2' : 'px-3',
+              'group flex items-center gap-3 rounded-xl py-3 transition-all duration-200 outline-none',
+              collapsed ? 'justify-center px-2' : 'px-4',
               isActive 
-                ? 'bg-slate-800 text-white' 
-                : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
+                ? 'bg-amber-500/10 text-amber-500 border-l-4 border-amber-500 font-bold shadow-soft' 
+                : 'text-ink-200 border-l-4 border-transparent hover:bg-bg-raised/70 hover:text-ink-100'
             )}
             title={collapsed ? item.label : undefined}
           >
             <Icon
               className={clsx(
-                'w-4 h-4 shrink-0',
-                isActive ? 'text-white' : 'text-slate-300 group-hover:text-white'
+                'w-4.5 h-4.5 shrink-0 transition-colors',
+                isActive ? 'text-amber-500' : 'text-ink-400 group-hover:text-ink-200'
               )}
             />
-            {!collapsed && <span className="font-medium">{item.label}</span>}
+            {!collapsed && <span className="font-display text-sm tracking-wide">{item.label}</span>}
           </motion.button>
         );
       })}
@@ -76,25 +76,23 @@ export function Sidebar({ active, onSelect, setActive, isAdmin = false, isOpen =
     <>
       {/* ── Desktop rail (always visible on md+) ─────────────────────────── */}
       <aside className={clsx(
-        'hidden md:flex flex-col border-r border-line backdrop-blur-sm py-6 px-3 transition-all duration-300',
+        'hidden md:flex flex-col border-r border-line backdrop-blur-md py-6 px-3 transition-all duration-300 shrink-0 min-h-[calc(100vh-4rem)] bg-bg-surface/80 dark:bg-bg-surface/50',
         collapsed ? 'w-20' : 'w-64'
-      )}
-        style={{ backgroundColor: 'rgb(var(--color-bg-base) / 0.4)' }}
-      >
+      )}>
         {/* Header with toggle button */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between px-2 mb-4">
           {!collapsed && (
-            <p className="font-mono text-[9px] tracking-[0.3em] text-amber-500">ELITESTUDY</p>
+            <p className="font-display font-black text-xs tracking-[0.25em] text-amber-500">ELITESTUDY</p>
           )}
           <button
             onClick={onToggleCollapse}
             className={clsx(
-              'flex items-center justify-center w-10 h-10 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-colors',
+              'flex items-center justify-center w-8 h-8 rounded-lg border border-line bg-bg-surface hover:bg-bg-raised text-ink-200 hover:text-ink-100 transition-colors shadow-soft',
               collapsed ? 'mx-auto' : 'ml-auto'
             )}
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
-            {collapsed ? <ChevronRight className="w-4 h-4 text-slate-400" /> : <ChevronLeft className="w-4 h-4 text-slate-400" />}
+            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
         </div>
         <NavList items={visibleNav} active={active} handler={handler} collapsed={collapsed} />
@@ -123,13 +121,12 @@ export function Sidebar({ active, onSelect, setActive, isAdmin = false, isOpen =
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed inset-y-0 left-0 z-50 flex flex-col w-64 border-r border-line shadow-xl py-6 px-3 md:hidden"
-              style={{ backgroundColor: 'rgb(var(--color-bg-base))' }}
+              className="fixed inset-y-0 left-0 z-50 flex flex-col w-64 border-r border-line shadow-xl py-6 px-3 md:hidden bg-bg-surface/95 dark:bg-bg-surface/90 backdrop-blur-lg"
             >
               {/* Branding strip */}
               <div className="mb-6 px-4">
-                <p className="font-mono text-[9px] tracking-[0.3em] text-amber-500">ELITESTUDY</p>
-                <p className="font-display text-sm text-ink-100">Navigation</p>
+                <p className="font-display font-black text-[10px] tracking-[0.3em] text-amber-500">ELITESTUDY</p>
+                <p className="font-display font-bold text-lg text-ink-100">Navigation</p>
               </div>
               <NavList items={visibleNav} active={active} handler={handler} />
             </motion.aside>

@@ -11,6 +11,7 @@ import { navigateHome, navigateToProfile, parseRoute } from './routing';
 import { confirmLeaveQuiz } from './utils';
 import Admin from './screens/Admin';
 import Auth from './screens/Auth';
+import LandingPage from './screens/LandingPage';
 import Dashboard from './screens/Dashboard';
 import Community from './screens/Community';
 import Leaderboard from './screens/Leaderboard';
@@ -37,6 +38,7 @@ function AppContent() {
     if (typeof window === 'undefined') return false;
     return localStorage.getItem('elitestudy-onboarding-seen') !== 'true';
   });
+  const [showAuth, setShowAuth] = useState(false);
 
   useEffect(() => {
     const syncRoute = () => setRoute(parseRoute());
@@ -94,7 +96,10 @@ function AppContent() {
   }
 
   if (!user) {
-    return <Auth notify={notify} />;
+    if (showAuth) {
+      return <Auth notify={notify} onBack={() => setShowAuth(false)} />;
+    }
+    return <LandingPage onGetStarted={() => setShowAuth(true)} />;
   }
 
   return (

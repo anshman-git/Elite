@@ -3,7 +3,7 @@ import { GraduationCap, KeyRound, Mail, UserRound } from 'lucide-react';
 import { firebaseEnabled, getFriendlyFirebaseError, loginWithEmail, resetPassword, signupWithEmail } from '../firebase';
 import { Button, Card } from '../components/ui';
 
-export default function Auth({ notify }) {
+export default function Auth({ notify, onBack }) {
   const [mode, setMode] = useState('login');
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [loading, setLoading] = useState(false);
@@ -69,6 +69,11 @@ export default function Auth({ notify }) {
           <button className="text-slate-500 dark:text-slate-400" onClick={() => setMode(mode === 'forgot' ? 'login' : 'forgot')}>
             {mode === 'forgot' ? 'Back to login' : 'Forgot password?'}
           </button>
+          {onBack && (
+            <button className="mt-2 text-xs text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300" onClick={onBack}>
+              &larr; Back to Landing Page
+            </button>
+          )}
         </div>
       </Card>
     </main>
