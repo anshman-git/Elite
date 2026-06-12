@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { BarChart3, BookOpen, CheckCircle, Trophy, TrendingDown, TrendingUp, Zap } from 'lucide-react';
+import { BarChart3, BookOpen, CheckCircle, Trophy, TrendingDown, TrendingUp, Zap, Target, Flame } from 'lucide-react';
 import { ResponsiveContainer, Radar, RadarChart, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Tooltip } from 'recharts';
 import { watchUserAttempts, watchSubjects } from '../firebase';
 import AttemptReviewModal from '../components/AttemptReviewModal';
@@ -9,6 +9,7 @@ import { Button, Card, Skeleton } from '../components/ui';
 import { CountUp } from '../components/motion/CountUp';
 import { useReducedMotion } from '../components/motion/useReducedMotion';
 import { getLocalDayDifference, toTimestampDate } from '../utils';
+import { StatsCard, ProgressRing } from '../components/InteractiveElements';
 
 /* ─── helpers ───────────────────────────────────────────────────────────────── */
 function getWeeklyBars(attempts) {
@@ -32,24 +33,6 @@ function progressColor(pct) {
 function getDayKey(date) {
   const parsed = date instanceof Date ? date : date?.toDate?.();
   return parsed ? `${parsed.getFullYear()}-${parsed.getMonth()}-${parsed.getDate()}` : null;
-}
-
-function StatCard({ icon, label, value, sub, accent }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 p-5"
-    >
-      <div className={`pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full blur-2xl opacity-20 ${accent}`} />
-      <div className={`mb-3 inline-flex h-10 w-10 items-center justify-center rounded-2xl ${accent} bg-opacity-20`}>
-        {icon}
-      </div>
-      <p className="text-3xl font-black text-white">{value}</p>
-      <p className="mt-0.5 text-sm font-bold text-white">{label}</p>
-      {sub && <p className="mt-1 text-xs text-slate-500">{sub}</p>}
-    </motion.div>
-  );
 }
 
 function SubjectBar({ subject, delay }) {
@@ -194,33 +177,33 @@ export default function Performance({ notify }) {
 
       <div className="grid gap-4 xl:grid-cols-[1.75fr_1fr]">
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-2">
-          <StatCard
-            icon={<BarChart3 size={20} className="text-cyan-400" />}
+          <StatsCard
+            icon={BarChart3}
             label="Quizzes Taken"
-            value={<CountUp to={attempts.length} />}
-            sub="Total attempts so far"
-            accent="bg-cyan-500/20"
+            value={attempts.length.toString()}
+            trend="Total attempts so far"
+            trendPositive={true}
           />
-          <StatCard
-            icon={<TrendingUp size={20} className="text-amber-400" />}
+          <StatsCard
+            icon={TrendingUp}
             label="Avg. Accuracy"
-            value={<CountUp to={averageAccuracy} suffix="%" />}
-            sub={averageAccuracy >= 70 ? 'Strong consistency' : 'Focus on accuracy'}
-            accent="bg-amber-500/20"
+            value={`${averageAccuracy}%`}
+            trend={averageAccuracy >= 70 ? 'Strong consistency' : 'Focus on accuracy'}
+            trendPositive={averageAccuracy >= 70}
           />
-          <StatCard
-            icon={<TrendingDown size={20} className="text-cyan-400" />}
-            label="Weakest subject"
+          <StatsCard
+            icon={Target}
+            label="Weakest Subject"
             value={weakestSubject?.name || '—'}
-            sub={weakestSubject ? `${weakestSubject.progress}% accuracy` : 'No subject data yet'}
-            accent="bg-cyan-500/20"
+            trend={weakestSubject ? `${weakestSubject.progress}% accuracy` : 'No data yet'}
+            trendPositive={false}
           />
-          <StatCard
-            icon={<Zap size={20} className="text-amber-400" />}
-            label="XP velocity"
-            value={<CountUp to={xpVelocity} suffix="xp" />}
-            sub="Average XP per attempt"
-            accent="bg-amber-500/20"
+          <StatsCard
+            icon={Flame}
+            label="XP Velocity"
+            value={xpVelocity.toString()}
+            trend="Average XP per attempt"
+            trendPositive={true}
           />
         </div>
 

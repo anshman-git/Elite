@@ -6,6 +6,7 @@ import { getDicebearAvatar, getDisplayName } from '../utils';
 import { useApp } from '../context/useApp';
 import { useReducedMotion } from '../components/motion/useReducedMotion';
 import { EmptyState } from '../components/ui';
+import { NotificationBadge } from '../components/InteractiveElements';
 
 const PODIUM = {
   1: { label: 'Gold', color: 'from-amber-500/25 to-amber-600/5 bg-bg-surface/40', border: 'border-amber-500/40', badge: 'bg-amber-500 text-slate-950', glow: 'shadow-glow-amber', crown: 'text-amber-500' },
@@ -112,10 +113,22 @@ function LeaderRowBase({ person, rank, scoreField, isYou, gapToAbove, rankChange
           {getDisplayName(person)}
           {isYou && <span className="ml-2 rounded-xl bg-amber-500/15 px-2 py-0.5 text-[9px] font-bold tracking-[0.15em] text-amber-500">YOU</span>}
         </p>
-        <div className="mt-2 flex flex-wrap gap-2 text-[9px] font-bold uppercase tracking-wider text-ink-400">
-          <span className="inline-flex items-center gap-1"><Flame size={10} className="text-amber-500" /> {person.streak || 0}d</span>
-          <span className="inline-flex items-center gap-1"><Zap size={10} className="text-cyan-500" /> {person.xp || 0} XP</span>
-          <span className="inline-flex items-center gap-1"><UsersRound size={10} className="text-indigo-500" /> {person.followers?.length || 0}</span>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {person.streak > 0 && (
+            <NotificationBadge
+              count={person.streak}
+              pulse={isYou}
+              className="bg-amber-500/20 text-amber-500 border border-amber-500/30"
+            />
+          )}
+          <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-cyan-500 bg-cyan-500/10 px-2 py-1 rounded-lg border border-cyan-500/20">
+            <Zap size={10} /> {person.xp || 0}
+          </span>
+          {(person.followers?.length || 0) > 0 && (
+            <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-indigo-500 bg-indigo-500/10 px-2 py-1 rounded-lg border border-indigo-500/20">
+              <UsersRound size={10} /> {person.followers.length}
+            </span>
+          )}
         </div>
       </div>
 

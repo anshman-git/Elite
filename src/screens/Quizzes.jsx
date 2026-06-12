@@ -12,9 +12,10 @@ import {
 } from 'lucide-react';
 import { watchQuizzes, submitAttempt, watchSubjects, watchUserAttempts } from '../firebase';
 import { useApp } from '../context/useApp';
-import { Button, EmptyState } from '../components/ui';
+import { Button, EmptyState, Badge } from '../components/ui';
 import { QuizArena } from '../components/quiz/QuizArena';
 import { getFriendlyFirebaseError } from '../firebase';
+import { ProgressRing } from '../components/InteractiveElements';
 import { classNames, confirmLeaveQuiz, getQuestionId, isCompletedAttempt, setQuizInProgress } from '../utils';
 
 /* ─── helpers ──────────────────────────────────────────────────────────────── */
@@ -54,7 +55,7 @@ function QuizStatusDot({ status }) {
   return <span className={`block h-2.5 w-2.5 rounded-full ${cls}`} />;
 }
 
-function Badge({ label, value, icon }) {
+function QuizMetadataBadge({ label, value, icon }) {
   return (
     <div className="flex flex-col items-center gap-1 rounded-2xl bg-white/5 px-3 py-2.5 text-center">
       {icon && <span className="text-cyan-400">{icon}</span>}
@@ -353,6 +354,9 @@ function QuizWorkspace({ activeQuiz, answers, setAnswers, submitted, submitting,
 
 /* ─── Quiz list card ────────────────────────────────────────────────────────── */
 function QuizCard({ quiz, attempted, onStart }) {
+  const questionCount = quiz.questions?.length || 0;
+  const completionPercent = Math.round((quiz.attemptedQuestions || 0) / Math.max(questionCount, 1) * 100) || 0;
+  
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -362,27 +366,48 @@ function QuizCard({ quiz, attempted, onStart }) {
         'group relative overflow-hidden rounded-3xl border bg-slate-900/80 p-5 transition-[background-color,border-color,box-shadow,transform,opacity] duration-300',
         attempted
           ? 'border-white/5 opacity-60 cursor-not-allowed'
-          : 'border-white/10 hover:border-cyan-500/40 hover:shadow-[0_0_40px_-12px_rgba(34,211,238,0.3)] cursor-pointer',
+          : 'border-white/10 hover:border-cyan-500/40 hover:shadow-[0_0_40px_-12px_rgba(34,211,238,0.3)] cursor-pointer hover:scale-105 hover:bg-slate-800/80',
       )}
     >
       {/* Gradient accent top-right */}
       {!attempted && (
         <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-cyan-500/10 blur-2xl transition-[background-color,opacity,transform] duration-500 group-hover:bg-cyan-500/20" />
       )}
-      <p className="text-[10px] font-bold uppercase tracking-widest text-cyan-400">{quiz.subject}</p>
-      <h3 className="mt-1.5 text-base font-black text-white">{quiz.title}</h3>
-      <div className="mt-4 grid grid-cols-3 gap-2">
-        <Badge label="MCQs" value={quiz.questions?.length || 0} />
-        <Badge label="Timer" value={`${quiz.timerMinutes || quiz.duration || 25}m`} icon={<Clock size={12} />} />
-        <Badge label="Daily" value={(quiz.dailyQuiz ?? quiz.isDaily) ? 'Yes' : 'No'} icon={(quiz.dailyQuiz ?? quiz.isDaily) ? <Zap size={12} /> : null} />
+      
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-cyan-400">{quiz.subject}</p>
+          <h3 className="mt-1.5 text-base font-black text-white">{quiz.title}</h3>
+          <p className="mt-1 text-xs text-slate-400">{questionCount} questions • {quiz.timerMinutes || quiz.duration || 25}m timer</p>
+        </div>
+        
+        {/* Progress Ring */}
+        {attempted && (
+          <div className="shrink-0">
+            <ProgressRing
+              percentage={completionPercent}
+              size={60}
+              color={completionPercent >= 80 ? 'emerald' : completionPercent >= 60 ? 'amber' : 'cyan'}
+              width={3}
+            />
+          </div>
+        )}
       </div>
+
+      <div className="mt-4 flex gap-2">
+        {(quiz.dailyQuiz ?? quiz.isDaily) && (
+          <Badge variant="info" animated>Daily Challenge</Badge>
+        )}
+        {attempted && <Badge variant="success" animated>Completed</Badge>}
+      </div>
+      
       <Button
         variant={attempted ? 'secondary' : 'accent'}
         className={classNames('mt-4 w-full', attempted ? 'opacity-50' : '')}
         disabled={attempted}
         onClick={onStart}
       >
-        {attempted ? '✓ Attempted' : 'Start Quiz →'}
+        {attempted ? '✓ Completed' : 'Start Quiz →'}
       </Button>
       {attempted && (
         <p className="mt-2 text-center text-[11px] text-slate-600">Reattempts disabled for fair scoring</p>

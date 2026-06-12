@@ -1,10 +1,10 @@
 import { motion } from 'framer-motion';
-import { UserRound, Trophy } from 'lucide-react';
+import { UserRound } from 'lucide-react';
 import { SpotlightCard } from '../motion/SpotlightCard';
 import { ProgressBar } from '../motion/ProgressBar';
 import { CountUp } from '../motion/CountUp';
 
-export function PlayerCard({ name, level, xp, xpToNext, rank, weeklyPoints, avatarUrl }) {
+export function PlayerCard({ name, level, xp, xpToNext, avatarUrl }) {
   const safeMax = Math.max(Number(xpToNext) || 1, 1);
   const pct = Math.min(100, (Number(xp) / safeMax) * 100);
 
@@ -41,28 +41,6 @@ export function PlayerCard({ name, level, xp, xpToNext, rank, weeklyPoints, avat
         </div>
         <ProgressBar value={Number(xp) || 0} max={safeMax} color="cyan" />
       </div>
-
-      <motion.div
-        whileHover={{ y: -2 }}
-        className="relative mt-6 flex items-center justify-between rounded-lg border border-line p-4 transform-gpu overflow-visible"
-        style={{ backgroundColor: 'rgb(var(--color-bg-inset))', isolation: 'isolate', transform: 'translateZ(0)' }}
-      >
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
-            <Trophy className="w-4 h-4 text-amber-400" />
-          </div>
-          <div>
-            <p className="font-mono text-[10px] tracking-[0.25em] text-ink-400">WEEKLY PULSE</p>
-            <p className="font-display text-lg text-ink-100">#{rank || '-'}</p>
-          </div>
-        </div>
-        <div className="text-right">
-          <p className="font-mono text-amber-400 font-bold">
-            <CountUp to={Number(weeklyPoints) || 0} suffix=" pts" />
-          </p>
-          <p className="text-[10px] tracking-wider text-ink-400 uppercase">This Week</p>
-        </div>
-      </motion.div>
     </SpotlightCard>
   );
 }

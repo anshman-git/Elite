@@ -8,10 +8,9 @@ import {
   Clock,
   Flame,
   Sparkles,
-  Target,
-  TrendingUp,
   Trophy,
   Zap,
+  Target,
 } from 'lucide-react';
 import { watchCollection, watchExamCountdown, watchSubjects, watchUserAttempts } from '../firebase';
 import AttemptReviewModal from '../components/AttemptReviewModal';
@@ -19,18 +18,14 @@ import { ScrollReveal } from '../components/motion/ScrollReveal';
 import { TickerBar } from '../components/motion/TickerBar';
 import { CountUp } from '../components/motion/CountUp';
 import { SpotlightCard } from '../components/motion/SpotlightCard';
-import { MissionCard } from '../components/home/MissionCard';
 import { PlayerCard } from '../components/home/PlayerCard';
-import { StatGrid } from '../components/home/StatGrid';
-import { Roadmap } from '../components/home/Roadmap';
-import { DailyFocus } from '../components/home/DailyFocus';
+import { StatsCard, ProgressRing } from '../components/InteractiveElements';
 import {
   daysUntilExam,
   getDicebearAvatar,
   getDisplayName,
   getLevelFromXp,
   getLocalDayDifference,
-  getStreakMotivation,
 } from '../utils';
 
 function getCountdownDisplay(examCountdown) {
@@ -109,9 +104,7 @@ function DashboardHero({
   displayName,
   streakDays,
   isDailyDone,
-  averageAccuracy,
   attemptsToday,
-  weeklyPoints,
   countdownText,
   onStart,
   onAnalytics,
@@ -182,9 +175,7 @@ function DashboardHero({
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-3">
-            <MiniMetric icon={Target} label="Accuracy" value={`${averageAccuracy}%`} tone="success" />
             <MiniMetric icon={Activity} label="Sprints" value={`${attemptsToday}/2`} tone="cyan" />
-            <MiniMetric icon={Trophy} label="Weekly XP" value={weeklyPoints} />
             <MiniMetric icon={Clock} label="Exam" value={countdownText} tone="cyan" />
           </div>
         </div>
@@ -297,9 +288,6 @@ export default function Dashboard({ setActive, user, notify, openProfile }) {
     [leaderboard],
   );
 
-  const rank = sortedLeaderboard.findIndex((p) => p.id === user?.uid) + 1;
-  const displayRank = rank > 0 ? rank : null;
-
   useEffect(() => {
     const unsubs = [];
 
@@ -346,8 +334,6 @@ export default function Dashboard({ setActive, user, notify, openProfile }) {
   const level = getLevelFromXp(user?.xp);
   const currentXp = Number(user?.xp || 0);
   const nextLevelXp = (level + 1) * 100;
-  const weeklyPoints = Number(user?.weeklyPoints || 0);
-  const points = Number(user?.points || 0);
 
   // Effective streak: recalculate client-side so UI resets instantly after 24h inactivity
   const streakDays = useMemo(
@@ -358,12 +344,6 @@ export default function Dashboard({ setActive, user, notify, openProfile }) {
   const attemptsToday = useMemo(() => getTodayAttempts(attempts), [attempts]);
   const averageAccuracy = useMemo(() => getAverageAccuracy(attempts), [attempts]);
   const isDailyDone = attemptsToday >= 2;
-
-  const topUser = sortedLeaderboard[0];
-  const pointsBehindLeader =
-    topUser && topUser.id !== user?.uid
-      ? Math.max(0, (Number(topUser.weeklyPoints) || 0) - weeklyPoints)
-      : 0;
 
   const roadmapSubjects = useMemo(
     () =>
@@ -376,40 +356,23 @@ export default function Dashboard({ setActive, user, notify, openProfile }) {
     [subjects, attempts],
   );
 
-  const statTiles = [
-    {
-      id: 'streak',
-      label: 'GRIND STREAK',
-      icon: Flame,
-      value: `${streakDays} days`,
-      sub: streakDays ? getStreakMotivation(streakDays) : 'First spark is waiting.',
-      color: 'amber',
-    },
-    {
-      id: 'exam',
-      label: 'EXAM TARGET',
-      icon: Clock,
-      value: countdownDisplay?.text || `${daysUntilExam()} days`,
-      sub: countdownDisplay?.urgent ? 'Tick. Tick. Tick.' : 'Keep the pressure steady.',
-      color: 'danger',
-    },
-    {
-      id: 'points',
-      label: 'TOTAL XP',
-      icon: TrendingUp,
-      value: points,
-      sub: `${Math.max(0, nextLevelXp - currentXp)} to next level`,
-      color: 'cyan',
-    },
-    {
-      id: 'rank',
-      label: 'GLOBAL RANK',
-      icon: Trophy,
-      value: displayRank ? `#${displayRank}` : '-',
-      sub: pointsBehindLeader ? `${pointsBehindLeader} XP behind #1` : 'Hold the line.',
-      color: 'amber',
-    },
-  ];
+  // Get stats for StatsCard display
+  const statsData = useMemo(() => {
+    const totalAttempts = attempts.length;
+    const thisWeekAttempts = attempts.filter((a) => {
+      const date = a.completedAt?.toDate?.() || new Date(a.completedAt);
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      return date >= weekAgo;
+    }).length;
+    
+    return {
+      totalAttempts,
+      thisWeekAttempts,
+      averageAccuracy,
+      currentRank: 5, // This would come from user data
+    };
+  }, [attempts, averageAccuracy]);
 
   const tickerItems = activities.length
     ? activities.map((item) => item.title || item.body || 'New command center update')
@@ -427,69 +390,65 @@ export default function Dashboard({ setActive, user, notify, openProfile }) {
             displayName={getDisplayName(user) || 'Grinder'}
             streakDays={streakDays}
             isDailyDone={isDailyDone}
-            averageAccuracy={averageAccuracy}
             attemptsToday={attemptsToday}
-            weeklyPoints={weeklyPoints}
             countdownText={countdownDisplay?.text || `${daysUntilExam()} days`}
             onStart={() => setActive('quizzes')}
             onAnalytics={() => setActive('performance')}
           />
         </ScrollReveal>
 
-        {/* Mission card + Player card */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          <ScrollReveal className="lg:col-span-2" delay={0.05}>
-            <MissionCard
-              streakDays={streakDays}
-              isDailyDone={isDailyDone}
-              streakCopy={
-                streakDays
-                  ? getStreakMotivation(streakDays)
-                  : 'Grind a quiz to spark your streak.'
-              }
-              rewardXp={50}
-              onStart={() => setActive('quizzes')}
+        {/* Enhanced Stats Section */}
+        <ScrollReveal delay={0.04}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatsCard
+              icon={Trophy}
+              label="Total Attempts"
+              value={statsData.totalAttempts.toString()}
+              trend={`+${statsData.thisWeekAttempts} this week`}
+              trendPositive={true}
+            />
+            <StatsCard
+              icon={Target}
+              label="Accuracy"
+              value={`${averageAccuracy}%`}
+              trend={averageAccuracy >= 80 ? 'Excellent!' : 'Keep practicing'}
+              trendPositive={averageAccuracy >= 75}
+            />
+            <StatsCard
+              icon={Flame}
+              label="Streak"
+              value={`${streakDays} days`}
+              trend={isDailyDone ? 'Daily done!' : 'Complete today'}
+              trendPositive={true}
+            />
+            <StatsCard
+              icon={Zap}
+              label="Level"
+              value={`${level}`}
+              trend={`${currentXp}/${nextLevelXp} XP`}
+              trendPositive={true}
+            />
+          </div>
+        </ScrollReveal>
+
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-[1fr_380px]">
+          <ScrollReveal delay={0.05}>
+            <ProgressSnapshot
+              subjects={roadmapSubjects}
+              averageAccuracy={averageAccuracy}
+              attempts={attempts}
+              onAnalytics={() => setActive('performance')}
             />
           </ScrollReveal>
 
-          <ScrollReveal delay={0.15}>
+          <ScrollReveal delay={0.1}>
             <PlayerCard
               name={getDisplayName(user) || 'Grinder'}
               level={level}
               xp={currentXp}
               xpToNext={nextLevelXp}
-              rank={displayRank}
-              weeklyPoints={weeklyPoints}
               avatarUrl={getDicebearAvatar(user?.uid, user?.avatarStyle)}
             />
-          </ScrollReveal>
-        </div>
-
-        {/* Stat tiles */}
-        <ScrollReveal delay={0.1}>
-          <StatGrid tiles={statTiles} />
-        </ScrollReveal>
-
-        <ScrollReveal delay={0.12}>
-          <ProgressSnapshot
-            subjects={roadmapSubjects}
-            averageAccuracy={averageAccuracy}
-            attempts={attempts}
-            onAnalytics={() => setActive('performance')}
-          />
-        </ScrollReveal>
-
-        {/* Roadmap + Daily focus */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          <ScrollReveal className="lg:col-span-2">
-            <Roadmap
-              subjects={roadmapSubjects}
-              onAnalytics={() => setActive('performance')}
-              onSubjectSelect={() => setActive('quizzes')}
-            />
-          </ScrollReveal>
-          <ScrollReveal delay={0.1}>
-            <DailyFocus />
           </ScrollReveal>
         </div>
 

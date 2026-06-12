@@ -8,6 +8,7 @@ import { CountUp } from '../components/motion/CountUp';
 import { useReducedMotion } from '../components/motion/useReducedMotion';
 import { formatPercent, getDicebearAvatar, getDisplayName, getLevelFromXp, getXpProgress } from '../utils';
 import { Button, Card, Input, ProgressBar, Textarea } from '../components/ui';
+import { StatsCard, ProgressRing } from '../components/InteractiveElements';
 
 const bannerOptions = [
   {
@@ -299,6 +300,39 @@ export default function Profile({ user, notify }) {
                 </div>
               </div>
             </Card>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.075 }}>
+            <div className="grid gap-4 md:grid-cols-2">
+              <StatsCard
+                icon={Trophy}
+                label="Rank"
+                value={typeof rank === 'number' ? `#${rank}` : rank}
+                trend={`Top ${Math.round(100 / (rank || 1))}%`}
+                trendPositive={true}
+              />
+              <StatsCard
+                icon={Flame}
+                label="Streak"
+                value={`${user?.streak || 0} days`}
+                trend={`Last activity today`}
+                trendPositive={user?.streak > 0}
+              />
+              <StatsCard
+                icon={Globe2}
+                label="Followers"
+                value={(user?.followers?.length || 0).toString()}
+                trend={`${user?.following?.length || 0} following`}
+                trendPositive={true}
+              />
+              <StatsCard
+                icon={Star}
+                label="Achievements"
+                value={achievements.length.toString()}
+                trend={`${Math.round((achievements.length / ACHIEVEMENT_DEFINITIONS.length) * 100)}% complete`}
+                trendPositive={achievements.length > 0}
+              />
+            </div>
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.1 }}>
