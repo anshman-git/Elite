@@ -139,7 +139,7 @@ export function QuizArena({
                     'border-line hover:border-amber-500/50',
 
                   state === 'selected' &&
-                    'border-slate-500 bg-slate-700',
+                    'border-amber-500/50 bg-amber-500/10',
 
                   state === 'right' &&
                     'border-green-600 bg-green-600 text-white',

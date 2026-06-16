@@ -172,9 +172,7 @@ export function EmptyState({ title, body, action, icon: Icon = Sparkles }) {
   );
 }
 
-export function Toast({ message, type = 'info' }) {
-  if (!message) return null;
-
+export function Toast({ toasts = [] }) {
   const styles = {
     success: 'border-emerald-500/30 bg-emerald-50/90 text-emerald-800 dark:bg-emerald-950/90 dark:text-emerald-300 dark:border-emerald-500/20 shadow-[0_10px_40px_-10px_rgba(16,185,129,0.15)]',
     error: 'border-rose-500/30 bg-rose-50/90 text-rose-800 dark:bg-rose-950/90 dark:text-rose-300 dark:border-rose-500/20 shadow-[0_10px_40px_-10px_rgba(244,63,94,0.15)]',
@@ -189,20 +187,29 @@ export function Toast({ message, type = 'info' }) {
     info: <Info className="text-cyan-500 shrink-0" size={18} />,
   };
 
+  if (!toasts.length) return null;
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 30, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 15, scale: 0.95 }}
-      transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-      className={classNames(
-        'fixed bottom-24 left-4 right-4 z-50 mx-auto flex max-w-sm items-center gap-3 rounded-2xl border px-4 py-3.5 text-sm font-semibold shadow-soft backdrop-blur-xl',
-        styles[type] || styles.info
-      )}
-    >
-      {icons[type] || icons.info}
-      <span className="flex-1 truncate leading-snug">{message}</span>
-    </motion.div>
+    <div className="fixed bottom-24 left-4 right-4 z-50 mx-auto flex max-w-sm flex-col gap-2">
+      <AnimatePresence>
+        {toasts.map((toast, index) => (
+          <motion.div
+            key={toast.id}
+            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 15, scale: 0.95 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 350, delay: index * 0.05 }}
+            className={classNames(
+              'flex items-center gap-3 rounded-2xl border px-4 py-3.5 text-sm font-semibold shadow-soft backdrop-blur-xl',
+              styles[toast.type] || styles.info
+            )}
+          >
+            {icons[toast.type] || icons.info}
+            <span className="flex-1 truncate leading-snug">{toast.message}</span>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
   );
 }
 

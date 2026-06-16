@@ -83,7 +83,7 @@ export default function Auth({ notify, onBack }) {
   }
 
   return (
-    <main className="grid min-h-screen place-items-center bg-gradient-to-br from-slate-900 via-slate-950 to-black p-4">
+    <main className="grid min-h-screen place-items-center bg-gradient-to-br from-bg-surface/95 via-bg-base to-bg-surface/95 p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -194,7 +194,7 @@ export default function Auth({ notify, onBack }) {
                     <motion.div 
                       animate={{ rotate: 360 }} 
                       transition={{ duration: 1, repeat: Infinity }} 
-                      className="w-4 h-4 border-2 border-slate-950/30 border-t-slate-950 rounded-full"
+                      className="w-4 h-4 border-2 border-ink-100/30 border-t-ink-100 rounded-full"
                     />
                     {mode === 'signup' ? 'Creating account...' : mode === 'forgot' ? 'Sending...' : 'Signing in...'}
                   </>

@@ -2,7 +2,7 @@ import { Bell, Menu, Shield, Sun, X, Flame, Moon } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 /**
- * TopBar — sticky app header.
+ * TopBar — sticky app header with fixed positioning coordination.
  */
 export function TopBar({
   onNotifications,
@@ -20,8 +20,8 @@ export function TopBar({
   const toggleTheme = onToggleDark || onTheme || (() => {});
 
   return (
-    <header className="sticky top-0 z-30 border-b border-line backdrop-blur-md bg-bg-surface/80 dark:bg-bg-surface/70 shadow-soft">
-      <div className="flex items-center justify-between gap-2 px-4 py-3 sm:px-6">
+    <header className="sticky top-0 z-30 border-b border-line backdrop-blur-xl bg-bg-surface/95 dark:bg-bg-surface/90 shadow-soft" role="banner">
+      <div className="flex items-center justify-between gap-3 px-4 py-3.5 sm:px-6 h-16">
 
         {/* Left: hamburger (mobile) + brand identity + admin badge */}
         <motion.div
@@ -31,13 +31,14 @@ export function TopBar({
           className="flex items-center gap-3 min-w-0"
         >
           {/* Hamburger — only on < md */}
-          <button
+          <motion.button
             onClick={onMenuToggle}
             aria-label={menuOpen ? 'Close navigation' : 'Open navigation'}
-            className="md:hidden flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-bg-surface text-ink-250 hover:text-amber-500 transition-colors shadow-soft shrink-0"
+            whileTap={{ scale: 0.92 }}
+            className="md:hidden flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-bg-raised/50 text-ink-300 hover:bg-bg-raised hover:text-amber-500 hover:border-amber-500/30 focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface active:bg-amber-500/20 transition-all duration-200 shadow-soft shrink-0"
           >
-            {menuOpen ? <X className="w-4.5 h-4.5" /> : <Menu className="w-4.5 h-4.5" />}
-          </button>
+            {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </motion.button>
 
           {/* Wordmark & Brand Icon */}
           <div className="flex items-center gap-2">
@@ -70,26 +71,33 @@ export function TopBar({
 
         {/* Right: actions */}
         <div className="flex items-center gap-2 shrink-0">
-          <button
+          <motion.button
             onClick={openNotifications}
             data-testid="bell-btn"
-            aria-label="Open notifications"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-bg-surface/50 text-ink-200 hover:border-amber-500/30 hover:text-amber-500 transition-all duration-200 shadow-soft relative"
+            aria-label={`Open notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+            whileTap={{ scale: 0.92 }}
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-bg-raised/50 text-ink-300 hover:bg-bg-raised hover:border-amber-500/30 hover:text-amber-500 focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface active:bg-amber-500/20 transition-all duration-200 shadow-soft relative"
           >
-            <Bell className="w-4 h-4" />
+            <Bell className="w-5 h-5" />
             {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-amber-500 animate-pulse-glow" />
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 animate-pulse shadow-lg shadow-amber-500/50"
+                aria-hidden="true"
+              />
             )}
-          </button>
+          </motion.button>
           
-          <button
+          <motion.button
             onClick={toggleTheme}
             data-testid="theme-toggle-btn"
-            aria-label="Toggle theme"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-bg-surface/50 text-ink-200 hover:border-amber-500/30 hover:text-amber-500 transition-all duration-200 shadow-soft"
+            aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+            whileTap={{ scale: 0.92 }}
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-bg-raised/50 text-ink-300 hover:bg-bg-raised hover:border-amber-500/30 hover:text-amber-500 focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface active:bg-amber-500/20 transition-all duration-200 shadow-soft"
           >
-            {dark ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
-          </button>
+            {dark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </motion.button>
         </div>
       </div>
     </header>

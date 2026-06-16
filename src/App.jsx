@@ -115,7 +115,8 @@ function AppContent() {
         menuOpen={sidebarOpen}
       />
 
-      <div className="mx-auto flex max-w-[1600px]">
+      <div className="flex min-h-[calc(100vh-4rem)]">
+        {/* Fixed sidebar takes space but doesn't flex */}
         <Sidebar
           active={showingPublicProfile ? 'leaderboard' : safeActive}
           setActive={guardedSetActive}
@@ -126,7 +127,9 @@ function AppContent() {
           onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
         />
 
-        <main className="min-w-0 flex-1 px-4 pb-28 pt-4 sm:px-6 lg:pb-8 transition-all duration-300">
+        {/* Main content adjusts for fixed sidebar on md+ */}
+        <main className="min-w-0 flex-1 md:ml-64 overflow-y-auto transition-all duration-300 px-4 pb-28 pt-4 sm:px-6 lg:pb-8"
+              style={{ marginLeft: sidebarCollapsed ? 'var(--sidebar-collapsed-width, 5rem)' : undefined }}>
           <div className="mx-auto max-w-7xl">
             <AnimatePresence mode="wait">
               <motion.div
@@ -165,10 +168,7 @@ function AppContent() {
 
       <OnboardingTour open={!showingNotFound && showOnboarding} onDone={completeOnboarding} />
 
-      <Toast
-        message={toasts.length > 0 ? toasts[0].message : ''}
-        type={toasts.length > 0 ? toasts[0].type : 'info'}
-      />
+      <Toast toasts={toasts} />
 
       {/* ── Notification drawer ───────────────────────────────────────────── */}
       <AnimatePresence>

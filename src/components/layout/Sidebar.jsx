@@ -15,7 +15,7 @@ const nav = [
 
 function NavList({ items, active, handler, collapsed }) {
   return (
-    <nav className="flex flex-col gap-1.5 mt-4">
+    <nav className="flex flex-col gap-2 mt-6 space-y-1" role="navigation" aria-label="Main navigation">
       {items.map((item, index) => {
         const Icon = item.icon;
         const isActive = active === item.id;
@@ -24,25 +24,38 @@ function NavList({ items, active, handler, collapsed }) {
             key={item.id}
             onClick={() => handler(item.id)}
             data-testid={item.testId}
+            aria-current={isActive ? 'page' : undefined}
             initial={{ opacity: 0, x: -12 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.04 * index, duration: 0.35 }}
             className={clsx(
-              'group flex items-center gap-3 rounded-xl py-3 transition-all duration-200 outline-none',
-              collapsed ? 'justify-center px-2' : 'px-4',
+              'group relative flex items-center gap-3 rounded-xl py-3 px-4 transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface',
+              collapsed && 'justify-center px-3',
               isActive 
-                ? 'bg-amber-500/10 text-amber-500 border-l-4 border-amber-500 font-bold shadow-soft' 
-                : 'text-ink-200 border-l-4 border-transparent hover:bg-bg-raised/70 hover:text-ink-100'
+                ? 'bg-gradient-to-r from-amber-500/20 to-amber-500/10 text-amber-500 border-l-2 border-amber-500 font-bold shadow-soft' 
+                : 'text-ink-300 border-l-2 border-transparent hover:bg-bg-raised/50 hover:text-ink-100 hover:border-amber-500/30 active:bg-amber-500/10 active:text-amber-400'
             )}
             title={collapsed ? item.label : undefined}
           >
+            {/* Active indicator dot */}
+            {isActive && !collapsed && (
+              <motion.div
+                layoutId="nav-indicator"
+                className="absolute left-0 top-1/2 h-1.5 w-1.5 rounded-full bg-amber-500 -translate-y-1/2 -translate-x-2"
+                transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+              />
+            )}
             <Icon
               className={clsx(
-                'w-4.5 h-4.5 shrink-0 transition-colors',
-                isActive ? 'text-amber-500' : 'text-ink-400 group-hover:text-ink-200'
+                'w-5 h-5 shrink-0 transition-all duration-200',
+                isActive ? 'text-amber-500' : 'text-ink-400 group-hover:text-amber-400/70 group-focus-visible:text-amber-400'
               )}
             />
-            {!collapsed && <span className="font-display text-sm tracking-wide">{item.label}</span>}
+            {!collapsed && (
+              <span className="font-display text-sm font-semibold tracking-wide truncate">
+                {item.label}
+              </span>
+            )}
           </motion.button>
         );
       })}
@@ -74,9 +87,9 @@ export function Sidebar({ active, onSelect, setActive, isAdmin = false, isOpen =
 
   return (
     <>
-      {/* ── Desktop rail (always visible on md+) ─────────────────────────── */}
+      {/* ── Desktop rail (FIXED positioning) ────────────────────────────── */}
       <aside className={clsx(
-        'hidden md:flex flex-col border-r border-line backdrop-blur-md py-6 px-3 transition-all duration-300 shrink-0 min-h-[calc(100vh-4rem)] bg-bg-surface/80 dark:bg-bg-surface/50',
+        'hidden md:fixed md:flex flex-col border-r border-line backdrop-blur-md py-6 px-3 transition-all duration-300 shrink-0 h-[calc(100vh-4rem)] top-16 left-0 z-20 bg-bg-surface/90 dark:bg-bg-surface/80',
         collapsed ? 'w-20' : 'w-64'
       )}>
         {/* Header with toggle button */}

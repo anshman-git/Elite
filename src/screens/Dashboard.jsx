@@ -80,23 +80,27 @@ function getAverageAccuracy(attempts) {
 
 function MiniMetric({ icon: Icon, label, value, tone = 'amber' }) {
   const toneClass = tone === 'cyan'
-    ? 'border-cyan-500/20 bg-cyan-500/10 text-cyan-400'
+    ? 'border-cyan-500/30 bg-cyan-500/10 text-cyan-400 shadow-glow-cyan group-hover:border-cyan-500/50 group-hover:shadow-glow-cyan'
     : tone === 'success'
-      ? 'border-success/20 bg-success/10 text-success'
-      : 'border-amber-500/20 bg-amber-500/10 text-amber-400';
+      ? 'border-success/30 bg-success/10 text-success group-hover:border-success/50'
+      : 'border-amber-500/30 bg-amber-500/10 text-amber-400 shadow-glow-amber group-hover:border-amber-500/50 group-hover:shadow-glow-amber';
 
   return (
-    <div className="rounded-xl border border-line bg-bg-surface/70 p-3 shadow-soft backdrop-blur-md">
+    <motion.div
+      whileHover={{ y: -2, scale: 1.02 }}
+      transition={{ duration: 0.2 }}
+      className="group rounded-xl border border-line bg-gradient-to-br from-bg-surface/80 to-bg-surface/40 p-4 shadow-soft hover:shadow-card backdrop-blur-md transition-all duration-200 ease-out cursor-default"
+    >
       <div className="flex items-center gap-3">
-        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg border ${toneClass}`}>
-          <Icon className="h-4 w-4" />
+        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg border font-semibold transition-all duration-200 ${toneClass}`}>
+          <Icon className="h-5 w-5" />
         </span>
         <div className="min-w-0">
-          <p className="truncate text-[10px] font-bold uppercase tracking-[0.18em] text-ink-400">{label}</p>
-          <p className="mt-0.5 truncate font-display text-lg font-black text-ink-100">{value}</p>
+          <p className="truncate text-xs font-bold uppercase tracking-[0.16em] text-ink-400">{label}</p>
+          <p className="mt-1 truncate font-display text-lg font-black text-ink-100 group-hover:text-amber-400 transition-colors">{value}</p>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -112,73 +116,94 @@ function DashboardHero({
   const dailyProgress = Math.min(100, attemptsToday * 50);
 
   return (
-    <SpotlightCard className="overflow-hidden p-0" glow="amber">
-      <div className="absolute inset-0 grid-bg opacity-80" aria-hidden />
-      <div className="pointer-events-none absolute -right-28 -top-28 h-72 w-72 rounded-full bg-amber-radial blur-2xl opacity-80" aria-hidden />
-      <div className="pointer-events-none absolute -bottom-32 left-1/4 h-72 w-72 rounded-full bg-cyan-radial blur-2xl opacity-70" aria-hidden />
+    <SpotlightCard className="overflow-hidden p-0 group" glow="amber">
+      <div className="absolute inset-0 grid-bg opacity-60" aria-hidden />
+      <div className="pointer-events-none absolute -right-28 -top-28 h-72 w-72 rounded-full bg-amber-radial blur-3xl opacity-70 group-hover:opacity-90 transition-opacity duration-500" aria-hidden />
+      <div className="pointer-events-none absolute -bottom-32 left-1/4 h-72 w-72 rounded-full bg-cyan-radial blur-3xl opacity-60 group-hover:opacity-80 transition-opacity duration-500" aria-hidden />
 
       <div className="relative grid gap-6 p-5 sm:p-7 lg:grid-cols-[1fr_360px] lg:p-8">
         <div className="flex min-w-0 flex-col justify-between">
           <div>
-            <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-amber-500 backdrop-blur-md">
-              <Sparkles className="h-3.5 w-3.5 shrink-0" />
-              <span className="truncate text-xs font-bold uppercase tracking-[0.18em]">
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="inline-flex max-w-full items-center gap-2 rounded-full border border-amber-500/30 bg-gradient-to-r from-amber-500/20 to-amber-500/10 px-3 py-2 text-amber-400 backdrop-blur-md hover:border-amber-500/50 transition-all duration-300"
+            >
+              <Sparkles className="h-4 w-4 shrink-0 animate-spin-slow" />
+              <span className="truncate text-xs font-bold uppercase tracking-[0.2em]">
                 Command center online
               </span>
-            </div>
+            </motion.div>
 
-            <h1 className="mt-5 max-w-3xl font-display text-3xl font-black leading-tight text-ink-100 sm:text-4xl lg:text-5xl">
+            <h1 className="mt-6 max-w-3xl font-display text-3xl font-black leading-tight text-ink-100 sm:text-4xl lg:text-5xl">
               {getGreeting()}, {displayName}.
-              <span className="block bg-gradient-to-r from-amber-500 via-yellow-500 to-cyan-500 bg-clip-text text-transparent">
+              <span className="block mt-2 bg-gradient-to-r from-amber-400 via-yellow-400 to-cyan-400 bg-clip-text text-transparent drop-shadow-lg">
                 Keep the streak alive.
               </span>
             </h1>
 
-            <p className="mt-4 max-w-2xl text-sm leading-6 text-ink-200 sm:text-base">
+            <p className="mt-5 max-w-2xl text-sm leading-6 text-ink-300 sm:text-base">
               Your study pulse, rank pressure, and daily practice targets are gathered here so the next move is always obvious.
             </p>
           </div>
 
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            <button onClick={onStart} className="btn-game justify-center px-5 py-3 text-sm">
-              <Zap className="h-4 w-4" />
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <motion.button
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={onStart}
+              className="btn-game justify-center gap-2 px-6 py-3.5 text-sm font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              <Zap className="h-5 w-5" />
               {isDailyDone ? 'Practice More' : 'Start Daily Sprint'}
               <ArrowRight className="h-4 w-4" />
-            </button>
-            <button onClick={onAnalytics} className="btn-ghost justify-center px-5 py-3 text-sm">
-              <BarChart3 className="h-4 w-4" />
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={onAnalytics}
+              className="btn-ghost justify-center gap-2 px-6 py-3.5 text-sm font-semibold hover:shadow-lg transition-all duration-200"
+            >
+              <BarChart3 className="h-5 w-5" />
               View Analytics
-            </button>
+            </motion.button>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-line bg-bg-surface/75 p-5 shadow-soft backdrop-blur-xl">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="rounded-2xl border border-line/50 bg-gradient-to-br from-bg-surface/50 to-bg-inset/30 p-6 shadow-card hover:shadow-card-hover backdrop-blur-xl transition-all duration-300"
+        >
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-amber-500">Today</p>
-              <h2 className="mt-2 font-display text-3xl font-black text-ink-100">{streakDays} day streak</h2>
-              <p className="mt-1 text-sm text-ink-400">
-                {isDailyDone ? 'Daily sprint cleared.' : 'Two focused sprints complete the loop.'}
+              <p className="font-mono text-xs font-bold uppercase tracking-[0.25em] text-amber-500">Today Progress</p>
+              <h2 className="mt-3 font-display text-3xl font-black text-ink-100">{streakDays}<span className="text-amber-400 text-2xl">🔥</span></h2>
+              <p className="mt-2 text-sm text-ink-400">
+                {isDailyDone ? '✓ Daily sprint cleared!' : 'Complete 2 sprints to keep the streak'}
               </p>
             </div>
-            <div className="relative grid h-20 w-20 shrink-0 place-items-center rounded-full border border-amber-500/30 bg-amber-500/10">
-              <div
-                className="absolute inset-1 rounded-full"
+            <div className="relative grid h-24 w-24 shrink-0 place-items-center rounded-full border-2 border-amber-500/40 bg-gradient-to-br from-amber-500/20 to-amber-500/10 shadow-glow-amber">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+                className="absolute inset-1.5 rounded-full"
                 style={{
-                  background: `conic-gradient(#FFA500 ${dailyProgress * 3.6}deg, rgba(148,163,184,0.18) 0deg)`,
+                  background: `conic-gradient(#FFA500 ${dailyProgress * 3.6}deg, rgba(148,163,184,0.2) 0deg)`,
                 }}
               />
-              <div className="relative grid h-14 w-14 place-items-center rounded-full border border-line bg-bg-surface">
-                <Flame className="h-6 w-6 text-amber-500" />
+              <div className="relative grid h-16 w-16 place-items-center rounded-full border border-line bg-bg-surface shadow-lg">
+                <Flame className="h-7 w-7 text-amber-500" />
               </div>
             </div>
           </div>
 
-          <div className="mt-5 grid grid-cols-2 gap-3">
+          <div className="mt-6 grid grid-cols-2 gap-3">
             <MiniMetric icon={Activity} label="Sprints" value={`${attemptsToday}/2`} tone="cyan" />
-            <MiniMetric icon={Clock} label="Exam" value={countdownText} tone="cyan" />
+            <MiniMetric icon={Clock} label="Exam" value={countdownText || '...'} tone="cyan" />
           </div>
-        </div>
+        </motion.div>
       </div>
     </SpotlightCard>
   );

@@ -417,8 +417,8 @@ function QuizCard({ quiz, attempted, onStart }) {
 }
 
 /* ─── Main export ────────────────────────────────────────────────────────────── */
-export default function Quizzes({ notify }) {
-  const { user, notify: globalNotify } = useApp();
+export default function Quizzes() {
+  const { user, notify } = useApp();
   const [quizzes, setQuizzes] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [subject, setSubject] = useState('All');
@@ -474,7 +474,7 @@ export default function Quizzes({ notify }) {
     if (!userId || !activeQuiz) return;
     if (submitting) return;
     if (attemptedQuizIds.has(activeQuiz.id)) {
-      globalNotify('You have already completed this quiz.');
+      notify('You have already completed this quiz.');
       setSubmitted(true);
       setQuizInProgress(false);
       return;
@@ -484,7 +484,7 @@ export default function Quizzes({ notify }) {
       await submitAttempt(userId, activeQuiz.id, activeQuiz, answers);
       setSubmitted(true);
       setQuizInProgress(false);
-      globalNotify('Quiz submitted successfully!');
+      notify('Quiz submitted successfully!');
       const finalScore = questions.reduce((total, item, index) => total + (answers[getQuestionId(item, index)] === item.answer ? 1 : 0), 0);
       if (questions.length > 0 && finalScore === questions.length) {
         setShowConfetti(true);
@@ -495,14 +495,14 @@ export default function Quizzes({ notify }) {
       console.error('Failed to submit quiz:', error);
       if (error?.code === 'already-attempted') {
         setSubmitted(true);
-        globalNotify(error.message);
+        notify(error.message);
       } else {
-        globalNotify(getFriendlyFirebaseError(error) || error.message || 'Failed to submit quiz. Please try again.');
+        notify(getFriendlyFirebaseError(error) || error.message || 'Failed to submit quiz. Please try again.');
       }
     } finally {
       setSubmitting(false);
     }
-  }, [user, activeQuiz, answers, globalNotify, attemptedQuizIds, submitting, questions, playSuccessTone]);
+  }, [user, activeQuiz, answers, notify, attemptedQuizIds, submitting, questions, playSuccessTone]);
 
   useEffect(() => {
     const unsubscribers = [];
