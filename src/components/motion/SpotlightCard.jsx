@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import clsx from 'clsx';
+import { classNames } from '../../utils';
 
 export function SpotlightCard({ children, className = '', glow = 'amber' }) {
   const ref = useRef(null);
@@ -16,7 +16,7 @@ export function SpotlightCard({ children, className = '', glow = 'amber' }) {
     <div
       ref={ref}
       onMouseMove={onMove}
-      className={clsx('cmd-card group p-6 transform-gpu', className)}
+      className={classNames('cmd-card group p-6 transform-gpu', className)}
       style={{ '--spot': tint, isolation: 'isolate', transform: 'translateZ(0)' }}
     >
       <div

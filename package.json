@@ -13,9 +13,7 @@
   "dependencies": {
     "@vitejs/plugin-react": "^5.1.1",
     "canvas-confetti": "^1.9.4",
-    "clsx": "^2.1.1",
     "firebase": "^12.13.0",
-    "firebase-admin": "^13.9.0",
     "framer-motion": "^12.40.0",
     "lucide-react": "^0.555.0",
     "react": "^19.2.0",
@@ -30,7 +28,7 @@
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
-    "install": "^0.13.0",
+    "firebase-admin": "^14.2.0",
     "mocha": "^9.2.2",
     "npm": "^11.16.0",
     "postcss": "^8.5.15",

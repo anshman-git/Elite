@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCheck, Megaphone, X } from 'lucide-react';
 import { BottomNav, Sidebar } from './components/navigation';
@@ -9,18 +9,21 @@ import { AppProvider } from './context/AppContext';
 import { useApp } from './context/useApp';
 import { navigateHome, navigateToProfile, parseRoute } from './routing';
 import { confirmLeaveQuiz } from './utils';
-import Admin from './screens/Admin';
-import Auth from './screens/Auth';
-import LandingPage from './screens/LandingPage';
-import Dashboard from './screens/Dashboard';
-import Community from './screens/Community';
-import Leaderboard from './screens/Leaderboard';
-import Performance from './screens/Performance';
-import Profile from './screens/Profile';
-import PublicProfile from './screens/PublicProfile';
-import NotFound from './screens/NotFound';
-import Quizzes from './screens/Quizzes';
-import Resources from './screens/Resources';
+
+// Lazy-loaded screens — each is code-split into its own chunk and loaded on demand.
+// Shared providers/layout (AppProvider, TopBar, Sidebar, BottomNav, ui) stay eager.
+const LandingPage = lazy(() => import('./screens/LandingPage'));
+const Auth = lazy(() => import('./screens/Auth'));
+const Dashboard = lazy(() => import('./screens/Dashboard'));
+const Quizzes = lazy(() => import('./screens/Quizzes'));
+const Resources = lazy(() => import('./screens/Resources'));
+const Community = lazy(() => import('./screens/Community'));
+const Leaderboard = lazy(() => import('./screens/Leaderboard'));
+const Performance = lazy(() => import('./screens/Performance'));
+const Profile = lazy(() => import('./screens/Profile'));
+const Admin = lazy(() => import('./screens/Admin'));
+const PublicProfile = lazy(() => import('./screens/PublicProfile'));
+const NotFound = lazy(() => import('./screens/NotFound'));
 
 function AppContent() {
   const {
@@ -96,10 +99,15 @@ function AppContent() {
   }
 
   if (!user) {
-    if (showAuth) {
-      return <Auth notify={notify} onBack={() => setShowAuth(false)} />;
-    }
-    return <LandingPage onGetStarted={() => setShowAuth(true)} />;
+    return (
+      <Suspense fallback={<LoadingState />}>
+        {showAuth ? (
+          <Auth notify={notify} onBack={() => setShowAuth(false)} />
+        ) : (
+          <LandingPage onGetStarted={() => setShowAuth(true)} />
+        )}
+      </Suspense>
+    );
   }
 
   return (
@@ -145,17 +153,19 @@ function AppContent() {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.22, ease: 'easeOut' }}
               >
-                {showingNotFound ? (
-                  <NotFound />
-                ) : showingPublicProfile ? (
-                  <PublicProfile
-                    profileUserId={route.profileUserId}
-                    onBack={closePublicProfile}
-                    notify={notify}
-                  />
-                ) : (
-                  page
-                )}
+                <Suspense fallback={<LoadingState />}>
+                  {showingNotFound ? (
+                    <NotFound />
+                  ) : showingPublicProfile ? (
+                    <PublicProfile
+                      profileUserId={route.profileUserId}
+                      onBack={closePublicProfile}
+                      notify={notify}
+                    />
+                  ) : (
+                    page
+                  )}
+                </Suspense>
               </motion.div>
             </AnimatePresence>
           </div>

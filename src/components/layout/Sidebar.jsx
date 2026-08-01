@@ -1,6 +1,6 @@
 import { BarChart3, BookOpen, ChevronLeft, ChevronRight, FileText, Home, Shield, Trophy, User, Users } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import clsx from 'clsx';
+import { classNames } from '../../utils';
 
 const nav = [
   { id: 'dashboard',   label: 'Home',        icon: Home,     testId: 'nav-home-btn' },
@@ -28,7 +28,7 @@ function NavList({ items, active, handler, collapsed }) {
             initial={{ opacity: 0, x: -12 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.04 * index, duration: 0.35 }}
-            className={clsx(
+            className={classNames(
               'group relative flex items-center gap-3 rounded-xl py-3 px-4 transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface',
               collapsed && 'justify-center px-3',
               isActive 
@@ -46,7 +46,7 @@ function NavList({ items, active, handler, collapsed }) {
               />
             )}
             <Icon
-              className={clsx(
+              className={classNames(
                 'w-5 h-5 shrink-0 transition-all duration-200',
                 isActive ? 'text-amber-500' : 'text-ink-400 group-hover:text-amber-400/70 group-focus-visible:text-amber-400'
               )}
@@ -88,7 +88,7 @@ export function Sidebar({ active, onSelect, setActive, isAdmin = false, isOpen =
   return (
     <>
       {/* ── Desktop rail (FIXED positioning) ────────────────────────────── */}
-      <aside className={clsx(
+      <aside className={classNames(
         'hidden md:fixed md:flex flex-col border-r border-line backdrop-blur-md py-6 px-3 transition-all duration-300 shrink-0 h-[calc(100vh-4rem)] top-16 left-0 z-20 bg-bg-surface/90 dark:bg-bg-surface/80',
         collapsed ? 'w-20' : 'w-64'
       )}>
@@ -99,7 +99,7 @@ export function Sidebar({ active, onSelect, setActive, isAdmin = false, isOpen =
           )}
           <button
             onClick={onToggleCollapse}
-            className={clsx(
+            className={classNames(
               'flex items-center justify-center w-8 h-8 rounded-lg border border-line bg-bg-surface hover:bg-bg-raised text-ink-200 hover:text-ink-100 transition-colors shadow-soft',
               collapsed ? 'mx-auto' : 'ml-auto'
             )}

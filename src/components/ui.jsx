@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, Loader2, Moon, Search, Sun, AlertCircle, CheckCircle, Info, Sparkles, X, Check } from 'lucide-react';
+import { Loader2, Search, AlertCircle, CheckCircle, Info, Sparkles, X, Check } from 'lucide-react';
 import { TopBar as LayoutTopBar } from './layout/TopBar';
 import { classNames } from '../utils';
 
