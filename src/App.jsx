@@ -31,7 +31,7 @@ function AppContent() {
 
   const [active, setActive] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [route, setRoute] = useState(() => parseRoute());
   const [showOnboarding, setShowOnboarding] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -129,8 +129,7 @@ function AppContent() {
         />
 
         <main
-          className="app-main flex-1 min-w-0 overflow-y-auto transition-all duration-300 px-3 pb-24 pt-3 sm:px-6 sm:pb-28 sm:pt-4 lg:pb-8 md:ml-64"
-          style={{ marginLeft: sidebarCollapsed ? 'var(--sidebar-collapsed-width, 5rem)' : undefined }}
+          className={`app-main min-w-0 flex-1 overflow-y-auto px-4 pb-8 pt-5 transition-[margin,padding] duration-150 sm:px-6 sm:pt-6 ${sidebarCollapsed ? 'md:ml-[var(--sidebar-collapsed-width)]' : 'md:ml-[var(--sidebar-expanded-width)]'}`}
         >
           <div className="mx-auto max-w-7xl">
             <AnimatePresence mode="wait">
@@ -142,10 +141,10 @@ function AppContent() {
                     ? `profile-${route.profileUserId}`
                     : safeActive
                 }
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.22, ease: 'easeOut' }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.12, ease: 'easeOut' }}
               >
                 <Suspense fallback={<LoadingState />}>
                   {showingNotFound ? (
@@ -167,7 +166,11 @@ function AppContent() {
       </div>
 
       {!showingPublicProfile && !showingNotFound ? (
-        <BottomNav active={safeActive} setActive={guardedSetActive} isAdmin={isAdmin} />
+        <BottomNav
+          active={safeActive}
+          setActive={guardedSetActive}
+          onMore={() => setSidebarOpen(true)}
+        />
       ) : null}
 
       <OnboardingTour open={!showingNotFound && showOnboarding} onDone={completeOnboarding} />
