@@ -106,9 +106,6 @@ body {
 
   text-rendering: optimizeLegibility;
 
-  backface-visibility: hidden;
-  transform: translateZ(0);
-
   background-image:
     radial-gradient(
       1200px 600px at 80% -10%,
@@ -175,6 +172,32 @@ button {
   overflow-x: hidden;
   min-height: 100vh;
   isolation: isolate;
+}
+
+/* Use the browser's dynamic viewport on phones so fixed app controls remain
+   anchored while browser chrome expands or collapses. */
+@supports (height: 100dvh) {
+  .app-shell {
+    height: 100dvh;
+  }
+}
+
+.bottom-nav {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+@media (max-width: 639px) {
+  .app-main {
+    padding-bottom: calc(4.75rem + env(safe-area-inset-bottom));
+  }
+
+  .cmd-card {
+    border-radius: 0.75rem;
+  }
+
+  .cmd-card:hover {
+    transform: none;
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { BarChart3, BookOpen, CheckCircle, Trophy, TrendingDown, TrendingUp, Zap, Target, Flame } from 'lucide-react';
+import { BarChart3, BookOpen, CheckCircle, Trophy, TrendingUp, Target, Flame } from 'lucide-react';
 import { ResponsiveContainer, Radar, RadarChart, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Tooltip } from 'recharts';
 import { watchUserAttempts, watchSubjects } from '../firebase';
 import AttemptReviewModal from '../components/AttemptReviewModal';
@@ -9,7 +9,18 @@ import { Button, Card, Skeleton } from '../components/ui';
 import { CountUp } from '../components/motion/CountUp';
 import { useReducedMotion } from '../components/motion/useReducedMotion';
 import { getLocalDayDifference, toTimestampDate } from '../utils';
-import { StatsCard, ProgressRing } from '../components/InteractiveElements';
+import { StatsCard } from '../components/InteractiveElements';
+
+/* ─── chart tokens ───────────────────────────────────────────────────────────── */
+const CHART_TOKENS = {
+  polarGrid: 'var(--color-line, rgba(148, 163, 184, 0.2))',
+  axisText: 'var(--color-ink-400, #94a3b8)',
+  radarStroke: '#22d3ee',
+  radarFill: '#ffa500',
+  tooltipBg: 'var(--color-bg-surface, #0f172a)',
+  tooltipBorder: 'var(--color-line, rgba(148, 163, 184, 0.2))',
+  tooltipText: 'var(--color-ink-100, #ffffff)',
+};
 
 /* ─── helpers ───────────────────────────────────────────────────────────────── */
 function getWeeklyBars(attempts) {
@@ -24,10 +35,10 @@ function getWeeklyBars(attempts) {
 }
 
 function progressColor(pct) {
-  if (pct >= 75) return { bar: 'from-amber-400 to-amber-500', text: 'text-amber-400', bg: 'bg-amber-500/10' };
-  if (pct >= 45) return { bar: 'from-cyan-400 to-cyan-500', text: 'text-cyan-400', bg: 'bg-cyan-500/10' };
-  if (pct >= 20) return { bar: 'from-slate-400 to-slate-500', text: 'text-slate-400', bg: 'bg-slate-500/10' };
-  return { bar: 'from-slate-600 to-slate-500', text: 'text-slate-400', bg: 'bg-slate-700/10' };
+  if (pct >= 75) return { bar: 'from-amber-400 to-amber-500', text: 'text-amber-500', bg: 'bg-amber-500/15' };
+  if (pct >= 45) return { bar: 'from-cyan-400 to-cyan-500', text: 'text-cyan-400', bg: 'bg-cyan-500/15' };
+  if (pct >= 20) return { bar: 'from-ink-400 to-ink-400/60', text: 'text-ink-400', bg: 'bg-bg-raised' };
+  return { bar: 'from-danger/70 to-danger', text: 'text-danger', bg: 'bg-danger/15' };
 }
 
 function getDayKey(date) {
@@ -44,7 +55,7 @@ function SubjectBar({ subject, delay }) {
       transition={{ delay, duration: 0.35 }}
     >
       <div className="mb-1.5 flex items-center justify-between">
-        <span className="text-sm font-bold text-slate-300">{subject.name}</span>
+        <span className="text-sm font-bold text-ink-200">{subject.name}</span>
         <div className="flex items-center gap-2">
           <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${col.bg} ${col.text}`}>
             {subject.progress >= 75 ? 'Strong' : subject.progress >= 45 ? 'Good' : subject.progress >= 20 ? 'Improving' : 'Needs Work'}
@@ -52,7 +63,7 @@ function SubjectBar({ subject, delay }) {
           <span className={`text-sm font-black ${col.text}`}>{subject.progress}%</span>
         </div>
       </div>
-      <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/5">
+      <div className="h-2.5 w-full overflow-hidden rounded-full bg-bg-raised border border-line-subtle">
         <motion.div
           initial={{ scaleX: 0 }}
           animate={{ scaleX: Math.max(0, Math.min(1, subject.progress / 100)) }}
@@ -171,8 +182,8 @@ export default function Performance({ notify }) {
     <div className="space-y-6">
       <div>
         <p className="text-[10px] font-bold uppercase tracking-widest text-cyan-400">Player intelligence</p>
-        <h2 className="text-3xl font-black text-white">Performance command center</h2>
-        <p className="mt-1 text-sm text-slate-500">Actionable insights from your quiz performance and subject mastery.</p>
+        <h2 className="text-3xl font-black text-ink-100 font-display">Performance command center</h2>
+        <p className="mt-1 text-sm text-ink-400">Actionable insights from your quiz performance and subject mastery.</p>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.75fr_1fr]">
@@ -207,44 +218,51 @@ export default function Performance({ notify }) {
           />
         </div>
 
-        <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6">
+        <div className="rounded-2xl border border-line bg-bg-surface/85 backdrop-blur-md p-6 shadow-card">
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-cyan-300">Radar overview</p>
-              <h3 className="mt-2 text-lg font-black text-white">Skill coverage</h3>
+              <p className="text-xs uppercase tracking-[0.3em] text-cyan-400 font-bold">Radar overview</p>
+              <h3 className="mt-2 text-lg font-black text-ink-100 font-display">Skill coverage</h3>
             </div>
-            <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
+            <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-400">
               Live profile
             </span>
           </div>
           <div className="h-[320px] w-full sm:h-[340px]">
             {loading ? (
-              <div className="grid h-full place-items-center rounded-3xl border border-dashed border-slate-700 bg-slate-900/50 p-6 text-slate-500">
+              <div className="grid h-full place-items-center rounded-2xl border border-dashed border-line bg-bg-raised/40 p-6 text-ink-400">
                 <Skeleton className="h-4 w-40" />
               </div>
             ) : radarData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart data={radarData} outerRadius="65%" margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                  <PolarGrid stroke="#334155" radialLines={false} />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                  <PolarGrid stroke={CHART_TOKENS.polarGrid} radialLines={false} />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: CHART_TOKENS.axisText, fontSize: 11 }} />
                   <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
                   <Radar
                     name="Progress"
                     dataKey="score"
-                    stroke="#38bdf8"
-                    fill="#f59e0b"
+                    stroke={CHART_TOKENS.radarStroke}
+                    fill={CHART_TOKENS.radarFill}
                     fillOpacity={0.2}
                     animationDuration={reducedMotion ? 0 : 900}
                   />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(148,163,184,0.18)', borderRadius: 18, color: '#fff' }}
-                    labelStyle={{ color: '#fff' }}
+                    contentStyle={{
+                      backgroundColor: CHART_TOKENS.tooltipBg,
+                      borderColor: CHART_TOKENS.tooltipBorder,
+                      borderRadius: 12,
+                      color: CHART_TOKENS.tooltipText,
+                      boxShadow: 'var(--shadow-card, 0 8px 30px rgba(0,0,0,0.12))',
+                    }}
+                    labelStyle={{ color: CHART_TOKENS.tooltipText, fontWeight: 700 }}
+                    itemStyle={{ color: CHART_TOKENS.tooltipText }}
                     formatter={(value) => [`${value}%`, 'Score']}
                   />
                 </RadarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="grid h-full place-items-center rounded-3xl border border-dashed border-slate-700 bg-slate-900/50 px-4 text-center text-slate-500">
+              <div className="grid h-full place-items-center rounded-2xl border border-dashed border-line bg-bg-raised/40 px-4 text-center text-ink-400">
                 <p className="font-semibold">Radar data will appear once subjects are attempted.</p>
               </div>
             )}
@@ -253,48 +271,48 @@ export default function Performance({ notify }) {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
-        <div className="space-y-4 rounded-3xl border border-white/10 bg-slate-950/70 p-6">
+        <div className="space-y-4 rounded-2xl border border-line bg-bg-surface/85 backdrop-blur-md p-6 shadow-card">
           <div className="flex items-center gap-2">
-            <Trophy size={18} className="text-amber-400" />
-            <h3 className="text-lg font-black text-white">Performance intelligence</h3>
+            <Trophy size={18} className="text-amber-500" />
+            <h3 className="text-lg font-black text-ink-100 font-display">Performance intelligence</h3>
           </div>
           <div className="grid gap-4 lg:grid-cols-2">
-            <Card className="rounded-[1.75rem] border border-white/10 bg-slate-900/80 p-5">
-              <p className="text-xs uppercase tracking-[0.3em] text-cyan-400">Strongest</p>
-              <p className="mt-3 text-xl font-black text-white">{strongestSubject?.name || 'No data yet'}</p>
-              <p className="mt-2 text-sm text-slate-400">
+            <Card className="rounded-xl border border-line bg-bg-raised/60 p-5 transition-colors hover:border-line-strong">
+              <p className="text-xs uppercase tracking-[0.3em] text-cyan-400 font-bold">Strongest</p>
+              <p className="mt-3 text-xl font-black text-ink-100 font-display">{strongestSubject?.name || 'No data yet'}</p>
+              <p className="mt-2 text-sm text-ink-400">
                 {strongestSubject ? `Highest subject accuracy at ${strongestSubject.progress}%` : 'Attempt quizzes to generate subject ratings.'}
               </p>
             </Card>
-            <Card className="rounded-[1.75rem] border border-white/10 bg-slate-900/80 p-5">
-              <p className="text-xs uppercase tracking-[0.3em] text-cyan-400">Weakest</p>
-              <p className="mt-3 text-xl font-black text-white">{weakestSubject?.name || 'No data yet'}</p>
-              <p className="mt-2 text-sm text-slate-400">
+            <Card className="rounded-xl border border-line bg-bg-raised/60 p-5 transition-colors hover:border-line-strong">
+              <p className="text-xs uppercase tracking-[0.3em] text-cyan-400 font-bold">Weakest</p>
+              <p className="mt-3 text-xl font-black text-ink-100 font-display">{weakestSubject?.name || 'No data yet'}</p>
+              <p className="mt-2 text-sm text-ink-400">
                 {weakestSubject ? `Lowest subject accuracy at ${weakestSubject.progress}%` : 'Your weakest subject will surface once you attempt quizzes.'}
               </p>
             </Card>
-            <Card className="rounded-[1.75rem] border border-white/10 bg-slate-900/80 p-5">
-              <p className="text-xs uppercase tracking-[0.3em] text-cyan-400">Trend</p>
-              <p className="mt-3 text-xl font-black text-white">{activityTrend.label}</p>
-              <p className="mt-2 text-sm text-slate-400">{activityTrend.detail}</p>
+            <Card className="rounded-xl border border-line bg-bg-raised/60 p-5 transition-colors hover:border-line-strong">
+              <p className="text-xs uppercase tracking-[0.3em] text-cyan-400 font-bold">Trend</p>
+              <p className="mt-3 text-xl font-black text-ink-100 font-display">{activityTrend.label}</p>
+              <p className="mt-2 text-sm text-ink-400">{activityTrend.detail}</p>
             </Card>
-            <Card className="rounded-[1.75rem] border border-white/10 bg-slate-900/80 p-5">
-              <p className="text-xs uppercase tracking-[0.3em] text-cyan-400">Velocity</p>
-              <p className="mt-3 text-xl font-black text-white"><CountUp to={xpVelocity} suffix="xp" /></p>
-              <p className="mt-2 text-sm text-slate-400">Average XP earned per quiz attempt.</p>
+            <Card className="rounded-xl border border-line bg-bg-raised/60 p-5 transition-colors hover:border-line-strong">
+              <p className="text-xs uppercase tracking-[0.3em] text-cyan-400 font-bold">Velocity</p>
+              <p className="mt-3 text-xl font-black text-ink-100 font-display"><CountUp to={xpVelocity} suffix="xp" /></p>
+              <p className="mt-2 text-sm text-ink-400">Average XP earned per quiz attempt.</p>
             </Card>
           </div>
         </div>
 
-        <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6">
+        <div className="rounded-2xl border border-line bg-bg-surface/85 backdrop-blur-md p-6 shadow-card">
           <div className="mb-5 flex items-center gap-2">
             <BookOpen size={18} className="text-cyan-400" />
-            <h3 className="font-black text-white">Weekly activity</h3>
+            <h3 className="font-black text-ink-100 font-display">Weekly activity</h3>
           </div>
           {loading ? (
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, index) => (
-                <Skeleton key={index} className="h-16 rounded-3xl" />
+                <Skeleton key={index} className="h-16 rounded-xl" />
               ))}
             </div>
           ) : (
@@ -304,37 +322,37 @@ export default function Performance({ notify }) {
                 const isToday = i === (new Date().getDay() + 6) % 7;
                 return (
                   <div key={i} className="flex flex-1 flex-col items-center gap-2">
-                    <div className="relative flex h-full w-full flex-col items-end justify-end overflow-hidden rounded-3xl bg-slate-900/80">
+                    <div className="relative flex h-full w-full flex-col items-end justify-end overflow-hidden rounded-xl bg-bg-raised border border-line-subtle">
                       <motion.div
                         initial={{ height: 0 }}
                         animate={{ height: `${Math.max(heightPct, 8)}%` }}
                         transition={{ delay: reducedMotion ? 0 : i * 0.05, duration: 0.5, ease: 'easeOut' }}
-                        className={`w-full rounded-t-3xl ${isToday ? 'bg-gradient-to-t from-cyan-500 to-amber-400' : 'bg-gradient-to-t from-cyan-700 to-cyan-400'}`}
+                        className={`w-full rounded-t-lg ${isToday ? 'bg-gradient-to-t from-amber-500 to-amber-400' : 'bg-gradient-to-t from-cyan-600 to-cyan-400'}`}
                       />
                     </div>
-                    <span className={`text-[10px] font-semibold ${isToday ? 'text-cyan-300' : 'text-slate-500'}`}>{DAYS[i]}</span>
+                    <span className={`text-[10px] font-semibold ${isToday ? 'text-amber-500 font-bold' : 'text-ink-400'}`}>{DAYS[i]}</span>
                   </div>
                 );
               })}
             </div>
           )}
-          <p className="mt-4 text-xs text-slate-500">
+          <p className="mt-4 text-xs text-ink-400 flex items-center">
             <span className="inline-flex h-2 w-2 rounded-full bg-cyan-400 mr-2" />Active day
-            <span className="ml-4 inline-flex h-2 w-2 rounded-full bg-amber-400 mr-2" />Current day
+            <span className="ml-4 inline-flex h-2 w-2 rounded-full bg-amber-500 mr-2" />Current day
           </p>
         </div>
       </div>
 
-      <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6">
+      <div className="rounded-2xl border border-line bg-bg-surface/85 backdrop-blur-md p-6 shadow-card">
         <div className="mb-5 flex items-center gap-2">
           <CheckCircle size={18} className="text-cyan-400" />
-          <h3 className="font-black text-white">Recent attempts</h3>
+          <h3 className="font-black text-ink-100 font-display">Recent attempts</h3>
         </div>
         <AnimatePresence mode="wait">
           {loading ? (
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, index) => (
-                <Skeleton key={index} className="h-16 rounded-3xl" />
+                <Skeleton key={index} className="h-16 rounded-xl" />
               ))}
             </div>
           ) : attempts.length ? (
@@ -348,18 +366,18 @@ export default function Performance({ notify }) {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: reducedMotion ? 0 : index * 0.03, duration: 0.35 }}
-                    className="flex items-center gap-4 rounded-3xl border border-white/10 bg-slate-900/80 px-4 py-3 transition hover:border-cyan-400/30"
+                    className="flex items-center gap-4 rounded-xl border border-line bg-bg-raised/50 px-4 py-3 transition hover:border-cyan-500/40 hover:bg-bg-raised/80"
                   >
-                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${col.bg}`}>
+                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${col.bg}`}>
                       <CheckCircle size={18} className={col.text} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-black text-white">{attempt.quizTitle || attempt.subject || 'Quiz attempt'}</p>
-                      <p className="text-xs text-slate-500">{attempt.score}/{attempt.total} correct · {accuracy}% accuracy</p>
+                      <p className="truncate text-sm font-black text-ink-100">{attempt.quizTitle || attempt.subject || 'Quiz attempt'}</p>
+                      <p className="text-xs text-ink-400">{attempt.score}/{attempt.total} correct · {accuracy}% accuracy</p>
                     </div>
                     <div className="shrink-0 text-right">
                       <p className={`text-sm font-black ${col.text}`}>{accuracy}%</p>
-                      <Button variant="secondary" onClick={() => setReviewAttemptId(attempt.id)} className="text-xs">
+                      <Button variant="secondary" size="sm" onClick={() => setReviewAttemptId(attempt.id)} className="text-xs rounded-lg">
                         Review
                       </Button>
                     </div>
@@ -368,7 +386,7 @@ export default function Performance({ notify }) {
               })}
             </div>
           ) : (
-            <div className="grid h-44 place-items-center rounded-3xl border border-dashed border-slate-700 bg-slate-900/60 px-4 text-center text-slate-500">
+            <div className="grid h-44 place-items-center rounded-2xl border border-dashed border-line bg-bg-raised/40 px-4 text-center text-ink-400">
               <p className="font-semibold">No attempts yet. Complete your first quiz to populate insights.</p>
             </div>
           )}
@@ -379,3 +397,4 @@ export default function Performance({ notify }) {
     </div>
   );
 }
+

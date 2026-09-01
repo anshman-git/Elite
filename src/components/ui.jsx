@@ -20,8 +20,8 @@ export function Card({ children, className = '', interactive = false, hover = 'g
       onHoverStart={() => interactive && setIsHovered(true)}
       onHoverEnd={() => interactive && setIsHovered(false)}
       className={classNames(
-        'rounded-2xl border border-line bg-bg-surface/85 backdrop-blur-md p-5 shadow-soft transition-all duration-300 dark:bg-bg-surface/50',
-        interactive ? 'cursor-pointer hover:border-line-strong hover:shadow-glow-amber' : '',
+        'rounded-xl border border-line bg-bg-surface/85 backdrop-blur-md p-5 shadow-card transition-all duration-300 dark:bg-bg-surface/50',
+        interactive ? 'cursor-pointer hover:border-line-strong hover:shadow-card-hover' : '',
         className,
       )}
       {...props}
@@ -35,10 +35,10 @@ export function Button({ children, variant = 'primary', className = '', ...props
   const [ripple, setRipple] = useState(null);
 
   const styles = {
-    primary: 'bg-amber-500 text-slate-950 font-bold hover:brightness-[1.06] active:scale-[0.98] shadow-glow-amber border border-amber-500/25',
+    primary: 'bg-amber-500 text-amber-50 font-bold hover:brightness-[1.06] active:scale-[0.98] shadow-glow-amber border border-amber-500/25',
     secondary: 'bg-bg-raised text-ink-100 border border-line hover:border-line-strong hover:bg-bg-surface active:scale-[0.98]',
     ghost: 'bg-transparent text-ink-200 hover:bg-bg-raised/70 hover:text-ink-100 active:scale-[0.98]',
-    accent: 'bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold hover:brightness-[1.06] active:scale-[0.98] shadow-glow-amber border border-amber-500/20',
+    accent: 'bg-gradient-to-r from-amber-500 to-amber-600 text-amber-50 font-bold hover:brightness-[1.06] active:scale-[0.98] shadow-glow-amber border border-amber-500/20',
   };
 
   const handleMouseDown = (e) => {
@@ -55,10 +55,10 @@ export function Button({ children, variant = 'primary', className = '', ...props
 
   return (
     <motion.button
-      whileHover={{ y: -2 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={{ y: -1 }}
+      whileTap={{ scale: 0.97 }}
       className={classNames(
-        'relative inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 overflow-hidden',
+        'relative inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-5 text-sm font-semibold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 overflow-hidden',
         styles[variant],
         className,
       )}
@@ -91,7 +91,7 @@ export function IconButton({ label, children, className = '', ...props }) {
       aria-label={label}
       title={label}
       className={classNames(
-        'grid h-11 w-11 place-items-center rounded-xl border border-line bg-bg-surface text-ink-200 transition-all duration-200 hover:bg-bg-raised hover:text-ink-100 hover:border-line-strong shadow-soft',
+        'grid h-11 w-11 place-items-center rounded-lg border border-line bg-bg-surface text-ink-200 transition-all duration-200 hover:bg-bg-raised hover:text-ink-100 hover:border-line-strong shadow-soft focus-visible:ring-2 focus-visible:ring-amber-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface',
         className,
       )}
       {...props}
@@ -105,7 +105,7 @@ export const TopBar = LayoutTopBar;
 
 export function SearchInput({ value, onChange, placeholder = 'Search' }) {
   return (
-    <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-line bg-bg-surface/65 backdrop-blur-md px-4 text-ink-400 transition-all duration-200 focus-within:border-amber-500 focus-within:shadow-glow-amber">
+    <label className="flex min-h-12 items-center gap-3 rounded-xl border border-line bg-bg-surface/65 backdrop-blur-md px-4 text-ink-400 transition-all duration-200 focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/15">
       <Search size={18} />
       <input
         value={value}
@@ -161,8 +161,8 @@ export function LoadingState() {
 export function EmptyState({ title, body, action, icon: Icon = Sparkles }) {
   return (
     <Card className="grid place-items-center overflow-hidden py-10 text-center relative grid-bg">
-      <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
-      <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-amber-500/20 bg-amber-500/10 text-amber-500 shadow-glow-amber animate-pulse">
+      <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
+      <div className="mx-auto grid h-14 w-14 place-items-center rounded-full border border-line bg-bg-raised text-ink-400">
         <Icon size={24} />
       </div>
       <h3 className="mt-4 text-base font-bold text-ink-100 font-display">{title}</h3>
@@ -174,10 +174,10 @@ export function EmptyState({ title, body, action, icon: Icon = Sparkles }) {
 
 export function Toast({ toasts = [] }) {
   const styles = {
-    success: 'border-emerald-500/30 bg-emerald-50/90 text-emerald-800 dark:bg-emerald-950/90 dark:text-emerald-300 dark:border-emerald-500/20 shadow-[0_10px_40px_-10px_rgba(16,185,129,0.15)]',
-    error: 'border-rose-500/30 bg-rose-50/90 text-rose-800 dark:bg-rose-950/90 dark:text-rose-300 dark:border-rose-500/20 shadow-[0_10px_40px_-10px_rgba(244,63,94,0.15)]',
-    warning: 'border-amber-500/30 bg-amber-50/90 text-amber-800 dark:bg-amber-950/90 dark:text-amber-300 dark:border-amber-500/20 shadow-[0_10px_40px_-10px_rgba(245,158,11,0.15)]',
-    info: 'border-line bg-bg-surface/90 text-ink-150 dark:bg-bg-surface/95 dark:text-ink-100 shadow-[0_10px_40px_-10px_rgba(59,130,246,0.15)]',
+    success: 'border-success/30 bg-success/10 text-success dark:bg-success/10 dark:text-success shadow-soft',
+    error: 'border-danger/30 bg-danger/10 text-danger dark:bg-danger/10 dark:text-danger shadow-soft',
+    warning: 'border-amber-500/30 bg-amber-500/10 text-amber-500 dark:bg-amber-500/10 dark:text-amber-500 shadow-soft',
+    info: 'border-line bg-bg-surface/90 text-ink-200 dark:bg-bg-surface/95 dark:text-ink-100 shadow-soft',
   };
 
   const icons = {
@@ -200,7 +200,7 @@ export function Toast({ toasts = [] }) {
             exit={{ opacity: 0, y: 15, scale: 0.95 }}
             transition={{ type: 'spring', damping: 25, stiffness: 350, delay: index * 0.05 }}
             className={classNames(
-              'flex items-center gap-3 rounded-2xl border px-4 py-3.5 text-sm font-semibold shadow-soft backdrop-blur-xl',
+              'flex items-center gap-3 rounded-xl border px-4 py-3.5 text-sm font-semibold backdrop-blur-xl',
               styles[toast.type] || styles.info
             )}
           >
@@ -218,18 +218,14 @@ export function Input({ label, value, onChange, placeholder, type = 'text', clas
 
   return (
     <label className="grid gap-2 text-sm font-bold text-ink-200">
-      <motion.span
-        animate={{ color: focused ? '#f59e0b' : error ? '#ef4444' : '#d0d0d0' }}
-        transition={{ duration: 0.2 }}
-      >
+      <span className={classNames(
+        'transition-colors duration-200',
+        focused ? 'text-amber-500' : error ? 'text-danger' : 'text-ink-200'
+      )}>
         {label}
-      </motion.span>
-      <motion.div
-        className="relative flex items-center gap-2"
-        initial={false}
-        animate={{ borderColor: focused ? '#f59e0b' : error ? '#ef4444' : '#3f3f46' }}
-      >
-        {Icon && <Icon className={classNames('w-4 h-4', focused ? 'text-amber-500' : error ? 'text-red-500' : 'text-ink-400')} />}
+      </span>
+      <div className="relative flex items-center gap-2">
+        {Icon && <Icon className={classNames('w-4 h-4 absolute left-4 z-10', focused ? 'text-amber-500' : error ? 'text-danger' : 'text-ink-400')} />}
         <input
           type={type}
           value={value}
@@ -238,16 +234,16 @@ export function Input({ label, value, onChange, placeholder, type = 'text', clas
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           className={classNames(
-            'min-h-12 rounded-2xl border border-line bg-bg-surface px-4 text-sm font-semibold text-ink-100 outline-none transition duration-200 focus:border-amber-500 focus:shadow-glow-amber focus:ring-1 focus:ring-amber-500/10 dark:bg-bg-surface/50 flex-1',
-            error && 'border-red-500 focus:border-red-500 focus:shadow-[0_0_12px_rgba(239,68,68,0.3)]',
-            success && 'border-emerald-500 focus:border-emerald-500',
+            'min-h-12 rounded-lg border border-line bg-bg-surface px-4 text-sm font-semibold text-ink-100 outline-none transition duration-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/15 dark:bg-bg-surface/50 flex-1',
+            error && 'border-danger focus:border-danger focus:ring-danger/15',
+            success && 'border-success focus:border-success',
             Icon && 'pl-10',
             className,
           )}
         />
-        {success && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-emerald-500"><Check size={18} /></motion.div>}
-        {error && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-red-500"><AlertCircle size={18} /></motion.div>}
-      </motion.div>
+        {success && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-success"><Check size={18} /></motion.div>}
+        {error && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-danger"><AlertCircle size={18} /></motion.div>}
+      </div>
     </label>
   );
 }
@@ -260,7 +256,7 @@ export function Select({ label, value, onChange, children, className = '' }) {
         value={value}
         onChange={(event) => onChange(event.target.value)}
         className={classNames(
-          'min-h-12 rounded-2xl border border-line bg-bg-surface px-4 text-sm font-semibold text-ink-100 outline-none transition duration-200 focus:border-amber-500 focus:shadow-glow-amber focus:ring-1 focus:ring-amber-500/10 dark:bg-bg-surface/50',
+          'min-h-12 rounded-lg border border-line bg-bg-surface px-4 text-sm font-semibold text-ink-100 outline-none transition duration-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/15 dark:bg-bg-surface/50',
           className,
         )}
       >
@@ -275,12 +271,12 @@ export function Textarea({ label, value, onChange, placeholder, className = '' }
 
   return (
     <label className="grid gap-2 text-sm font-bold text-ink-200">
-      <motion.span
-        animate={{ color: focused ? '#f59e0b' : '#d0d0d0' }}
-        transition={{ duration: 0.2 }}
-      >
+      <span className={classNames(
+        'transition-colors duration-200',
+        focused ? 'text-amber-500' : 'text-ink-200'
+      )}>
         {label}
-      </motion.span>
+      </span>
       <textarea
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -289,7 +285,7 @@ export function Textarea({ label, value, onChange, placeholder, className = '' }
         onBlur={() => setFocused(false)}
         rows={4}
         className={classNames(
-          'min-h-24 rounded-2xl border border-line bg-bg-surface px-4 py-3 text-sm font-semibold text-ink-100 outline-none transition duration-200 focus:border-amber-500 focus:shadow-glow-amber focus:ring-1 focus:ring-amber-500/10 dark:bg-bg-surface/50',
+          'min-h-24 rounded-lg border border-line bg-bg-surface px-4 py-3 text-sm font-semibold text-ink-100 outline-none transition duration-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/15 dark:bg-bg-surface/50',
           className,
         )}
       />
@@ -323,17 +319,17 @@ export function Tooltip({ children, label, position = 'top' }) {
             exit={{ opacity: 0, scale: 0.95, y: 4 }}
             transition={{ duration: 0.15 }}
             className={classNames(
-              'absolute left-1/2 -translate-x-1/2 z-50 px-3 py-2 rounded-lg bg-slate-950 text-white text-xs font-semibold whitespace-nowrap pointer-events-none',
+              'absolute left-1/2 -translate-x-1/2 z-50 px-3 py-2 rounded-lg bg-bg-inset border border-line text-ink-100 text-xs font-semibold whitespace-nowrap pointer-events-none shadow-card',
               positionClasses[position]
             )}
           >
             {label}
             <div className={classNames(
-              'absolute w-2 h-2 bg-slate-950 rotate-45',
-              position === 'top' && '-bottom-1 left-1/2 -translate-x-1/2',
-              position === 'bottom' && '-top-1 left-1/2 -translate-x-1/2',
-              position === 'left' && '-right-1 top-1/2 -translate-y-1/2',
-              position === 'right' && '-left-1 top-1/2 -translate-y-1/2',
+              'absolute w-2 h-2 bg-bg-inset border border-line rotate-45',
+              position === 'top' && '-bottom-1 left-1/2 -translate-x-1/2 border-t-0 border-l-0',
+              position === 'bottom' && '-top-1 left-1/2 -translate-x-1/2 border-b-0 border-r-0',
+              position === 'left' && '-right-1 top-1/2 -translate-y-1/2 border-l-0 border-b-0',
+              position === 'right' && '-left-1 top-1/2 -translate-y-1/2 border-r-0 border-t-0',
             )} />
           </motion.div>
         )}
@@ -345,10 +341,10 @@ export function Tooltip({ children, label, position = 'top' }) {
 export function Badge({ children, variant = 'default', animated = true, className = '' }) {
   const styles = {
     default: 'bg-bg-raised border border-line text-ink-100',
-    success: 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300',
-    warning: 'bg-amber-500/20 border border-amber-500/40 text-amber-300',
-    danger: 'bg-rose-500/20 border border-rose-500/40 text-rose-300',
-    info: 'bg-cyan-500/20 border border-cyan-500/40 text-cyan-300',
+    success: 'bg-success/15 border border-success/30 text-success',
+    warning: 'bg-amber-500/15 border border-amber-500/30 text-amber-500',
+    danger: 'bg-danger/15 border border-danger/30 text-danger',
+    info: 'bg-cyan-500/15 border border-cyan-500/30 text-cyan-500',
   };
 
   return (
@@ -373,7 +369,7 @@ export function AnimatedCheckmark({ checked = true }) {
       initial={{ scale: 0, rotate: -45 }}
       animate={checked ? { scale: 1, rotate: 0 } : { scale: 0, rotate: -45 }}
       transition={{ duration: 0.3, type: 'spring', stiffness: 300 }}
-      className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500 text-white"
+      className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-success text-ink-100"
     >
       {checked && <Check size={16} />}
     </motion.div>
@@ -390,10 +386,12 @@ export function Tabs({ tabs, defaultTab = 0, onChange }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex gap-2 border-b border-line">
+      <div className="flex gap-2 border-b border-line" role="tablist">
         {tabs.map((tab, index) => (
           <motion.button
             key={index}
+            role="tab"
+            aria-selected={activeTab === index}
             onClick={() => handleTabChange(index)}
             className={classNames(
               'relative px-4 py-3 text-sm font-semibold transition-colors duration-200',
@@ -418,6 +416,7 @@ export function Tabs({ tabs, defaultTab = 0, onChange }) {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.2 }}
+          role="tabpanel"
         >
           {tabs[activeTab]?.content}
         </motion.div>

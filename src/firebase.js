@@ -577,11 +577,6 @@ export async function deleteResource(resourceId) {
   return deleteDoc(doc(db, 'resources', resourceId));
 }
 
-export async function createAnnouncement(payload) {
-  if (!db) throw new Error('Firebase is not configured yet.');
-  return addDoc(collection(db, 'announcements'), { ...payload, type: payload.type || 'announcement', createdAt: serverTimestamp() });
-}
-
 // Quiz CRUD functions
 export async function updateQuiz(quizId, payload) {
   if (!db) throw new Error('Firebase is not configured yet.');
@@ -672,15 +667,6 @@ export async function followUser(currentUserId, targetUserId, currentUserName = 
     xp: increment(5),
     lastActiveAt: serverTimestamp(),
   });
-  batch.set(doc(collection(db, 'notifications')), {
-    targetUserId,
-    actorUserId: currentUserId,
-    type: 'follow',
-    title: 'New follower',
-    body: `${currentUserName} followed you.`,
-    read: false,
-    createdAt: serverTimestamp(),
-  });
   await batch.commit();
   return { followed: true };
 }
@@ -698,55 +684,6 @@ export async function unfollowUser(currentUserId, targetUserId) {
   batch.update(doc(db, 'users', targetUserId), {
     followers: arrayRemove(currentUserId),
     lastActiveAt: serverTimestamp(),
-  });
-  await batch.commit();
-}
-
-export function watchUserNotifications(userId, callback, options = {}) {
-  const { take = 20, onError } = options;
-  if (!db || !userId) {
-    callback([]);
-    return () => {};
-  }
-
-  const notificationsQuery = query(
-    collection(db, 'notifications'),
-    where('targetUserId', '==', userId),
-    orderBy('createdAt', 'desc'),
-    limit(take),
-  );
-
-  return onSnapshot(
-    notificationsQuery,
-    (snapshot) => callback(snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))),
-    (error) => {
-      console.error('Error watching notifications:', error);
-      callback([]);
-      onError?.(error);
-    },
-  );
-}
-
-export async function markNotificationRead(notificationId) {
-  if (!db) throw new Error('Firebase is not configured yet.');
-  return updateDoc(doc(db, 'notifications', notificationId), {
-    read: true,
-    readAt: serverTimestamp(),
-  });
-}
-
-export async function markAllNotificationsRead(userId) {
-  if (!db || !userId) return;
-  const unreadQuery = query(
-    collection(db, 'notifications'),
-    where('targetUserId', '==', userId),
-    where('read', '==', false),
-    limit(25),
-  );
-  const snapshot = await getDocs(unreadQuery);
-  const batch = firestoreWriteBatch(db);
-  snapshot.docs.forEach((item) => {
-    batch.update(item.ref, { read: true, readAt: serverTimestamp() });
   });
   await batch.commit();
 }
@@ -825,27 +762,5 @@ export async function giveWeeklyPoints(userId, amount = 100) {
     points: increment(amount),
     weeklyPoints: increment(amount),
     lastActiveAt: serverTimestamp(),
-  });
-}
-
-// Settings functions
-export async function updateExamCountdown(payload) {
-  if (!db) throw new Error('Firebase is not configured yet.');
-  return setDoc(doc(db, 'settings', 'examCountdown'), { ...payload, updatedAt: serverTimestamp() });
-}
-
-export async function getExamCountdown() {
-  if (!db) return null;
-  const docSnap = await getDoc(doc(db, 'settings', 'examCountdown'));
-  return docSnap.exists() ? docSnap.data() : null;
-}
-
-export function watchExamCountdown(callback) {
-  if (!db) {
-    callback(null);
-    return () => {};
-  }
-  return onSnapshot(doc(db, 'settings', 'examCountdown'), (doc) => {
-    callback(doc.exists() ? doc.data() : null);
   });
 }

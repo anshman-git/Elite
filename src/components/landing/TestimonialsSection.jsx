@@ -96,7 +96,7 @@ export default function TestimonialsSection() {
             <motion.div
               key={idx}
               variants={itemVariants}
-              className="cmd-card p-6 border border-line bg-bg-surface flex flex-col justify-between shadow-soft hover:shadow-glow group cursor-default"
+              className="cmd-card p-6 border border-line bg-bg-surface flex flex-col justify-between shadow-card hover:shadow-card-hover hover:border-line-strong transition-all duration-200 group cursor-default"
             >
               <div>
                 {/* Stars */}

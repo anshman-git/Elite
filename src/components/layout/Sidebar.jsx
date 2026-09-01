@@ -1,11 +1,10 @@
-import { BarChart3, BookOpen, ChevronLeft, ChevronRight, FileText, Home, Shield, Trophy, User, Users } from 'lucide-react';
+import { BarChart3, BookOpen, ChevronLeft, ChevronRight, Home, Shield, Trophy, User, Users } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { classNames } from '../../utils';
+import { classNames, getDisplayName, getDicebearAvatar } from '../../utils';
 
 const nav = [
   { id: 'dashboard',   label: 'Home',        icon: Home,     testId: 'nav-home-btn' },
   { id: 'quizzes',     label: 'Quiz',         icon: BookOpen, testId: 'nav-quiz-btn' },
-  { id: 'resources',   label: 'Files',        icon: FileText, testId: 'nav-files-btn' },
   { id: 'community',   label: 'Social',       icon: Users,    testId: 'nav-social-btn' },
   { id: 'leaderboard', label: 'Ranks',        icon: Trophy,   testId: 'nav-ranks-btn' },
   { id: 'profile',     label: 'Profile',      icon: User,     testId: 'nav-profile-btn' },
@@ -63,6 +62,55 @@ function NavList({ items, active, handler, collapsed }) {
   );
 }
 
+function ProfileCard({ user, collapsed, onClick }) {
+  const displayName = getDisplayName(user);
+  const avatar = user?.photoURL || getDicebearAvatar(user?.uid);
+  const email = user?.email || '';
+
+  if (collapsed) {
+    return (
+      <button
+        onClick={onClick}
+        className="flex items-center justify-center w-10 h-10 mx-auto rounded-xl border border-line bg-bg-raised/50 hover:bg-bg-raised hover:border-amber-500/30 transition-all duration-200 overflow-hidden shrink-0"
+        title={displayName}
+        aria-label="Open profile"
+      >
+        <img
+          src={avatar}
+          alt=""
+          className="w-7 h-7 rounded-lg object-cover"
+          loading="lazy"
+        />
+      </button>
+    );
+  }
+
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-3 w-full rounded-xl py-2.5 px-3 transition-all duration-200 hover:bg-bg-raised/50 border border-transparent hover:border-line group text-left shrink-0"
+      aria-label="Open profile"
+    >
+      <img
+        src={avatar}
+        alt=""
+        className="w-9 h-9 rounded-xl object-cover border border-line shrink-0"
+        loading="lazy"
+      />
+      <div className="min-w-0 flex-1">
+        <p className="font-display text-sm font-semibold text-ink-100 truncate leading-tight">
+          {displayName}
+        </p>
+        {email && (
+          <p className="text-[11px] text-ink-400 truncate leading-tight mt-0.5">
+            {email}
+          </p>
+        )}
+      </div>
+    </button>
+  );
+}
+
 /**
  * Sidebar — desktop rail + mobile slide-in drawer.
  *
@@ -73,9 +121,10 @@ function NavList({ items, active, handler, collapsed }) {
  *   collapsed — desktop collapsed state (controlled by parent)
  *   onToggleCollapse — toggle desktop collapsed state
  *   isOpen    — mobile drawer open state (controlled by parent)
- *   onClose   — close mobile drawer,collapsed = false, onToggleCollapse 
+ *   onClose   — close mobile drawer
+ *   user      — current user object for profile card
  */
-export function Sidebar({ active, onSelect, setActive, isAdmin = false, isOpen = false, onClose, collapsed = false, onToggleCollapse }) {
+export function Sidebar({ active, onSelect, setActive, isAdmin = false, isOpen = false, onClose, collapsed = false, onToggleCollapse, user }) {
   const navigate = onSelect || setActive || (() => {});
 
   const handler = (id) => {
@@ -89,11 +138,12 @@ export function Sidebar({ active, onSelect, setActive, isAdmin = false, isOpen =
     <>
       {/* ── Desktop rail (FIXED positioning) ────────────────────────────── */}
       <aside className={classNames(
-        'hidden md:fixed md:flex flex-col border-r border-line backdrop-blur-md py-6 px-3 transition-all duration-300 shrink-0 h-[calc(100vh-4rem)] top-16 left-0 z-20 bg-bg-surface/90 dark:bg-bg-surface/80',
+        'hidden md:flex md:fixed flex-col border-r border-line backdrop-blur-md py-6 px-3 transition-all duration-300 shrink-0 top-16 left-0 z-20 bg-bg-surface/90 dark:bg-bg-surface/80',
+        'h-[calc(100vh-4rem)]',
         collapsed ? 'w-20' : 'w-64'
       )}>
         {/* Header with toggle button */}
-        <div className="flex items-center justify-between px-2 mb-4">
+        <div className={classNames('flex items-center px-2 mb-4', collapsed ? 'justify-center' : 'justify-between')}>
           {!collapsed && (
             <p className="font-display font-black text-xs tracking-[0.25em] text-amber-500">ELITESTUDY</p>
           )}
@@ -108,7 +158,16 @@ export function Sidebar({ active, onSelect, setActive, isAdmin = false, isOpen =
             {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
         </div>
-        <NavList items={visibleNav} active={active} handler={handler} collapsed={collapsed} />
+
+        {/* Navigation — takes remaining space */}
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+          <NavList items={visibleNav} active={active} handler={handler} collapsed={collapsed} />
+        </div>
+
+        {/* Profile section — pinned to bottom */}
+        <div className="pt-3 mt-3 border-t border-line">
+          <ProfileCard user={user} collapsed={collapsed} onClick={() => handler('profile')} />
+        </div>
       </aside>
 
       {/* ── Mobile drawer (slide in from left) ───────────────────────────── */}
@@ -141,7 +200,16 @@ export function Sidebar({ active, onSelect, setActive, isAdmin = false, isOpen =
                 <p className="font-display font-black text-[10px] tracking-[0.3em] text-amber-500">ELITESTUDY</p>
                 <p className="font-display font-bold text-lg text-ink-100">Navigation</p>
               </div>
-              <NavList items={visibleNav} active={active} handler={handler} />
+
+              {/* Navigation — takes remaining space */}
+              <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+                <NavList items={visibleNav} active={active} handler={handler} />
+              </div>
+
+              {/* Profile section — pinned to bottom */}
+              <div className="pt-3 mt-3 border-t border-line">
+                <ProfileCard user={user} collapsed={false} onClick={() => handler('profile')} />
+              </div>
             </motion.aside>
           </>
         )}

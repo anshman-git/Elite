@@ -101,7 +101,7 @@ export default function HowItWorks() {
 
                   {/* Card Content container */}
                   <div className="w-full md:w-1/2 md:px-8">
-                    <div className={`cmd-card p-6 border group hover:shadow-glow-amber transition-all duration-300 bg-bg-surface relative ${step.color}`}>
+                    <div className={`cmd-card p-6 border group hover:shadow-card-hover hover:border-line-strong transition-all duration-200 bg-bg-surface relative ${step.color}`}>
                       <div className={`h-10 w-10 rounded-xl bg-gradient-to-br flex items-center justify-center text-white mb-4 ${step.color}`}>
                         <StepIcon className="h-5 w-5" />
                       </div>

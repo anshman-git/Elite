@@ -44,7 +44,7 @@ export default function Resources({ notify }) {
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-500">Library</p>
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-400">Library</p>
         <h2 className="text-3xl font-black text-ink-100 font-display">Study Library</h2>
         <p className="mt-1 text-sm text-ink-400 font-semibold">
           Curated notes, previous year question papers, and sample templates compiled for college students.
@@ -53,20 +53,22 @@ export default function Resources({ notify }) {
 
       <SearchInput value={query} onChange={setQuery} placeholder="Search subject, PYQ, notes, sample papers..." />
 
-      <div className="flex gap-2.5 overflow-x-auto pb-2 select-none">
+      <div className="flex gap-2 overflow-x-auto pb-2 select-none" role="tablist">
         {['All', 'PYQ', 'Notes', 'Sample Paper'].map((item) => (
           <button
             key={item}
+            role="tab"
+            aria-selected={type === item}
             onClick={() => setType(item)}
-            className={`min-h-11 shrink-0 rounded-2xl px-5 text-sm font-bold transition-all duration-200 outline-none flex items-center gap-2 ${
+            className={`min-h-10 shrink-0 rounded-lg px-4 text-sm font-bold transition-all duration-200 outline-none flex items-center gap-2 ${
               type === item 
-                ? 'bg-amber-500 text-slate-950 shadow-glow-amber border border-amber-500/25' 
+                ? 'bg-amber-500 text-amber-50 shadow-soft border border-amber-500/25' 
                 : 'bg-bg-surface text-ink-200 border border-line hover:border-line-strong hover:bg-bg-raised/70'
             }`}
           >
             {item} 
-            <span className={`rounded-xl px-2 py-0.5 text-xs font-mono font-bold ${
-              type === item ? 'bg-slate-950/15 text-slate-950' : 'bg-bg-inset border border-line text-ink-200'
+            <span className={`rounded-md px-2 py-0.5 text-xs font-mono font-bold ${
+              type === item ? 'bg-amber-600/30 text-amber-50' : 'bg-bg-inset border border-line text-ink-400'
             }`}>
               {typeCounts[item] || 0}
             </span>
@@ -80,7 +82,8 @@ export default function Resources({ notify }) {
           {subjects.map((subject) => (
             <button 
               key={subject.id} 
-              className="rounded-2xl border border-line bg-bg-raised/50 px-4 py-4 text-center text-sm font-display font-bold text-ink-100 transition-all duration-200 hover:bg-bg-raised hover:text-amber-500 hover:border-amber-500/35 hover:-translate-y-0.5 shadow-soft"
+              onClick={() => setQuery(subject.name)}
+              className="rounded-xl border border-line bg-bg-raised/50 px-4 py-3.5 text-center text-sm font-display font-bold text-ink-100 transition-all duration-200 hover:bg-bg-raised hover:text-amber-500 hover:border-amber-500/35 hover:-translate-y-0.5 shadow-soft"
             >
               {subject.name}
             </button>
@@ -93,7 +96,7 @@ export default function Resources({ notify }) {
           {filtered.map((item) => (
             <Card key={item.id} interactive className="flex flex-col justify-between">
               <div className="flex items-start gap-4">
-                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-cyan-500/10 text-cyan-500 border border-cyan-500/20 shadow-soft">
+                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-soft">
                   {item.fileType?.startsWith('image/') ? <Image size={20} /> : <FileText size={20} />}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -101,7 +104,7 @@ export default function Resources({ notify }) {
                   <h3 className="mt-1 truncate font-display font-bold text-ink-100 text-base">{item.title}</h3>
                   <div className="mt-1 flex flex-wrap items-center gap-2">
                     <p className="text-xs text-ink-400 font-semibold">Uploaded {formatDate(item.createdAt)}</p>
-                    <span className="inline-flex items-center gap-1 rounded-xl bg-bg-inset border border-line px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-ink-200">
+                    <span className="inline-flex items-center gap-1 rounded-md bg-bg-inset border border-line px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-ink-200">
                       {getFileExtension(item.url || item.fileUrl)} • {formatFileSize(item.fileSize)}
                     </span>
                   </div>
@@ -111,7 +114,7 @@ export default function Resources({ notify }) {
                 <Button variant="secondary" onClick={() => window.open(item.url || item.fileUrl, '_blank', 'noopener,noreferrer')} disabled={!(item.url || item.fileUrl)}>
                   <Eye size={16} /> Preview
                 </Button>
-                <Button onClick={() => window.open(item.url || item.fileUrl, '_blank', 'noopener,noreferrer')} disabled={!(item.url || item.fileUrl)}>
+                <Button variant="primary" onClick={() => window.open(item.url || item.fileUrl, '_blank', 'noopener,noreferrer')} disabled={!(item.url || item.fileUrl)}>
                   <Download size={16} /> Open
                 </Button>
               </div>

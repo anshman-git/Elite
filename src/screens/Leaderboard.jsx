@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowDown, ArrowUp, ArrowUpRight, Crown, Flame, Medal, Search, Trophy, UsersRound, Zap } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpRight, Crown, Medal, Search, Trophy, UsersRound, Zap } from 'lucide-react';
 import { watchCollection } from '../firebase';
 import { getDicebearAvatar, getDisplayName } from '../utils';
 import { useApp } from '../context/useApp';
@@ -9,12 +9,10 @@ import { EmptyState } from '../components/ui';
 import { NotificationBadge } from '../components/InteractiveElements';
 
 const PODIUM = {
-  1: { label: 'Gold', color: 'from-amber-500/25 to-amber-600/5 bg-bg-surface/40', border: 'border-amber-500/40', badge: 'bg-amber-500 text-slate-950', glow: 'shadow-glow-amber', crown: 'text-amber-500' },
-  2: { label: 'Silver', color: 'from-cyan-500/20 to-cyan-600/5 bg-bg-surface/40', border: 'border-cyan-500/35', badge: 'bg-cyan-500 text-slate-950', glow: 'shadow-glow-cyan', crown: 'text-cyan-550' },
-  3: { label: 'Bronze', color: 'from-orange-500/20 to-orange-600/5 bg-bg-surface/40', border: 'border-orange-500/35', badge: 'bg-orange-500 text-slate-950', glow: 'shadow-glow-amber', crown: 'text-orange-500' },
+  1: { label: 'Gold', color: 'from-amber-500/20 via-amber-500/10 to-bg-surface', border: 'border-amber-500/40', badge: 'bg-amber-500 text-bg-base', glow: 'shadow-glow-amber', crown: 'text-amber-500' },
+  2: { label: 'Silver', color: 'from-cyan-500/15 via-cyan-500/5 to-bg-surface', border: 'border-cyan-500/30', badge: 'bg-cyan-500 text-bg-base', glow: 'shadow-card', crown: 'text-cyan-500' },
+  3: { label: 'Bronze', color: 'from-orange-500/15 via-orange-500/5 to-bg-surface', border: 'border-orange-500/30', badge: 'bg-orange-500 text-bg-base', glow: 'shadow-card', crown: 'text-orange-500' },
 };
-
-const RANK_MARK = { 1: '1', 2: '2', 3: '3' };
 
 function PodiumCard({ person, rank, scoreField, openProfile }) {
   const cfg = PODIUM[rank];
@@ -22,35 +20,36 @@ function PodiumCard({ person, rank, scoreField, openProfile }) {
 
   return (
     <motion.button
+      type="button"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: (rank - 1) * 0.1, duration: 0.4 }}
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
       onClick={() => openProfile?.(person.id)}
-      className={`group relative w-full overflow-hidden rounded-3xl border bg-gradient-to-br p-5 text-left transition-all duration-300 backdrop-blur-md ${cfg.color} ${cfg.border} ${cfg.glow}`}
+      className={`group relative w-full overflow-hidden rounded-2xl border bg-gradient-to-b p-5 text-left transition-all duration-300 backdrop-blur-md ${cfg.color} ${cfg.border} ${cfg.glow}`}
       style={{ height: rank === 1 ? 'auto' : rank === 2 ? 'calc(100% - 16px)' : 'calc(100% - 32px)' }}
     >
       <div
         className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-15 blur-2xl"
-        style={{ background: rank === 1 ? '#ffa500' : rank === 2 ? '#22d3ee' : '#f97316' }}
+        style={{ background: rank === 1 ? 'rgba(255,165,0,0.4)' : rank === 2 ? 'rgba(34,211,238,0.4)' : 'rgba(249,115,22,0.4)' }}
       />
       <div className="relative mb-3 flex justify-center">
         <div className="relative">
           <img
             src={getDicebearAvatar(person.id, person.avatarStyle)}
             alt=""
-            className="h-16 w-16 rounded-2xl border border-line bg-bg-raised"
+            className="h-16 w-16 rounded-xl border border-line bg-bg-raised object-cover"
           />
-          <span className={`absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-xl text-xs font-black shadow-soft ${cfg.badge}`}>
+          <span className={`absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-lg text-xs font-black shadow-card ${cfg.badge}`}>
             {rank}
           </span>
         </div>
       </div>
       <p className="text-center text-sm font-display font-bold text-ink-100 truncate">{getDisplayName(person)}</p>
-      <p className={`mt-1 text-center text-2xl font-black font-display tracking-tight ${cfg.crown}`}>{score}</p>
+      <p className={`mt-1 text-center text-2xl font-black font-display tracking-tight ${cfg.crown}`}>{score.toLocaleString()}</p>
       <p className="text-center text-[10px] font-bold text-ink-400 uppercase tracking-wider">points</p>
       <div className="mt-4 flex justify-center">
-        <span className={`rounded-xl px-3 py-1 text-[10px] font-black tracking-wider uppercase shadow-soft ${cfg.badge}`}>
+        <span className={`rounded-lg px-3 py-1 text-[10px] font-black tracking-wider uppercase shadow-card ${cfg.badge}`}>
           {cfg.label}
         </span>
       </div>
@@ -61,12 +60,12 @@ function PodiumCard({ person, rank, scoreField, openProfile }) {
 function LeaderRowBase({ person, rank, scoreField, isYou, gapToAbove, rankChange, openProfile }) {
   const reduceMotion = useReducedMotion();
   const score = Number(person[scoreField]) || 0;
-  const Icon = rank === 1 ? Crown : rank === 2 || rank === 3 ? Medal : Trophy;
+  const PodiumIcon = rank === 1 ? Crown : rank === 2 || rank === 3 ? Medal : null;
   const podiumColor = rank === 1 ? 'text-amber-500' : rank === 2 ? 'text-cyan-500' : rank === 3 ? 'text-orange-500' : 'text-ink-400';
 
   const rankChangeIndicator = rankChange !== 0 ? (
-    <span className={`inline-flex items-center gap-0.5 rounded-xl px-2 py-0.5 text-[9px] font-bold ${
-      rankChange > 0 ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
+    <span className={`inline-flex items-center gap-0.5 rounded-md px-1 py-0.5 text-[9px] font-bold ${
+      rankChange > 0 ? 'bg-success/10 text-success border border-success/20' : 'bg-danger/10 text-danger border border-danger/20'
     }`}>
       {rankChange > 0 ? <ArrowUp size={8} /> : <ArrowDown size={8} />}
       {Math.abs(rankChange)}
@@ -84,36 +83,47 @@ function LeaderRowBase({ person, rank, scoreField, isYou, gapToAbove, rankChange
       whileHover={!reduceMotion ? { x: 4 } : {}}
       transition={{ type: 'spring', stiffness: 260, damping: 28, mass: 0.85 }}
       onClick={() => openProfile?.(person.id)}
-      className={`group flex w-full items-center gap-4 rounded-2xl border p-4 text-left transition-all duration-300 ${
+      className={`group flex w-full items-center gap-3 sm:gap-4 rounded-xl border p-3.5 sm:p-4 text-left transition-all duration-200 ${
         isYou
-          ? 'border-amber-500/40 bg-amber-500/10 shadow-glow-amber'
-          : 'border-line bg-bg-surface/85 backdrop-blur-md hover:border-line-strong hover:shadow-soft'
+          ? 'border-amber-500/40 bg-amber-500/10 shadow-card'
+          : 'border-line bg-bg-surface hover:border-line-strong hover:shadow-card-hover'
       }`}
     >
-      {/* Rank Circle */}
-      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border ${
-        isYou ? 'border-amber-500/30 bg-amber-500/20 text-amber-500' : 'border-line bg-bg-inset text-ink-200'
-      } font-display font-black text-sm relative`}>
-        {rank <= 3 ? RANK_MARK[rank] : `#${rank}`}
-        {rankChangeIndicator && (
-          <span className="absolute -top-1 -right-1">
-            {rankChangeIndicator}
-          </span>
+      {/* Rank column */}
+      <div className="flex w-8 sm:w-10 shrink-0 flex-col items-center justify-center text-center">
+        <span className={`font-display font-black text-sm sm:text-base ${isYou ? 'text-amber-500' : rank <= 3 ? podiumColor : 'text-ink-400'}`}>
+          {rank <= 3 ? `#${rank}` : rank}
+        </span>
+        {rankChangeIndicator && <span className="mt-0.5">{rankChangeIndicator}</span>}
+      </div>
+
+      {/* Avatar with optional podium icon */}
+      <div className="relative shrink-0">
+        <img
+          src={getDicebearAvatar(person.id, person.avatarStyle)}
+          alt=""
+          className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl border border-line bg-bg-raised object-cover"
+        />
+        {PodiumIcon && (
+          <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-md border border-line-subtle bg-bg-surface shadow-card">
+            <PodiumIcon size={11} className={podiumColor} />
+          </div>
         )}
       </div>
 
-      {/* Icon */}
-      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-bg-inset border border-line-subtle text-ink-200 shadow-soft">
-        <Icon className={`h-5 w-5 ${podiumColor}`} />
-      </div>
-
-      {/* Profile */}
+      {/* Profile Details */}
       <div className="min-w-0 flex-1">
-        <p className={`truncate text-sm font-display font-bold ${isYou ? 'text-amber-500' : 'text-ink-100'}`}>
-          {getDisplayName(person)}
-          {isYou && <span className="ml-2 rounded-xl bg-amber-500/15 px-2 py-0.5 text-[9px] font-bold tracking-[0.15em] text-amber-500">YOU</span>}
-        </p>
-        <div className="mt-2 flex flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          <p className={`truncate text-sm font-display font-bold ${isYou ? 'text-amber-500' : 'text-ink-100'}`}>
+            {getDisplayName(person)}
+          </p>
+          {isYou && (
+            <span className="rounded-md bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-black tracking-wider text-amber-500">
+              YOU
+            </span>
+          )}
+        </div>
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
           {person.streak > 0 && (
             <NotificationBadge
               count={person.streak}
@@ -121,11 +131,11 @@ function LeaderRowBase({ person, rank, scoreField, isYou, gapToAbove, rankChange
               className="bg-amber-500/20 text-amber-500 border border-amber-500/30"
             />
           )}
-          <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-cyan-500 bg-cyan-500/10 px-2 py-1 rounded-lg border border-cyan-500/20">
-            <Zap size={10} /> {person.xp || 0}
+          <span className="inline-flex items-center gap-1 rounded-md border border-cyan-500/20 bg-cyan-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-cyan-500">
+            <Zap size={10} /> {person.xp || 0} XP
           </span>
           {(person.followers?.length || 0) > 0 && (
-            <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-indigo-500 bg-indigo-500/10 px-2 py-1 rounded-lg border border-indigo-500/20">
+            <span className="inline-flex items-center gap-1 rounded-md border border-cyan-500/20 bg-cyan-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-cyan-500">
               <UsersRound size={10} /> {person.followers.length}
             </span>
           )}
@@ -134,9 +144,11 @@ function LeaderRowBase({ person, rank, scoreField, isYou, gapToAbove, rankChange
 
       {/* Score */}
       <div className="shrink-0 text-right">
-        <p className={`text-lg font-black font-display tracking-tight ${isYou ? 'text-amber-500' : 'text-cyan-500'}`}>{score.toLocaleString()}</p>
+        <p className={`text-base sm:text-lg font-black font-display tracking-tight ${isYou ? 'text-amber-500' : 'text-cyan-500'}`}>
+          {score.toLocaleString()}
+        </p>
         {gapToAbove > 0 && (
-          <span className="mt-1 inline-flex items-center gap-1 rounded-xl bg-bg-inset border border-line-subtle px-2 py-0.5 text-[9px] font-bold text-ink-400">
+          <span className="mt-0.5 inline-flex items-center gap-0.5 rounded-md border border-line-subtle bg-bg-inset px-1.5 py-0.5 text-[9px] font-bold text-ink-400">
             <ArrowUpRight size={8} /> {gapToAbove} pts
           </span>
         )}
@@ -233,57 +245,65 @@ export default function Leaderboard({ notify, openProfile }) {
           <p className="mt-1 text-sm text-ink-400 font-semibold">{rankedLeaderboard.length} members ranked</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex rounded-2xl border border-line bg-bg-surface/80 p-1 shadow-soft">
+          <div role="tablist" aria-label="Leaderboard timeframe" className="flex rounded-xl border border-line bg-bg-surface p-1 shadow-card">
             <button
+              role="tab"
+              aria-selected={isWeekly}
+              type="button"
               onClick={() => setIsWeekly(true)}
-              className={`rounded-xl px-4 py-2 text-sm font-bold transition-all duration-200 ${
-                isWeekly ? 'bg-amber-500 text-slate-950 shadow-glow-amber' : 'text-ink-450 hover:text-ink-100'
+              className={`rounded-lg px-4 py-2 text-sm font-bold transition-all duration-200 ${
+                isWeekly ? 'bg-amber-500 text-bg-base font-black shadow-card' : 'text-ink-400 hover:text-ink-100 hover:bg-bg-raised/50'
               }`}
             >
               Weekly
             </button>
             <button
+              role="tab"
+              aria-selected={!isWeekly}
+              type="button"
               onClick={() => setIsWeekly(false)}
-              className={`rounded-xl px-4 py-2 text-sm font-bold transition-all duration-200 ${
-                !isWeekly ? 'bg-amber-500 text-slate-950 shadow-glow-amber' : 'text-ink-450 hover:text-ink-100'
+              className={`rounded-lg px-4 py-2 text-sm font-bold transition-all duration-200 ${
+                !isWeekly ? 'bg-amber-500 text-bg-base font-black shadow-card' : 'text-ink-400 hover:text-ink-100 hover:bg-bg-raised/50'
               }`}
             >
               All-time
             </button>
           </div>
           <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
+            <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
             <input
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Search users..."
-              className="h-10 rounded-xl border border-line bg-bg-surface/85 pl-8 pr-4 text-sm font-bold text-ink-100 placeholder-ink-600 outline-none transition-all duration-200 focus:border-amber-500 focus:shadow-glow-amber"
+              className="h-10 rounded-xl border border-line bg-bg-surface pl-8 pr-4 text-sm font-bold text-ink-100 placeholder:text-ink-600 outline-none transition-all duration-200 focus:border-amber-500/60 focus:ring-1 focus:ring-amber-500/40 shadow-card"
             />
           </div>
         </div>
       </div>
 
       {!searchQuery && top3.length >= 3 && (
-        <div className="py-4">
-          <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-ink-400">Top Performers</p>
-          <div className="grid grid-cols-3 items-end gap-3 sm:gap-6 max-w-2xl mx-auto">
-            {[top3[1], top3[0], top3[2]].filter(Boolean).map((person, index) => {
-              const displayRank = index === 0 ? 2 : index === 1 ? 1 : 3;
-              return (
-                <div
-                  key={person.id}
-                  className={index === 1 ? 'order-2' : index === 0 ? 'order-1' : 'order-3'}
-                  style={{ marginBottom: index === 1 ? 0 : index === 0 ? '-16px' : '-32px' }}
-                >
-                  <PodiumCard person={person} rank={displayRank} scoreField={scoreField} openProfile={openProfile} />
-                </div>
-              );
-            })}
+        <div className="hidden sm:block">
+          <div className="py-4">
+            <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-ink-400">Top Performers</p>
+            <div className="grid grid-cols-3 items-end gap-3 sm:gap-6 max-w-2xl mx-auto">
+              {[top3[1], top3[0], top3[2]].filter(Boolean).map((person, index) => {
+                const displayRank = index === 0 ? 2 : index === 1 ? 1 : 3;
+                return (
+                  <div
+                    key={person.id}
+                    className={index === 1 ? 'order-2' : index === 0 ? 'order-1' : 'order-3'}
+                    style={{ marginBottom: index === 1 ? 0 : index === 0 ? '-16px' : '-32px' }}
+                  >
+                    <PodiumCard person={person} rank={displayRank} scoreField={scoreField} openProfile={openProfile} />
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
 
-      <div className="space-y-3 pt-6">
+      <div className="space-y-3 pt-4">
         {!searchQuery && <p className="text-[10px] font-bold uppercase tracking-widest text-ink-400">Full Rankings</p>}
         {filteredLeaderboard.length ? (
           <AnimatePresence>
@@ -306,7 +326,7 @@ export default function Leaderboard({ notify, openProfile }) {
       </div>
 
       {rankedLeaderboard.length > 0 && (
-        <div className="grid grid-cols-2 gap-4 rounded-3xl border border-line bg-bg-surface/80 p-5 sm:grid-cols-4 shadow-soft">
+        <div className="grid grid-cols-2 gap-4 rounded-2xl border border-line bg-bg-surface p-5 sm:grid-cols-4 shadow-card">
           <div className="text-center p-2">
             <p className="text-2xl font-black text-ink-100 font-display">{rankedLeaderboard.length}</p>
             <p className="text-xs text-ink-400 font-semibold mt-1">Participants</p>
@@ -324,7 +344,7 @@ export default function Leaderboard({ notify, openProfile }) {
             <p className="text-xs text-ink-400 font-semibold mt-1">Avg Score</p>
           </div>
           <div className="text-center p-2">
-            <p className="text-2xl font-black text-emerald-500 font-display">
+            <p className="text-2xl font-black text-success font-display">
               {Math.max(...rankedLeaderboard.map((person) => person.streak || 0), 0)}d
             </p>
             <p className="text-xs text-ink-400 font-semibold mt-1">Best Streak</p>

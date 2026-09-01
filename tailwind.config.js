@@ -27,7 +27,7 @@ export default {
       },
       boxShadow: {
         soft: '0 18px 45px rgba(15, 23, 42, 0.08)',
-        glow: '0 18px 60px rgba(37, 99, 235, 0.20)',
+
         'glow-amber': '0 0 0 1px rgba(255,165,0,0.4), 0 8px 32px -8px rgba(255,165,0,0.45)',
         'glow-cyan': '0 0 0 1px rgba(34,211,238,0.4), 0 8px 32px -8px rgba(34,211,238,0.45)',
         /* Theme-aware shadows via CSS variables */
@@ -53,13 +53,6 @@ export default {
           400: 'rgb(var(--color-ink-400))',
           600: 'rgb(var(--color-ink-600))',
           DEFAULT: '#101828',
-        },
-        accent: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
         },
         amber: {
           50: '#FFF8E1',

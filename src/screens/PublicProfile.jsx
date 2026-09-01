@@ -8,9 +8,9 @@ import { formatPercent, getDicebearAvatar, getDisplayName, getLevelFromXp, getXp
 import { Button, Card, EmptyState, LoadingState, ProgressBar } from '../components/ui';
 
 const bannerGradients = {
-  cyber: 'radial-gradient(circle at top left, rgba(34,211,238,0.26), transparent 30%), radial-gradient(circle at 80% 10%, rgba(168,85,247,0.18), transparent 30%), linear-gradient(135deg, #020617, #0f172a 62%, #020617)',
-  neon: 'radial-gradient(circle at top right, rgba(34,211,238,0.22), transparent 30%), radial-gradient(circle at 20% 0%, rgba(192,132,252,0.18), transparent 34%), linear-gradient(180deg, #020617, #111827)',
-  aurora: 'radial-gradient(circle at center, rgba(168,85,247,0.22), transparent 30%), radial-gradient(circle at 90% 20%, rgba(34,211,238,0.16), transparent 28%), linear-gradient(135deg, #020617, #0f172a)',
+  cyber: 'radial-gradient(circle at top left, rgba(34,211,238,0.22), transparent 30%), radial-gradient(circle at 80% 10%, rgba(255,165,0,0.14), transparent 30%), linear-gradient(135deg, rgba(6,182,212,0.1), rgba(255,165,0,0.05))',
+  neon: 'radial-gradient(circle at top right, rgba(34,211,238,0.2), transparent 30%), radial-gradient(circle at 20% 0%, rgba(244,63,94,0.12), transparent 34%), linear-gradient(180deg, rgba(34,211,238,0.08), rgba(244,63,94,0.05))',
+  aurora: 'radial-gradient(circle at center, rgba(168,85,247,0.18), transparent 30%), radial-gradient(circle at 90% 20%, rgba(34,211,238,0.14), transparent 28%), linear-gradient(135deg, rgba(168,85,247,0.1), rgba(6,182,212,0.06))',
 };
 
 export default function PublicProfile({ profileUserId, onBack, notify }) {
@@ -118,7 +118,7 @@ export default function PublicProfile({ profileUserId, onBack, notify }) {
   if (!profile) {
     return (
       <Card>
-        <p className="font-bold text-white">Profile not found.</p>
+        <p className="font-bold text-ink-100">Profile not found.</p>
         <Button variant="secondary" className="mt-4" onClick={onBack}>
           <ArrowLeft size={17} /> Back
         </Button>
@@ -138,24 +138,24 @@ export default function PublicProfile({ profileUserId, onBack, notify }) {
       <motion.section
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
-        className="overflow-hidden rounded-[1.75rem] border border-slate-800/90 text-white shadow-[0_35px_120px_-70px_rgba(34,211,238,0.45)]"
+        className="overflow-hidden rounded-2xl border border-line bg-bg-surface text-ink-100 shadow-card transition-all duration-300"
         style={{ backgroundImage: bannerBackground }}
       >
-        <div className="bg-black/18 p-5 backdrop-blur-[1px] sm:p-7">
+        <div className="bg-bg-surface/60 p-5 backdrop-blur-md sm:p-7">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
               <motion.img
                 src={getDicebearAvatar(profile.id, profile.avatarStyle)}
                 alt=""
-                className="h-28 w-28 rounded-[1.75rem] border border-cyan-300/30 bg-slate-950 object-cover shadow-[0_0_38px_-12px_rgba(34,211,238,0.8)]"
+                className="h-28 w-28 rounded-2xl border-2 border-cyan-500/30 bg-bg-raised object-cover shadow-soft"
                 whileHover={{ rotate: -2, scale: 1.03 }}
               />
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-300">Weekly rank #{rank}</p>
-                <h2 className="mt-2 text-4xl font-black tracking-tight sm:text-5xl">{getDisplayName(profile)}</h2>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">{profile.bio || 'No bio yet.'}</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-cyan-500">Weekly rank #{rank}</p>
+                <h2 className="mt-2 text-3xl font-black font-display tracking-tight text-ink-100 sm:text-4xl lg:text-5xl">{getDisplayName(profile)}</h2>
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-200">{profile.bio || 'No bio yet.'}</p>
                 {profile.website ? (
-                  <a href={profile.website} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-cyan-200 hover:text-white">
+                  <a href={profile.website} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-cyan-500 hover:underline">
                     <Globe2 size={16} /> {profile.website}
                   </a>
                 ) : null}
@@ -166,7 +166,7 @@ export default function PublicProfile({ profileUserId, onBack, notify }) {
                 <Copy size={17} /> Copy link
               </Button>
               {!isOwnProfile ? (
-                <Button variant={isFollowing ? 'secondary' : 'accent'} onClick={handleFollowToggle} disabled={isSavingFollow}>
+                <Button variant={isFollowing ? 'secondary' : 'primary'} onClick={handleFollowToggle} disabled={isSavingFollow}>
                   {isFollowing ? <UserCheck size={17} /> : <UserPlus size={17} />}
                   {isFollowing ? 'Following' : 'Follow'}
                 </Button>
@@ -180,10 +180,10 @@ export default function PublicProfile({ profileUserId, onBack, notify }) {
             <HeroStat label="Level" value={getLevelFromXp(profile.xp)} />
             <HeroStat label="XP" value={profile.xp || 0} />
           </div>
-          <div className="mt-4 rounded-2xl border border-slate-700/70 bg-slate-950/70 p-4">
-            <div className="mb-2 flex justify-between text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+          <div className="mt-4 rounded-xl border border-line bg-bg-surface/80 backdrop-blur-md p-4 shadow-soft">
+            <div className="mb-2 flex justify-between text-xs font-bold uppercase tracking-wider text-ink-400">
               <span>Progress</span>
-              <span>{getXpProgress(profile.xp)}%</span>
+              <span className="text-ink-100">{getXpProgress(profile.xp)}%</span>
             </div>
             <ProgressBar value={getXpProgress(profile.xp)} />
           </div>
@@ -202,8 +202,8 @@ export default function PublicProfile({ profileUserId, onBack, notify }) {
       <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
         <Card>
           <div className="flex items-center justify-between gap-3">
-            <h3 className="text-lg font-black text-white">Recent activity</h3>
-            <span className="rounded-full bg-cyan-400/10 px-3 py-1 text-xs font-bold text-cyan-200">{attempts.length} shown</span>
+            <h3 className="text-lg font-black font-display text-ink-100">Recent activity</h3>
+            <span className="rounded-full border border-cyan-500/25 bg-cyan-500/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-cyan-500">{attempts.length} shown</span>
           </div>
           {attempts.length ? (
             <div className="mt-4 space-y-3">
@@ -211,11 +211,11 @@ export default function PublicProfile({ profileUserId, onBack, notify }) {
                 <motion.div
                   key={attempt.id}
                   whileHover={{ x: 4 }}
-                  className="rounded-2xl border border-slate-800 bg-slate-900/80 px-4 py-3"
+                  className="rounded-xl border border-line bg-bg-raised/60 px-4 py-3 transition-colors hover:border-line-strong hover:bg-bg-raised"
                 >
-                  <p className="font-bold text-white">{attempt.quizTitle || attempt.subject || 'Quiz attempt'}</p>
-                  <p className="mt-1 text-sm text-slate-400">
-                    {attempt.score}/{attempt.total} correct - {attempt.accuracy || 0}% accuracy
+                  <p className="font-bold text-ink-100">{attempt.quizTitle || attempt.subject || 'Quiz attempt'}</p>
+                  <p className="mt-1 text-sm text-ink-400">
+                    {attempt.score}/{attempt.total} correct · {attempt.accuracy || 0}% accuracy
                   </p>
                 </motion.div>
               ))}
@@ -230,8 +230,8 @@ export default function PublicProfile({ profileUserId, onBack, notify }) {
         <div className="space-y-5">
           <Card>
             <div className="flex items-center justify-between gap-3">
-              <h3 className="text-lg font-black text-white">Achievements</h3>
-              <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs font-bold text-cyan-200">
+              <h3 className="text-lg font-black font-display text-ink-100">Achievements</h3>
+              <span className="rounded-full border border-cyan-500/25 bg-cyan-500/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-cyan-500">
                 {achievements.length} earned
               </span>
             </div>
@@ -240,12 +240,12 @@ export default function PublicProfile({ profileUserId, onBack, notify }) {
                 <motion.div
                   key={badge}
                   whileHover={{ y: -2 }}
-                  className="rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-bold text-slate-200"
+                  className="rounded-xl border border-line bg-bg-raised/60 px-4 py-3 text-sm font-bold text-ink-200 transition-colors hover:border-line-strong hover:bg-bg-raised"
                 >
                   {badge}
                 </motion.div>
               )) : (
-                <div className="rounded-2xl border border-slate-800 bg-slate-900/80 px-4 py-6 text-center text-sm text-slate-400">
+                <div className="rounded-xl border border-dashed border-line bg-bg-raised/40 px-4 py-6 text-center text-sm text-ink-400">
                   No achievements yet.
                 </div>
               )}
@@ -253,23 +253,38 @@ export default function PublicProfile({ profileUserId, onBack, notify }) {
           </Card>
 
           <Card>
-            <div className="grid grid-cols-2 gap-2 rounded-2xl bg-slate-900 p-1">
-              {['followers', 'following'].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`rounded-xl px-3 py-2 text-sm font-black capitalize transition ${activeTab === tab ? 'bg-cyan-300 text-slate-950' : 'text-slate-400 hover:text-white'}`}
-                >
-                  {tab}
-                </button>
-              ))}
+            <div role="tablist" aria-label="Social connections" className="grid grid-cols-2 gap-1 rounded-xl bg-bg-raised p-1 border border-line-subtle">
+              {['followers', 'following'].map((tab) => {
+                const isSelected = activeTab === tab;
+                return (
+                  <button
+                    key={tab}
+                    role="tab"
+                    id={`tab-${tab}`}
+                    aria-selected={isSelected}
+                    aria-controls={`tabpanel-${tab}`}
+                    onClick={() => setActiveTab(tab)}
+                    className={`rounded-lg px-3 py-2 text-sm font-bold capitalize transition-all duration-200 ${
+                      isSelected
+                        ? 'bg-bg-surface text-ink-100 shadow-soft border border-line'
+                        : 'text-ink-400 hover:text-ink-100'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                );
+              })}
             </div>
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTab}
+                id={`tabpanel-${activeTab}`}
+                role="tabpanel"
+                aria-labelledby={`tab-${activeTab}`}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
                 className="mt-4 space-y-2"
               >
                 {socialUsers.length ? socialUsers.slice(0, 8).map((person) => (
@@ -277,16 +292,16 @@ export default function PublicProfile({ profileUserId, onBack, notify }) {
                     key={person.id}
                     type="button"
                     onClick={() => navigateToProfile(person.id)}
-                    className="flex w-full items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/80 p-3 text-left transition hover:border-cyan-400/50"
+                    className="flex w-full items-center gap-3 rounded-xl border border-line bg-bg-surface/80 p-3 text-left transition-all duration-200 hover:border-cyan-500/50 hover:bg-bg-raised shadow-soft"
                   >
-                    <img src={getDicebearAvatar(person.id, person.avatarStyle)} alt="" className="h-10 w-10 rounded-xl bg-slate-950" />
-                    <div className="min-w-0">
-                      <p className="truncate font-bold text-white">{getDisplayName(person)}</p>
-                      <p className="text-xs text-slate-400">LV {getLevelFromXp(person.xp)}</p>
+                    <img src={getDicebearAvatar(person.id, person.avatarStyle)} alt="" className="h-10 w-10 rounded-lg border border-line bg-bg-raised object-cover" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-bold text-ink-100">{getDisplayName(person)}</p>
+                      <p className="text-xs text-ink-400">LV {getLevelFromXp(person.xp)}</p>
                     </div>
                   </button>
                 )) : (
-                  <p className="rounded-2xl border border-slate-800 bg-slate-900/80 px-4 py-6 text-center text-sm text-slate-400">
+                  <p className="rounded-xl border border-dashed border-line bg-bg-raised/40 px-4 py-6 text-center text-sm text-ink-400">
                     No {activeTab} yet.
                   </p>
                 )}
@@ -303,22 +318,22 @@ function HeroStat({ label, value }) {
   return (
     <motion.div
       layout
-      className="rounded-2xl border border-slate-700/70 bg-slate-950/70 p-4 text-center backdrop-blur-xl"
+      className="rounded-xl border border-line bg-bg-surface/80 backdrop-blur-md p-4 text-center shadow-soft"
     >
-      <motion.p key={value} initial={{ scale: 0.85 }} animate={{ scale: 1 }} className="text-2xl font-black text-white">
+      <motion.p key={value} initial={{ scale: 0.85 }} animate={{ scale: 1 }} className="text-2xl font-black font-display text-ink-100">
         {value}
       </motion.p>
-      <p className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">{label}</p>
+      <p className="mt-1 text-xs font-bold uppercase tracking-wider text-ink-400">{label}</p>
     </motion.div>
   );
 }
 
 function Stat({ icon: Icon, label, value }) {
   return (
-    <motion.div whileHover={{ y: -3 }} className="rounded-2xl border border-slate-800 bg-slate-950/95 p-4 text-center shadow-[0_20px_70px_-55px_rgba(0,0,0,0.85)]">
-      <Icon className="mx-auto text-cyan-300" size={20} />
-      <p className="mt-2 text-2xl font-black text-white">{value}</p>
-      <p className="text-xs font-bold text-slate-500">{label}</p>
+    <motion.div whileHover={{ y: -3 }} className="rounded-xl border border-line bg-bg-surface p-4 text-center shadow-soft transition-all duration-200 hover:border-line-strong hover:shadow-card-hover">
+      <Icon className="mx-auto text-cyan-500" size={20} />
+      <p className="mt-2 text-2xl font-black font-display text-ink-100">{value}</p>
+      <p className="mt-1 text-xs font-bold uppercase tracking-wider text-ink-400">{label}</p>
     </motion.div>
   );
 }

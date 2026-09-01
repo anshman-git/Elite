@@ -1,22 +1,18 @@
-import { Bell, Menu, Shield, Sun, X, Flame, Moon } from 'lucide-react';
+import { Menu, Shield, Sun, X, Flame, Moon } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 /**
  * TopBar — sticky app header with fixed positioning coordination.
  */
 export function TopBar({
-  onNotifications,
   onTheme,
-  onOpenNotifications,
   onToggleDark,
   onMenuToggle,
   menuOpen = false,
   isAdmin,
-  unreadCount = 0,
   user,
   dark,
 }) {
-  const openNotifications = onOpenNotifications || onNotifications || (() => {});
   const toggleTheme = onToggleDark || onTheme || (() => {});
 
   return (
@@ -71,24 +67,6 @@ export function TopBar({
 
         {/* Right: actions */}
         <div className="flex items-center gap-2 shrink-0">
-          <motion.button
-            onClick={openNotifications}
-            data-testid="bell-btn"
-            aria-label={`Open notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
-            whileTap={{ scale: 0.92 }}
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-bg-raised/50 text-ink-300 hover:bg-bg-raised hover:border-amber-500/30 hover:text-amber-500 focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface active:bg-amber-500/20 transition-all duration-200 shadow-soft relative"
-          >
-            <Bell className="w-5 h-5" />
-            {unreadCount > 0 && (
-              <motion.span
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 animate-pulse shadow-lg shadow-amber-500/50"
-                aria-hidden="true"
-              />
-            )}
-          </motion.button>
-          
           <motion.button
             onClick={toggleTheme}
             data-testid="theme-toggle-btn"

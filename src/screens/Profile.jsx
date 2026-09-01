@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import CalendarHeatmap from 'react-calendar-heatmap';
 import 'react-calendar-heatmap/dist/styles.css';
@@ -15,19 +15,19 @@ const bannerOptions = [
     value: 'cyber',
     label: 'Cyber Grid',
     gradient:
-      'radial-gradient(circle at top left, rgba(14,165,233,0.24), transparent 28%), linear-gradient(135deg, rgba(15,23,42,0.95), rgba(7,10,25,0.96))',
+      'radial-gradient(circle at top left, rgba(6,182,212,0.22), transparent 30%), linear-gradient(135deg, rgba(6,182,212,0.12), rgba(255,165,0,0.06))',
   },
   {
     value: 'neon',
     label: 'Neon Flux',
     gradient:
-      'radial-gradient(circle at top right, rgba(56,189,248,0.22), transparent 30%), linear-gradient(180deg, rgba(15,23,42,0.94), rgba(9,10,25,0.98))',
+      'radial-gradient(circle at top right, rgba(34,211,238,0.2), transparent 30%), linear-gradient(180deg, rgba(34,211,238,0.1), rgba(244,63,94,0.06))',
   },
   {
     value: 'aurora',
     label: 'Aurora Pulse',
     gradient:
-      'radial-gradient(circle at center, rgba(34,211,238,0.14), transparent 28%), linear-gradient(135deg, rgba(7,10,25,0.92), rgba(15,23,42,0.9))',
+      'radial-gradient(circle at center, rgba(34,211,238,0.16), transparent 28%), linear-gradient(135deg, rgba(168,85,247,0.12), rgba(6,182,212,0.08))',
   },
 ];
 
@@ -168,70 +168,75 @@ export default function Profile({ user, notify }) {
   return (
     <div className="space-y-6">
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
-        <Card>
-          <div
-            className="relative overflow-hidden rounded-[2rem] border border-slate-700/70 bg-slate-950/90 shadow-[0_30px_90px_-50px_rgba(14,165,233,0.45)]"
-            style={{ backgroundImage: bannerBackground }}
-          >
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.18),transparent_30%)]" />
-            <div className="relative grid gap-6 p-6 lg:grid-cols-[1.25fr_0.95fr] lg:items-end">
-              <div className="flex flex-col gap-6 lg:flex-row lg:items-end">
-                <div className="relative flex items-center justify-center">
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-cyan-400/20 via-slate-900/0 to-amber-400/20 blur-2xl" />
-                  <div className="relative flex h-32 w-32 items-center justify-center rounded-full border-4 border-cyan-400/25 bg-slate-950 shadow-[0_0_40px_-20px_rgba(14,165,233,0.35)]">
-                    <img
-                      src={getDicebearAvatar(user?.uid, avatarStyle)}
-                      alt="Profile avatar"
-                      className="h-28 w-28 rounded-full border-2 border-slate-900 bg-slate-950 object-cover"
-                    />
-                    <div className="pointer-events-none absolute -right-2 -bottom-2 flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/15 text-amber-300 text-sm font-black shadow-lg shadow-amber-500/10">
-                      L{level}
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-3 text-white">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="rounded-full border border-cyan-400/20 bg-slate-900/70 px-3 py-1 text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">Player identity</span>
-                    <span className="rounded-full bg-amber-400/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.24em] text-amber-300">{activityLabel}</span>
-                  </div>
-                  <h1 className="text-4xl font-black tracking-tight sm:text-5xl">{name || getDisplayName(user)}</h1>
-                  <p className="max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">{bio || 'A compact arena profile with streaks, rank, activity, and progression all in one place.'}</p>
-                  <div className="grid gap-2 text-sm uppercase tracking-[0.18em] text-slate-400 sm:grid-cols-3">
-                    <span>{user?.followers?.length || 0} followers</span>
-                    <span>{user?.following?.length || 0} following</span>
-                    <span>Joined {formatJoined(user?.createdAt)}</span>
+        <div
+          className="relative overflow-hidden rounded-2xl border border-line bg-bg-surface shadow-card transition-all duration-300"
+          style={{ backgroundImage: bannerBackground }}
+        >
+          <div className="relative bg-bg-surface/50 p-6 backdrop-blur-md sm:p-8 lg:grid lg:grid-cols-[1.25fr_0.95fr] lg:items-end lg:gap-8">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-end">
+              <div className="relative flex items-center justify-center self-start">
+                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-cyan-500/20 via-transparent to-amber-500/20 blur-xl" />
+                <div className="relative flex h-28 w-28 sm:h-32 sm:w-32 items-center justify-center rounded-full border-4 border-cyan-500/30 bg-bg-surface shadow-soft">
+                  <img
+                    src={getDicebearAvatar(user?.uid, avatarStyle)}
+                    alt="Profile avatar"
+                    className="h-24 w-24 sm:h-28 sm:w-28 rounded-full border border-line bg-bg-raised object-cover"
+                  />
+                  <div className="pointer-events-none absolute -right-1 -bottom-1 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-amber-500 text-bg-base font-display text-xs sm:text-sm font-black shadow-glow-amber">
+                    L{level}
                   </div>
                 </div>
               </div>
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-cyan-500">
+                    Player identity
+                  </span>
+                  <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-amber-500">
+                    {activityLabel}
+                  </span>
+                </div>
+                <h1 className="text-3xl font-black font-display tracking-tight text-ink-100 sm:text-4xl lg:text-5xl">
+                  {name || getDisplayName(user)}
+                </h1>
+                <p className="max-w-2xl text-sm leading-relaxed text-ink-200 sm:text-base">
+                  {bio || 'A compact arena profile with streaks, rank, activity, and progression all in one place.'}
+                </p>
+                <div className="grid gap-2 text-xs font-semibold uppercase tracking-wider text-ink-400 sm:grid-cols-3">
+                  <span>{user?.followers?.length || 0} followers</span>
+                  <span>{user?.following?.length || 0} following</span>
+                  <span>Joined {formatJoined(user?.createdAt)}</span>
+                </div>
+              </div>
+            </div>
 
-              <div className="grid gap-4 sm:text-right">
-                <div className="rounded-3xl bg-slate-900/85 p-5 text-slate-200 shadow-inner shadow-slate-950/20">
-                  <p className="text-xs uppercase tracking-[0.24em] text-slate-400">XP Pool</p>
-                  <div className="mt-3 flex items-end gap-4">
-                    <div>
-                      <p className="text-3xl font-black text-white"><CountUp to={xpValue} /></p>
-                      <p className="mt-1 text-sm text-slate-400">Total experience</p>
-                    </div>
-                    <div className="rounded-3xl bg-slate-950/80 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">
-                      +{xpToNext} to next
-                    </div>
+            <div className="mt-6 grid gap-4 lg:mt-0 sm:text-right">
+              <div className="rounded-xl border border-line bg-bg-surface/80 backdrop-blur-md p-5 text-ink-200 shadow-soft">
+                <p className="text-xs uppercase tracking-wider font-bold text-ink-400">XP Pool</p>
+                <div className="mt-3 flex items-end justify-between sm:justify-end gap-4">
+                  <div className="text-left sm:text-right">
+                    <p className="text-3xl font-black font-display text-ink-100"><CountUp to={xpValue} /></p>
+                    <p className="mt-0.5 text-xs text-ink-400">Total experience</p>
+                  </div>
+                  <div className="rounded-lg border border-cyan-500/25 bg-cyan-500/10 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-cyan-500">
+                    +{xpToNext} to next
                   </div>
                 </div>
-                <div className="space-y-3 rounded-3xl bg-slate-900/85 p-5 text-slate-200">
-                  <div className="flex items-center justify-between text-xs uppercase tracking-[0.18em] text-slate-400">
-                    <span>Progress to next level</span>
-                    <span>{xpProgress}%</span>
-                  </div>
-                  <ProgressBar value={xpProgress} />
-                  <div className="rounded-3xl bg-slate-950/80 px-4 py-3 text-sm text-slate-300">
-                    <div className="font-bold text-white">Level {level}</div>
-                    <p className="mt-1 text-slate-400">Keep stacking XP to unlock the next tier.</p>
-                  </div>
+              </div>
+              <div className="space-y-3 rounded-xl border border-line bg-bg-surface/80 backdrop-blur-md p-5 text-ink-200 shadow-soft">
+                <div className="flex items-center justify-between text-xs uppercase tracking-wider font-bold text-ink-400">
+                  <span>Progress to next level</span>
+                  <span className="text-ink-100">{xpProgress}%</span>
+                </div>
+                <ProgressBar value={xpProgress} />
+                <div className="rounded-lg border border-line bg-bg-raised/70 px-4 py-3 text-sm text-left">
+                  <div className="font-bold text-ink-100">Level {level}</div>
+                  <p className="mt-0.5 text-xs text-ink-400">Keep stacking XP to unlock the next tier.</p>
                 </div>
               </div>
             </div>
           </div>
-        </Card>
+        </div>
       </motion.div>
 
       <div className="grid gap-6 xl:grid-cols-[1.35fr_0.85fr]">
@@ -240,14 +245,14 @@ export default function Profile({ user, notify }) {
             <Card>
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-xl font-black text-white">Edit profile</h2>
-                  <p className="mt-1 text-sm text-slate-400">Refresh your persona, links, and avatar style for the cyber arena.</p>
+                  <h2 className="text-xl font-black font-display text-ink-100">Edit profile</h2>
+                  <p className="mt-1 text-sm text-ink-400">Refresh your persona, links, and avatar style for the arena.</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button variant="secondary" onClick={copyProfileLink}>
                     <Copy size={17} /> Copy profile link
                   </Button>
-                  <Button variant="accent" onClick={handleSave} disabled={isSaving}>
+                  <Button variant="primary" onClick={handleSave} disabled={isSaving}>
                     {isSaving ? 'Saving...' : 'Save profile'}
                   </Button>
                 </div>
@@ -260,17 +265,17 @@ export default function Profile({ user, notify }) {
                 <Textarea label="Status / bio" value={bio} onChange={setBio} placeholder="Short mission statement" />
                 <div className="grid gap-4 lg:grid-cols-2">
                   <div>
-                    <p className="mb-3 text-sm font-bold uppercase tracking-[0.18em] text-slate-400">Avatar style</p>
+                    <p className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-400">Avatar style</p>
                     <div className="grid gap-2 sm:grid-cols-2">
                       {avatarStyles.map((style) => (
                         <button
                           key={style}
                           type="button"
                           onClick={() => setAvatarStyle(style)}
-                          className={`rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${
+                          className={`rounded-lg border px-4 py-2.5 text-left text-sm font-semibold capitalize transition-all duration-200 ${
                             avatarStyle === style
-                              ? 'border-cyan-400 bg-cyan-400/10 text-cyan-200'
-                              : 'border-slate-700 bg-slate-900 text-slate-200 hover:border-cyan-400/70 hover:bg-slate-800'
+                              ? 'border-cyan-500 bg-cyan-500/10 text-cyan-500 shadow-soft'
+                              : 'border-line bg-bg-surface text-ink-200 hover:border-line-strong hover:bg-bg-raised hover:text-ink-100'
                           }`}
                         >
                           {style}
@@ -279,17 +284,17 @@ export default function Profile({ user, notify }) {
                     </div>
                   </div>
                   <div>
-                    <p className="mb-3 text-sm font-bold uppercase tracking-[0.18em] text-slate-400">Banner theme</p>
+                    <p className="mb-3 text-xs font-bold uppercase tracking-wider text-ink-400">Banner theme</p>
                     <div className="grid gap-2 sm:grid-cols-2">
                       {bannerOptions.map((option) => (
                         <button
                           key={option.value}
                           type="button"
                           onClick={() => setBannerStyle(option.value)}
-                          className={`rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${
+                          className={`rounded-lg border px-4 py-2.5 text-left text-sm font-semibold transition-all duration-200 ${
                             bannerStyle === option.value
-                              ? 'border-cyan-400 bg-cyan-400/10 text-cyan-200'
-                              : 'border-slate-700 bg-slate-900 text-slate-200 hover:border-cyan-400/70 hover:bg-slate-800'
+                              ? 'border-cyan-500 bg-cyan-500/10 text-cyan-500 shadow-soft'
+                              : 'border-line bg-bg-surface text-ink-200 hover:border-line-strong hover:bg-bg-raised hover:text-ink-100'
                           }`}
                         >
                           {option.label}
@@ -315,7 +320,7 @@ export default function Profile({ user, notify }) {
                 icon={Flame}
                 label="Streak"
                 value={`${user?.streak || 0} days`}
-                trend={`Last activity today`}
+                trend="Last activity today"
                 trendPositive={user?.streak > 0}
               />
               <StatsCard
@@ -339,10 +344,10 @@ export default function Profile({ user, notify }) {
             <Card>
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-black text-white">Achievement wall</h2>
-                  <p className="mt-1 text-sm text-slate-400">Your earned badges and locked goals.</p>
+                  <h2 className="text-lg font-black font-display text-ink-100">Achievement wall</h2>
+                  <p className="mt-1 text-sm text-ink-400">Your earned badges and locked goals.</p>
                 </div>
-                <span className="rounded-full border border-cyan-400/20 bg-slate-900 px-3 py-1 text-xs uppercase tracking-[0.24em] text-cyan-300">
+                <span className="rounded-full border border-cyan-500/25 bg-cyan-500/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-cyan-500">
                   {achievements.length} earned
                 </span>
               </div>
@@ -356,27 +361,27 @@ export default function Profile({ user, notify }) {
                       layout
                       whileHover={!reducedMotion ? { y: -3 } : {}}
                       transition={{ type: 'spring', stiffness: 260, damping: 24 }}
-                      className={`rounded-3xl border p-4 transition ${
+                      className={`rounded-xl border p-4 transition-all duration-200 ${
                         unlocked
-                          ? 'border-cyan-400/25 bg-cyan-500/10 text-white shadow-[0_20px_60px_-40px_rgba(34,211,238,0.35)]'
-                          : 'border-white/5 bg-slate-900/70 text-slate-400'
+                          ? 'border-cyan-500/30 bg-cyan-500/5 text-ink-100 shadow-card-hover'
+                          : 'border-line-subtle bg-bg-raised/40 text-ink-400 opacity-70'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-3">
-                        <span className={`grid h-11 w-11 place-items-center rounded-2xl text-xl ${
-                          unlocked ? 'bg-cyan-500/15 text-cyan-300' : 'bg-white/5 text-slate-500'
+                        <span className={`grid h-11 w-11 place-items-center rounded-lg text-xl ${
+                          unlocked ? 'bg-cyan-500/15 text-cyan-500' : 'bg-bg-raised text-ink-600'
                         }`}>
                           <Icon size={20} />
                         </span>
-                        <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${
-                          unlocked ? 'bg-emerald-400/10 text-emerald-300' : 'bg-white/5 text-slate-500'
+                        <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                          unlocked ? 'bg-success/15 text-success' : 'bg-bg-raised text-ink-600'
                         }`}>
                           {unlocked ? 'Unlocked' : 'Locked'}
                         </span>
                       </div>
                       <div className="mt-4 space-y-1">
-                        <p className="font-black text-white">{item.title}</p>
-                        <p className="text-sm leading-6 text-slate-400">{item.description}</p>
+                        <p className="font-black text-ink-100">{item.title}</p>
+                        <p className="text-xs leading-relaxed text-ink-400">{item.description}</p>
                       </div>
                     </motion.div>
                   );
@@ -391,11 +396,11 @@ export default function Profile({ user, notify }) {
             <Card>
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300">Identity</p>
-                  <h2 className="text-3xl font-black text-white">Player profile</h2>
-                  <p className="mt-1 text-sm text-slate-400">Your stats, streak, and activity in one panel.</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-cyan-500">Identity</p>
+                  <h2 className="text-2xl sm:text-3xl font-black font-display text-ink-100">Player profile</h2>
+                  <p className="mt-1 text-sm text-ink-400">Your stats, streak, and activity in one panel.</p>
                 </div>
-                <span className="rounded-full border border-amber-500/20 bg-amber-500/5 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-amber-300">
+                <span className="rounded-full border border-amber-500/25 bg-amber-500/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-amber-500">
                   {activityLabel}
                 </span>
               </div>
@@ -412,17 +417,17 @@ export default function Profile({ user, notify }) {
             <Card>
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-black text-white">Activity heatmap</h2>
-                  <p className="mt-1 text-sm text-slate-400">Daily quiz activity for the last 90 days.</p>
+                  <h2 className="text-lg font-black font-display text-ink-100">Activity heatmap</h2>
+                  <p className="mt-1 text-sm text-ink-400">Daily quiz activity for the last 90 days.</p>
                 </div>
-                <div className="heatmap-legend flex flex-wrap items-center gap-2 text-xs text-slate-400">
-                  <span className="heatmap-legend-dot bg-slate-700" /> No activity
-                  <span className="heatmap-legend-dot bg-cyan-500/30" /> Light
+                <div className="heatmap-legend flex flex-wrap items-center gap-2 text-xs font-medium text-ink-400">
+                  <span className="heatmap-legend-dot bg-bg-inset border border-line" /> No activity
+                  <span className="heatmap-legend-dot bg-cyan-500/40" /> Light
                   <span className="heatmap-legend-dot bg-cyan-500/70" /> Active
-                  <span className="heatmap-legend-dot bg-amber-400" /> Peak
+                  <span className="heatmap-legend-dot bg-amber-500" /> Peak
                 </div>
               </div>
-              <div className="mt-4 overflow-x-auto rounded-3xl border border-white/10 bg-slate-950/70 p-3">
+              <div className="mt-4 overflow-x-auto rounded-xl border border-line bg-bg-surface/50 p-4">
                 {heatmapValues.length ? (
                   <CalendarHeatmap
                     startDate={heatmapStartDate}
@@ -445,7 +450,7 @@ export default function Profile({ user, notify }) {
                     }
                   />
                 ) : (
-                  <div className="rounded-3xl border border-dashed border-slate-700/70 bg-slate-900/80 p-10 text-center text-sm text-slate-500">
+                  <div className="rounded-xl border border-dashed border-line bg-bg-raised/40 p-8 text-center text-sm text-ink-400">
                     No activity detected yet. Complete quizzes to populate your heatmap.
                   </div>
                 )}
@@ -456,15 +461,15 @@ export default function Profile({ user, notify }) {
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.1 }}>
             <Card>
               <div className="flex items-center gap-3">
-                <div className="grid h-12 w-12 place-items-center rounded-3xl bg-cyan-400/10 text-cyan-300">
+                <div className="grid h-11 w-11 place-items-center rounded-xl border border-cyan-500/20 bg-cyan-500/10 text-cyan-500">
                   <UserRound size={20} />
                 </div>
-                <div>
-                  <p className="text-sm uppercase tracking-[0.18em] text-slate-400">Member access</p>
-                  <h2 className="text-lg font-black text-white">{user?.email || 'No email on file'}</h2>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs uppercase tracking-wider font-bold text-ink-400">Member access</p>
+                  <h2 className="text-base sm:text-lg font-black text-ink-100 truncate">{user?.email || 'No email on file'}</h2>
                 </div>
               </div>
-              <p className="mt-4 text-sm leading-6 text-slate-300">
+              <p className="mt-3 text-sm leading-relaxed text-ink-200">
                 Keep your personal dashboard updated for faster rewards and streak tracking. Your profile name shows across the leaderboard and public profile cards.
               </p>
             </Card>
@@ -489,22 +494,22 @@ export default function Profile({ user, notify }) {
 
 function Stat({ value, label, accent }) {
   const accentClasses = {
-    cyan: 'text-cyan-300',
-    blue: 'text-sky-300',
-    teal: 'text-emerald-300',
-    amber: 'text-amber-300',
+    cyan: 'text-cyan-500',
+    blue: 'text-cyan-500',
+    teal: 'text-success',
+    amber: 'text-amber-500',
   };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-3xl bg-slate-900/85 p-5 text-white shadow-[0_16px_50px_-35px_rgba(0,0,0,0.55)]"
+      className="rounded-xl border border-line bg-bg-surface p-4 sm:p-5 shadow-soft transition-all duration-200 hover:border-line-strong hover:shadow-card-hover"
     >
-      <p className={`text-3xl font-black ${accentClasses[accent] || 'text-cyan-300'}`}>
+      <p className={`text-2xl sm:text-3xl font-black font-display ${accentClasses[accent] || 'text-cyan-500'}`}>
         <CountUp to={Number(value) || 0} />
       </p>
-      <p className="mt-2 text-xs uppercase tracking-[0.18em] text-slate-400">{label}</p>
+      <p className="mt-1 text-xs uppercase tracking-wider font-bold text-ink-400">{label}</p>
     </motion.div>
   );
 }

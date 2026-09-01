@@ -98,24 +98,6 @@ export function validateQuiz(quiz) {
   return errors;
 }
 
-export function validateAnnouncement(announcement) {
-  const errors = [];
-
-  if (!announcement.title?.trim()) {
-    errors.push('Announcement title is required');
-  } else if (announcement.title.length > 200) {
-    errors.push('Title must be less than 200 characters');
-  }
-
-  if (!announcement.body?.trim()) {
-    errors.push('Announcement message is required');
-  } else if (announcement.body.length > 2000) {
-    errors.push('Message must be less than 2000 characters');
-  }
-
-  return errors;
-}
-
 export function validateFile(file) {
   if (!file) {
     return 'File is required';

@@ -21,18 +21,18 @@ export default function GamificationSection() {
             Level Up Your Study Game
           </h2>
           <p className="text-base text-ink-200 leading-relaxed font-sans">
-            Studying doesn't have to be a chore. EliteStudy turns college learning into an interactive adventure.
+            Studying doesn't have to be a chore. EliteStudy turns college exam prep into an engaging learning adventure.
           </p>
         </div>
 
         {/* Bento Grid Layout */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* XP Card - Col span 2 */}
-          <div className="md:col-span-2 cmd-card p-6 border border-line bg-bg-surface flex flex-col justify-between shadow-soft hover:shadow-glow-amber hover:border-amber-500/30 transition-all duration-300">
+          <div className="md:col-span-2 cmd-card p-6 border border-line bg-bg-surface flex flex-col justify-between shadow-card hover:border-line-strong hover:shadow-card-hover transition-all duration-200">
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <div className="h-9 w-9 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                  <Zap className="h-4.5 w-4.5 text-amber-500" />
+                <div className="h-9 w-9 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
+                  <Zap className="h-4.5 w-4.5" />
                 </div>
                 <h3 className="font-display font-bold text-ink-100 text-base">XP Progression</h3>
               </div>
@@ -48,7 +48,7 @@ export default function GamificationSection() {
                   <span className="text-2xl font-black text-ink-100 font-display">2,450</span>
                   <span className="text-xs text-ink-600 font-bold">/ 3,000 XP</span>
                 </div>
-                <span className="text-xs font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded">Level 12</span>
+                <span className="text-xs font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">Level 12</span>
               </div>
               <div className="w-full h-3 rounded-full bg-bg-inset border border-line-subtle overflow-hidden">
                 <motion.div
@@ -59,16 +59,16 @@ export default function GamificationSection() {
                   className="h-full bg-gradient-to-r from-amber-500 to-amber-600 rounded-full"
                 />
               </div>
-              <p className="text-[10px] text-ink-600 font-bold mt-1">⚡ You need 550 XP more to reach Level 13</p>
+              <p className="text-[10px] text-ink-400 font-semibold mt-1">⚡ You need 550 XP more to reach Level 13</p>
             </div>
           </div>
 
           {/* Weekly Challenge Card - Col span 1 */}
-          <div className="cmd-card p-6 border border-line bg-bg-surface flex flex-col justify-between shadow-soft hover:shadow-glow-cyan hover:border-cyan-500/30 transition-all duration-300">
+          <div className="cmd-card p-6 border border-line bg-bg-surface flex flex-col justify-between shadow-card hover:border-line-strong hover:shadow-card-hover transition-all duration-200">
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <div className="h-9 w-9 rounded-xl bg-cyan-500/10 flex items-center justify-center">
-                  <Swords className="h-4.5 w-4.5 text-cyan-500" />
+                <div className="h-9 w-9 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400">
+                  <Swords className="h-4.5 w-4.5" />
                 </div>
                 <h3 className="font-display font-bold text-ink-100 text-base">Weekly Challenge</h3>
               </div>
@@ -80,7 +80,7 @@ export default function GamificationSection() {
             <div className="p-4 rounded-xl border border-line-subtle bg-bg-raised/60 mt-auto">
               <div className="flex justify-between items-start mb-2.5">
                 <span className="text-xs font-black text-ink-100">BCA MCQ Crusader</span>
-                <span className="text-xs font-bold text-cyan-500">34 / 50</span>
+                <span className="text-xs font-bold text-cyan-400">34 / 50</span>
               </div>
               <div className="w-full h-2 rounded-full bg-bg-inset border border-line-subtle overflow-hidden mb-2">
                 <motion.div
@@ -91,16 +91,16 @@ export default function GamificationSection() {
                   className="h-full bg-cyan-500 rounded-full"
                 />
               </div>
-              <span className="text-[9px] font-bold text-ink-600">Reward: +500 XP & Silver Badge</span>
+              <span className="text-[9px] font-bold text-ink-400">Reward: +500 XP & Silver Badge</span>
             </div>
           </div>
 
           {/* Ranking System - Col span 1 */}
-          <div className="cmd-card p-6 border border-line bg-bg-surface flex flex-col justify-between shadow-soft hover:shadow-glow-amber hover:border-amber-500/30 transition-all duration-300">
+          <div className="cmd-card p-6 border border-line bg-bg-surface flex flex-col justify-between shadow-card hover:border-line-strong hover:shadow-card-hover transition-all duration-200">
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <div className="h-9 w-9 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                  <Crown className="h-4.5 w-4.5 text-amber-500 animate-pulse" />
+                <div className="h-9 w-9 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
+                  <Crown className="h-4.5 w-4.5" />
                 </div>
                 <h3 className="font-display font-bold text-ink-100 text-base">Competitive Rankings</h3>
               </div>
@@ -109,19 +109,19 @@ export default function GamificationSection() {
               </p>
             </div>
 
-            <div className="space-y-2.5 mt-auto">
+            <div className="space-y-2 mt-auto">
               {leaderBoardUsers.map((item, idx) => (
                 <div
                   key={idx}
-                  className={`flex items-center justify-between p-2.5 rounded-xl border ${
+                  className={`flex items-center justify-between p-2.5 rounded-lg border ${
                     item.active
-                      ? 'bg-amber-500/10 border-amber-500/30 font-bold'
+                      ? 'bg-amber-500/10 border-amber-500/30 font-bold text-ink-100'
                       : 'bg-bg-raised/40 border-line-subtle text-ink-200'
                   }`}
                 >
                   <div className="flex items-center gap-2.5 text-xs">
                     <span className="select-none">{item.rank}</span>
-                    <span className="font-sans text-ink-100">{item.name}</span>
+                    <span className="font-sans font-semibold">{item.name}</span>
                   </div>
                   <span className="text-xs font-black text-ink-100 font-display">{item.xp}</span>
                 </div>
@@ -130,11 +130,11 @@ export default function GamificationSection() {
           </div>
 
           {/* Streak Flame Card - Col span 1 */}
-          <div className="cmd-card p-6 border border-line bg-bg-surface flex flex-col justify-between shadow-soft hover:shadow-glow-amber hover:border-amber-500/30 transition-all duration-300">
+          <div className="cmd-card p-6 border border-line bg-bg-surface flex flex-col justify-between shadow-card hover:border-line-strong hover:shadow-card-hover transition-all duration-200">
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <div className="h-9 w-9 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                  <Flame className="h-4.5 w-4.5 text-amber-500" />
+                <div className="h-9 w-9 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
+                  <Flame className="h-4.5 w-4.5" />
                 </div>
                 <h3 className="font-display font-bold text-ink-100 text-base">Daily Streaks</h3>
               </div>
@@ -151,13 +151,13 @@ export default function GamificationSection() {
               {/* Row of week days */}
               <div className="flex items-center justify-between gap-1">
                 {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, idx) => {
-                  const active = idx < 5; // Mon-Fri active
+                  const active = idx < 5;
                   return (
                     <div key={idx} className="flex flex-col items-center gap-1.5">
                       <div
-                        className={`h-7.5 w-7.5 rounded-lg border flex items-center justify-center text-xs font-bold transition-colors ${
+                        className={`h-7 w-7 rounded-lg border flex items-center justify-center text-xs font-bold transition-colors ${
                           active
-                            ? 'bg-amber-500 border-amber-600 text-white shadow-glow-amber'
+                            ? 'bg-amber-500 border-amber-500 text-amber-50 shadow-soft'
                             : 'bg-bg-inset border-line-subtle text-ink-600'
                         }`}
                       >
@@ -171,11 +171,11 @@ export default function GamificationSection() {
           </div>
 
           {/* Achievement Badges Card - Col span 1 */}
-          <div className="cmd-card p-6 border border-line bg-bg-surface flex flex-col justify-between shadow-soft hover:shadow-glow-cyan hover:border-cyan-500/30 transition-all duration-300">
+          <div className="cmd-card p-6 border border-line bg-bg-surface flex flex-col justify-between shadow-card hover:border-line-strong hover:shadow-card-hover transition-all duration-200">
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <div className="h-9 w-9 rounded-xl bg-cyan-500/10 flex items-center justify-center">
-                  <Award className="h-4.5 w-4.5 text-cyan-500 animate-bounce" />
+                <div className="h-9 w-9 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400">
+                  <Award className="h-4.5 w-4.5" />
                 </div>
                 <h3 className="font-display font-bold text-ink-100 text-base">Unlock Badges</h3>
               </div>
@@ -190,7 +190,7 @@ export default function GamificationSection() {
                 { emoji: '🔥', name: '10d Streak' },
                 { emoji: '🏆', name: 'Top 100' },
               ].map((badge, idx) => (
-                <div key={idx} className="flex flex-col items-center gap-1.5 p-2 rounded-xl border border-line-subtle bg-bg-raised/40 w-16">
+                <div key={idx} className="flex flex-col items-center gap-1.5 p-2.5 rounded-lg border border-line-subtle bg-bg-raised/40 w-16">
                   <span className="text-xl select-none">{badge.emoji}</span>
                   <span className="text-[8px] font-black text-ink-200 text-center leading-tight">{badge.name}</span>
                 </div>
