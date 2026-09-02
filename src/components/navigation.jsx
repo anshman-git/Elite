@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, Home, ShieldCheck, Trophy, UserRound, UsersRound } from 'lucide-react';
+import { BarChart3, BookOpen, Home, MoreHorizontal, UserRound } from 'lucide-react';
 import { classNames, confirmLeaveQuiz } from '../utils';
 import { Sidebar as LayoutSidebar } from './layout/Sidebar';
 
@@ -7,52 +7,52 @@ function navigate(setActive, target) {
   setActive(target);
 }
 
-const items = [
-  { id: 'dashboard',   label: 'Home',    icon: Home },
-  { id: 'quizzes',     label: 'Quiz',    icon: BookOpen },
-  { id: 'resources',   label: 'Files',   icon: ShieldCheck },
-  { id: 'community',   label: 'Social',  icon: UsersRound },
-  { id: 'leaderboard', label: 'Ranks',   icon: Trophy },
-  { id: 'profile',     label: 'Profile', icon: UserRound },
-  { id: 'admin',       label: 'Admin',   icon: ShieldCheck },
+const mobileItems = [
+  { id: 'dashboard', label: 'Today', icon: Home },
+  { id: 'quizzes', label: 'Practice', icon: BookOpen },
+  { id: 'performance', label: 'Progress', icon: BarChart3 },
+  { id: 'profile', label: 'Profile', icon: UserRound },
 ];
 
-export function BottomNav({ active, setActive, isAdmin }) {
-  const visibleItems = isAdmin ? items : items.filter((item) => item.id !== 'admin');
-
+export function BottomNav({ active, setActive, onMore }) {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-line px-2 pb-3 pt-2 backdrop-blur-md lg:hidden"
-         style={{ backgroundColor: 'rgb(var(--color-bg-base) / 0.95)' }}>
-      <div className={`mx-auto grid max-w-lg gap-1 ${isAdmin ? 'grid-cols-7' : 'grid-cols-6'}`}>
-        {visibleItems.map((item) => {
+    <nav className="ledger-bottom-nav bottom-nav fixed bottom-0 left-0 right-0 z-40 border-t border-line bg-bg-base px-2 pt-2" aria-label="Mobile navigation">
+      <div className="mx-auto grid max-w-lg grid-cols-5 gap-1">
+        {mobileItems.map((item) => {
           const Icon = item.icon;
           const isActive = active === item.id;
           return (
             <button
               key={item.id}
+              type="button"
               onClick={() => navigate(setActive, item.id)}
+              aria-current={isActive ? 'page' : undefined}
               className={classNames(
-                'flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl text-[10px] font-bold transition-[background-color,color] duration-200',
-                isActive
-                  ? 'bg-amber-500/15 text-amber-500'
-                  : 'text-ink-400 hover:text-ink-100',
+                'ledger-focus-ring flex min-h-11 min-w-0 flex-col items-center justify-center gap-1 rounded-md text-[10px] font-semibold transition-colors duration-150',
+                isActive ? 'bg-bg-raised text-accent' : 'text-ink-400 hover:text-ink-100',
               )}
             >
-              <Icon size={18} />
-              <span>{item.label}</span>
+              <Icon className="h-[18px] w-[18px] stroke-[1.8]" aria-hidden="true" />
+              <span className="truncate">{item.label}</span>
             </button>
           );
         })}
+        <button
+          type="button"
+          onClick={onMore}
+          className="ledger-focus-ring flex min-h-11 min-w-0 flex-col items-center justify-center gap-1 rounded-md text-[10px] font-semibold text-ink-400 transition-colors duration-150 hover:text-ink-100"
+          aria-label="Open more navigation"
+        >
+          <MoreHorizontal className="h-[18px] w-[18px] stroke-[1.8]" aria-hidden="true" />
+          <span>More</span>
+        </button>
       </div>
     </nav>
   );
 }
 
-/**
- * Sidebar — thin wrapper that passes all props (incl. mobile drawer props)
- * to the layout Sidebar so App.jsx callers don't need direct imports.
- */
-export function Sidebar({ active, setActive, isAdmin, isOpen, onClose, collapsed, onToggleCollapse }) {
+/** Sidebar wrapper kept stable for App.jsx callers. */
+export function Sidebar({ active, setActive, isAdmin, isOpen, onClose, collapsed, onToggleCollapse, user }) {
   return (
     <LayoutSidebar
       active={active}
@@ -62,6 +62,7 @@ export function Sidebar({ active, setActive, isAdmin, isOpen, onClose, collapsed
       onClose={onClose}
       collapsed={collapsed}
       onToggleCollapse={onToggleCollapse}
+      user={user}
     />
   );
 }

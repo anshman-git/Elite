@@ -10,12 +10,10 @@ export function AnimatedCheckbox({ checked = false, onChange, label, className =
   return (
     <label className={classNames('flex items-center gap-3 cursor-pointer group', className)}>
       <motion.div
-        className="relative w-6 h-6 rounded-lg border-2 border-line bg-bg-surface flex items-center justify-center"
-        animate={{
-          borderColor: checked ? '#f59e0b' : '#3f3f46',
-          backgroundColor: checked ? '#f59e0b' : '#27272a',
-        }}
-        transition={{ duration: 0.2 }}
+        className={classNames(
+          'relative w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors duration-200',
+          checked ? 'border-amber-500 bg-amber-500' : 'border-line bg-bg-surface'
+        )}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
       >
@@ -26,7 +24,7 @@ export function AnimatedCheckbox({ checked = false, onChange, label, className =
             exit={{ scale: 0, rotate: 45 }}
             transition={{ duration: 0.2, type: 'spring', stiffness: 400 }}
           >
-            <Check size={16} className="text-slate-950" strokeWidth={3} />
+            <Check size={16} className="text-amber-50" strokeWidth={3} />
           </motion.div>
         )}
       </motion.div>
@@ -39,7 +37,7 @@ export function AnimatedCheckbox({ checked = false, onChange, label, className =
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange?.(e.target.checked)}
-        className="hidden"
+        className="sr-only"
       />
     </label>
   );
@@ -52,12 +50,10 @@ export function AnimatedRadio({ checked = false, onChange, label, className = ''
   return (
     <label className={classNames('flex items-center gap-3 cursor-pointer group', className)}>
       <motion.div
-        className="relative w-6 h-6 rounded-full border-2 border-line bg-bg-surface flex items-center justify-center"
-        animate={{
-          borderColor: checked ? '#f59e0b' : '#3f3f46',
-          scale: checked ? 1.05 : 1,
-        }}
-        transition={{ duration: 0.2 }}
+        className={classNames(
+          'relative w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors duration-200',
+          checked ? 'border-amber-500' : 'border-line bg-bg-surface'
+        )}
         whileHover={{ scale: 1.15 }}
         whileTap={{ scale: 0.95 }}
       >
@@ -79,7 +75,7 @@ export function AnimatedRadio({ checked = false, onChange, label, className = ''
         type="radio"
         checked={checked}
         onChange={(e) => onChange?.(e.target.checked)}
-        className="hidden"
+        className="sr-only"
       />
     </label>
   );
@@ -92,9 +88,10 @@ export function AnimatedSwitch({ enabled = false, onChange, label, className = '
   return (
     <label className={classNames('flex items-center gap-3 cursor-pointer', className)}>
       <motion.div
-        className="relative w-12 h-6 rounded-full bg-bg-raised border border-line flex items-center"
-        animate={{ backgroundColor: enabled ? '#fbbf24' : '#27272a' }}
-        transition={{ duration: 0.3 }}
+        className={classNames(
+          'relative w-12 h-6 rounded-full border flex items-center transition-colors duration-300',
+          enabled ? 'bg-amber-500 border-amber-500/50' : 'bg-bg-raised border-line'
+        )}
         onClick={() => onChange?.(!enabled)}
       >
         <motion.div
@@ -116,9 +113,9 @@ export function AnimatedSwitch({ enabled = false, onChange, label, className = '
 export function ProgressRing({ radius = 45, circumference = 282, percentage = 0, strokeWidth = 8, label = '', color = 'amber' }) {
   const colors = {
     amber: 'stroke-amber-500',
-    emerald: 'stroke-emerald-500',
+    emerald: 'stroke-success',
     cyan: 'stroke-cyan-500',
-    rose: 'stroke-rose-500',
+    rose: 'stroke-danger',
   };
 
   const offset = circumference - (percentage / 100) * circumference;
@@ -174,26 +171,23 @@ export function StatsCard({ icon: Icon, label, value, trend = null, trendPositiv
   return (
     <motion.div
       className={classNames(
-        'rounded-2xl border border-line bg-bg-surface/85 backdrop-blur-md p-5 shadow-soft',
+        'rounded-xl border border-line bg-bg-surface/85 backdrop-blur-md p-5 shadow-card',
         className
       )}
-      whileHover={{ y: -4, scale: 1.02 }}
+      whileHover={{ y: -2 }}
       transition={{ duration: 0.2 }}
     >
       <div className="flex items-start justify-between mb-3">
-        <motion.div
-          className="p-3 rounded-xl bg-amber-500/10 text-amber-500"
-          whileHover={{ scale: 1.1, rotate: 5 }}
-        >
-          <Icon size={20} />
-        </motion.div>
+        <div className="p-2.5 rounded-lg bg-bg-raised text-ink-200">
+          <Icon size={18} />
+        </div>
         {trend && (
           <motion.div
             className={classNames(
               'text-xs font-bold px-2 py-1 rounded-lg',
               trendPositive
-                ? 'bg-emerald-500/20 text-emerald-300'
-                : 'bg-rose-500/20 text-rose-300'
+                ? 'bg-success/15 text-success'
+                : 'bg-danger/15 text-danger'
             )}
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -225,10 +219,13 @@ export function AnimatedDropdown({ items = [], value, onChange, placeholder = 'S
 
   return (
     <div className={classNames('relative w-full', className)}>
-      <motion.button
+      <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full min-h-12 rounded-2xl border border-line bg-bg-surface px-4 text-left text-sm font-semibold text-ink-100 outline-none transition duration-200 focus:border-amber-500 focus:shadow-glow-amber dark:bg-bg-surface/50 flex items-center justify-between"
-        animate={{ borderColor: isOpen ? '#f59e0b' : '#3f3f46' }}
+        className={classNames(
+          'w-full min-h-12 rounded-lg border bg-bg-surface px-4 text-left text-sm font-semibold text-ink-100 outline-none transition duration-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/15 dark:bg-bg-surface/50 flex items-center justify-between',
+          isOpen ? 'border-amber-500' : 'border-line'
+        )}
       >
         <span>{selected?.label || placeholder}</span>
         <motion.div
@@ -237,19 +234,20 @@ export function AnimatedDropdown({ items = [], value, onChange, placeholder = 'S
         >
           <ChevronDown size={18} className={isOpen ? 'text-amber-500' : 'text-ink-400'} />
         </motion.div>
-      </motion.button>
+      </button>
 
       {isOpen && (
         <motion.div
-          className="absolute top-full left-0 right-0 mt-2 rounded-2xl border border-line bg-bg-surface/95 backdrop-blur-md shadow-lg z-50"
+          className="absolute top-full left-0 right-0 mt-2 rounded-lg border border-line bg-bg-surface/95 backdrop-blur-md shadow-card z-50"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.15 }}
         >
           {items.map((item, index) => (
-            <motion.button
+            <button
               key={item.value}
+              type="button"
               onClick={() => {
                 onChange?.(item.value);
                 setIsOpen(false);
@@ -257,15 +255,12 @@ export function AnimatedDropdown({ items = [], value, onChange, placeholder = 'S
               className={classNames(
                 'w-full px-4 py-3 text-left text-sm font-semibold transition-colors duration-200',
                 'hover:bg-amber-500/10 hover:text-amber-500',
-                value === item.value && 'bg-amber-500/20 text-amber-500',
+                value === item.value && 'bg-amber-500/15 text-amber-500',
                 index !== items.length - 1 && 'border-b border-line'
               )}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.05 }}
             >
               {item.label}
-            </motion.button>
+            </button>
           ))}
         </motion.div>
       )}
@@ -276,15 +271,14 @@ export function AnimatedDropdown({ items = [], value, onChange, placeholder = 'S
 /**
  * Notification Badge with pulse
  */
-export function NotificationBadge({ count = 0, animated = true, className = '' }) {
+export function NotificationBadge({ count = 0, animated = true, pulse = false, className = '' }) {
   if (count === 0) return null;
 
   return (
     <motion.div
       className={classNames(
-        'flex items-center justify-center w-6 h-6 rounded-full text-xs font-black text-white bg-rose-500',
-        animated && 'animate-pulse',
-        className
+        'flex items-center justify-center min-w-6 h-6 px-1 rounded-full text-xs font-black',
+        className || 'text-ink-100 bg-danger'
       )}
       initial={animated ? { scale: 0 } : {}}
       animate={{ scale: 1 }}

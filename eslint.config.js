@@ -10,6 +10,7 @@ export default [
       ecmaVersion: 2020,
       globals: {
         clearTimeout: 'readonly',
+        clearInterval: 'readonly',
         console: 'readonly',
         document: 'readonly',
         window: 'readonly',
@@ -21,6 +22,7 @@ export default [
         confirm: 'readonly',
         process: 'readonly',
         setTimeout: 'readonly',
+        setInterval: 'readonly',
       },
       parserOptions: {
         ecmaVersion: 'latest',

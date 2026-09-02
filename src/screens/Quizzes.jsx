@@ -47,20 +47,20 @@ const OPTION_LABELS = ['A', 'B', 'C', 'D', 'E', 'F'];
 /* ─── sub-components ────────────────────────────────────────────────────────── */
 function QuizStatusDot({ status }) {
   const cls = {
-    correct: 'bg-emerald-400 shadow-[0_0_8px_2px_rgba(52,211,153,0.45)]',
-    wrong: 'bg-rose-500',
-    answered: 'bg-cyan-400 shadow-[0_0_8px_2px_rgba(34,211,238,0.4)]',
-    unanswered: 'bg-slate-700',
-  }[status] || 'bg-slate-700';
+    correct: 'bg-success shadow-[0_0_8px_2px_rgba(52,211,153,0.35)]',
+    wrong: 'bg-danger',
+    answered: 'bg-cyan-400 shadow-[0_0_8px_2px_rgba(34,211,238,0.35)]',
+    unanswered: 'bg-bg-raised border border-line',
+  }[status] || 'bg-bg-raised border border-line';
   return <span className={`block h-2.5 w-2.5 rounded-full ${cls}`} />;
 }
 
 function QuizMetadataBadge({ label, value, icon }) {
   return (
-    <div className="flex flex-col items-center gap-1 rounded-2xl bg-white/5 px-3 py-2.5 text-center">
-      {icon && <span className="text-cyan-400">{icon}</span>}
-      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{label}</p>
-      <p className="text-sm font-black text-white">{value}</p>
+    <div className="flex flex-col items-center gap-1 rounded-xl border border-line-subtle bg-bg-raised/60 px-3 py-2.5 text-center">
+      {icon && <span className="text-cyan-500 dark:text-cyan-400">{icon}</span>}
+      <p className="text-[10px] font-bold uppercase tracking-widest text-ink-400">{label}</p>
+      <p className="text-sm font-black text-ink-100">{value}</p>
     </div>
   );
 }
@@ -119,7 +119,7 @@ function QuizWorkspace({ activeQuiz, answers, setAnswers, submitted, submitting,
               style={{
                 left: `${8 + (i * 3.2) % 85}%`,
                 top: '90%',
-                background: ['#22d3ee', '#a78bfa', '#34d399', '#fbbf24', '#f472b6'][i % 5],
+                background: ['#22d3ee', '#a78bfa', '#34d399', '#ffa500', '#fb7185'][i % 5],
               }}
             />
           ))}
@@ -127,35 +127,35 @@ function QuizWorkspace({ activeQuiz, answers, setAnswers, submitted, submitting,
       )}
 
       {/* Top bar */}
-      <div className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/90 backdrop-blur-xl">
+      <div className="sticky top-0 z-30 border-b border-line bg-bg-surface/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-4 py-3">
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-cyan-400">{activeQuiz.subject}</p>
-            <h2 className="truncate text-lg font-black text-white">{activeQuiz.title}</h2>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-cyan-500 dark:text-cyan-400">{activeQuiz.subject}</p>
+            <h2 className="truncate text-lg font-black text-ink-100">{activeQuiz.title}</h2>
           </div>
           <div className="flex shrink-0 items-center gap-3">
             {/* Progress */}
             <div className="hidden items-center gap-2 sm:flex">
-              <div className="h-2 w-32 overflow-hidden rounded-full bg-slate-800">
+              <div className="h-2 w-32 overflow-hidden rounded-full bg-bg-inset">
                 <motion.div
-                  className="h-full origin-left rounded-full bg-gradient-to-r from-cyan-400 to-amber-400"
+                  className="h-full origin-left rounded-full bg-gradient-to-r from-cyan-400 to-amber-500"
                   initial={{ scaleX: 0 }}
                   animate={{ scaleX: progressPercent / 100 }}
                   transition={{ duration: 0.4, ease: 'easeOut' }}
                 />
               </div>
-              <span className="text-xs font-bold text-slate-400">{answeredCount}/{questions.length}</span>
+              <span className="text-xs font-bold text-ink-400">{answeredCount}/{questions.length}</span>
             </div>
             {/* Timer */}
             <div className={classNames(
-              'flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-black',
-              timeWarning ? 'animate-pulse bg-rose-500/20 text-rose-300' : 'bg-white/10 text-white'
+              'flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-black transition-colors',
+              timeWarning ? 'animate-pulse border-danger/30 bg-danger/15 text-danger' : 'border-line bg-bg-raised text-ink-100'
             )}>
               <Clock size={14} />
               {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}
             </div>
             {!submitted && (
-              <Button variant="accent" onClick={handleSubmit} disabled={submitting} className="hidden sm:block">
+              <Button variant="primary" onClick={handleSubmit} disabled={submitting} className="hidden sm:inline-flex">
                 {submitting ? 'Submitting…' : 'Submit'}
               </Button>
             )}
@@ -168,9 +168,9 @@ function QuizWorkspace({ activeQuiz, answers, setAnswers, submitted, submitting,
       <div className="mx-auto flex w-full max-w-[1400px] flex-1 gap-0">
 
         {/* LEFT — question navigator */}
-        <aside className="hidden w-64 shrink-0 flex-col gap-4 border-r border-white/10 p-4 lg:flex">
+        <aside className="hidden w-64 shrink-0 flex-col gap-4 border-r border-line bg-bg-surface/50 p-4 lg:flex">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Questions</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-ink-400">Questions</p>
             <div className="mt-3 grid grid-cols-5 gap-2">
               {questions.map((item, idx) => {
                 const status = getStatus(item, idx);
@@ -180,15 +180,20 @@ function QuizWorkspace({ activeQuiz, answers, setAnswers, submitted, submitting,
                     key={idx}
                     onClick={() => setActiveIndex(idx)}
                     className={classNames(
-                      'flex h-10 w-10 items-center justify-center rounded-xl text-xs font-black transition-[background-color,color,box-shadow,transform] duration-200',
+                      'flex h-10 w-10 items-center justify-center rounded-lg text-xs font-black transition-all duration-200 border',
                       isActive
-                        ? 'bg-cyan-500 text-slate-950 shadow-[0_0_16px_-4px_rgba(34,211,238,0.7)]'
-                        : submitted ? (status === 'correct' ? 'bg-emerald-500/20 text-emerald-300'
-                        : status === 'wrong' ? 'bg-rose-500/20 text-rose-300'
-                        : status === 'answered' ? 'bg-cyan-500/20 text-cyan-300'
-                        : 'bg-white/5 text-slate-400')
-                        : status === 'answered' ? 'bg-cyan-500/20 text-cyan-300'
-                        : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white',
+                        ? 'border-amber-500 bg-amber-500 text-amber-50 shadow-soft ring-2 ring-amber-500/25'
+                        : submitted
+                          ? (status === 'correct'
+                            ? 'border-success/40 bg-success/15 text-success font-bold'
+                            : status === 'wrong'
+                              ? 'border-danger/40 bg-danger/15 text-danger font-bold'
+                              : status === 'answered'
+                                ? 'border-cyan-500/40 bg-cyan-500/15 text-cyan-500 dark:text-cyan-400 font-bold'
+                                : 'border-line bg-bg-raised/70 text-ink-400')
+                          : status === 'answered'
+                            ? 'border-cyan-500/40 bg-cyan-500/15 text-cyan-500 dark:text-cyan-400 font-bold'
+                            : 'border-line bg-bg-raised/70 text-ink-400 hover:bg-bg-raised hover:text-ink-100 hover:border-line-strong',
                     )}
                   >
                     {idx + 1}
@@ -199,7 +204,7 @@ function QuizWorkspace({ activeQuiz, answers, setAnswers, submitted, submitting,
           </div>
 
           {/* Legend */}
-          <div className="space-y-2 rounded-2xl bg-white/5 p-3 text-[11px] font-semibold text-slate-400">
+          <div className="space-y-2 rounded-xl border border-line-subtle bg-bg-raised/70 p-3 text-[11px] font-semibold text-ink-400">
             <div className="flex items-center gap-2"><QuizStatusDot status="answered" /> Answered</div>
             <div className="flex items-center gap-2"><QuizStatusDot status="unanswered" /> Not visited</div>
             {submitted && <div className="flex items-center gap-2"><QuizStatusDot status="correct" /> Correct</div>}
@@ -211,16 +216,16 @@ function QuizWorkspace({ activeQuiz, answers, setAnswers, submitted, submitting,
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-2xl border border-cyan-400/20 bg-cyan-400/5 p-4 text-center"
+              className="rounded-xl border border-cyan-500/25 bg-cyan-500/10 p-4 text-center"
             >
-              <Trophy className="mx-auto text-cyan-300" size={26} />
-              <p className="mt-2 text-2xl font-black text-white">{score}/{questions.length}</p>
-              <p className="text-xs text-slate-400">+{estimatedXp} XP</p>
+              <Trophy className="mx-auto text-cyan-500 dark:text-cyan-400" size={26} />
+              <p className="mt-2 text-2xl font-black text-ink-100">{score}/{questions.length}</p>
+              <p className="text-xs font-semibold text-ink-400">+{estimatedXp} XP</p>
             </motion.div>
           )}
 
           {!submitted && (
-            <Button variant="accent" onClick={handleSubmit} disabled={submitting} className="w-full">
+            <Button variant="primary" onClick={handleSubmit} disabled={submitting} className="w-full">
               {submitting ? 'Submitting…' : 'Submit Quiz'}
             </Button>
           )}
@@ -237,27 +242,27 @@ function QuizWorkspace({ activeQuiz, answers, setAnswers, submitted, submitting,
                 animate={{ opacity: 1, scale: 1 }}
                 className="mx-auto max-w-lg"
               >
-                <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900 to-slate-800 p-8 text-center shadow-2xl">
-                  <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-cyan-400/10">
+                <div className="rounded-2xl border border-line bg-bg-surface p-6 text-center shadow-card sm:p-8">
+                  <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-cyan-500/10">
                     {score === questions.length
-                      ? <Trophy size={40} className="text-yellow-400" />
+                      ? <Trophy size={40} className="text-amber-500" />
                       : score > questions.length / 2
-                        ? <CheckCircle2 size={40} className="text-emerald-400" />
-                        : <Star size={40} className="text-slate-400" />}
+                        ? <CheckCircle2 size={40} className="text-success" />
+                        : <Star size={40} className="text-ink-400" />}
                   </div>
-                  <h3 className="text-3xl font-black text-white">
+                  <h3 className="font-display text-2xl font-black text-ink-100 sm:text-3xl">
                     {score === questions.length ? 'Perfect Score! 🎉' : score > questions.length / 2 ? 'Well done!' : 'Keep Practicing!'}
                   </h3>
-                  <p className="mt-1 text-slate-400">
-                    You scored <span className="font-black text-cyan-300">{score}</span> out of{' '}
-                    <span className="font-black text-white">{questions.length}</span>
+                  <p className="mt-1 text-ink-400">
+                    You scored <span className="font-black text-cyan-500 dark:text-cyan-400">{score}</span> out of{' '}
+                    <span className="font-black text-ink-100">{questions.length}</span>
                   </p>
                   <div className="mt-6 grid grid-cols-3 gap-3">
                     <Badge label="Score" value={`${score}/${questions.length}`} icon={<CheckCircle2 size={14} />} />
                     <Badge label="XP Earned" value={`+${estimatedXp}`} icon={<Zap size={14} />} />
                     <Badge label="Accuracy" value={`${questions.length ? Math.round((score / questions.length) * 100) : 0}%`} icon={<Flame size={14} />} />
                   </div>
-                  <Button onClick={exitQuiz} className="mt-6 w-full">Back to Quizzes</Button>
+                  <Button variant="primary" onClick={exitQuiz} className="mt-6 w-full">Back to Quizzes</Button>
                 </div>
                 {/* Review each question */}
                 <div className="mt-6 space-y-4">
@@ -267,23 +272,23 @@ function QuizWorkspace({ activeQuiz, answers, setAnswers, submitted, submitting,
                     const correct = userAns === item.answer;
                     return (
                       <div key={qid} className={classNames(
-                        'rounded-2xl border p-4',
-                        correct ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-rose-500/30 bg-rose-500/5'
+                        'rounded-xl border p-4 transition-colors',
+                        correct ? 'border-success/30 bg-success/5' : 'border-danger/30 bg-danger/5'
                       )}>
                         <div className="flex items-start gap-3">
                           {correct
-                            ? <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-emerald-400" />
-                            : <XCircle size={18} className="mt-0.5 shrink-0 text-rose-400" />}
+                            ? <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-success" />
+                            : <XCircle size={18} className="mt-0.5 shrink-0 text-danger" />}
                           <div>
-                            <p className="font-bold text-white">{item.question}</p>
+                            <p className="font-bold text-ink-100">{item.question}</p>
                             {!correct && (
-                              <p className="mt-1 text-sm text-slate-400">
-                                Correct: <span className="font-bold text-emerald-400">{item.answer}</span>
-                                {userAns && <> · Your answer: <span className="font-bold text-rose-400">{userAns}</span></>}
+                              <p className="mt-1 text-sm text-ink-400">
+                                Correct: <span className="font-bold text-success">{item.answer}</span>
+                                {userAns && <> · Your answer: <span className="font-bold text-danger">{userAns}</span></>}
                               </p>
                             )}
                             {item.explanation && (
-                              <p className="mt-2 text-sm text-slate-500">{item.explanation}</p>
+                              <p className="mt-2 text-sm text-ink-400">{item.explanation}</p>
                             )}
                           </div>
                         </div>
@@ -320,7 +325,7 @@ function QuizWorkspace({ activeQuiz, answers, setAnswers, submitted, submitting,
                   onChoose={handleChooseAnswer}
                 />
                 {/* Prev / Next navigation stays with QuizWorkspace */}
-                <div className="mt-4 flex items-center justify-between">
+                <div className="mt-4 flex items-center justify-between gap-3">
                   <Button
                     variant="secondary"
                     onClick={() => setActiveIndex((i) => Math.max(0, i - 1))}
@@ -337,7 +342,7 @@ function QuizWorkspace({ activeQuiz, answers, setAnswers, submitted, submitting,
                     </Button>
                   ) : (
                     !submitted && (
-                      <Button variant="accent" onClick={handleSubmit} disabled={submitting}>
+                      <Button variant="primary" onClick={handleSubmit} disabled={submitting}>
                         {submitting ? 'Submitting…' : 'Submit Quiz'}
                       </Button>
                     )
@@ -361,24 +366,25 @@ function QuizCard({ quiz, attempted, onStart }) {
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
+      whileHover={!attempted ? { y: -2 } : undefined}
       transition={{ duration: 0.25 }}
       className={classNames(
-        'group relative overflow-hidden rounded-3xl border bg-slate-900/80 p-5 transition-[background-color,border-color,box-shadow,transform,opacity] duration-300',
+        'group relative overflow-hidden rounded-2xl border bg-bg-surface p-5 shadow-card transition-all duration-300',
         attempted
-          ? 'border-white/5 opacity-60 cursor-not-allowed'
-          : 'border-white/10 hover:border-cyan-500/40 hover:shadow-[0_0_40px_-12px_rgba(34,211,238,0.3)] cursor-pointer hover:scale-105 hover:bg-slate-800/80',
+          ? 'border-line-subtle opacity-70 cursor-not-allowed bg-bg-surface/50'
+          : 'border-line hover:border-line-strong hover:shadow-card-hover cursor-pointer',
       )}
     >
-      {/* Gradient accent top-right */}
+      {/* Subtle background glow */}
       {!attempted && (
-        <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-cyan-500/10 blur-2xl transition-[background-color,opacity,transform] duration-500 group-hover:bg-cyan-500/20" />
+        <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-cyan-500/10 blur-2xl opacity-50 transition-opacity duration-500 group-hover:opacity-100" />
       )}
       
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-cyan-400">{quiz.subject}</p>
-          <h3 className="mt-1.5 text-base font-black text-white">{quiz.title}</h3>
-          <p className="mt-1 text-xs text-slate-400">{questionCount} questions • {quiz.timerMinutes || quiz.duration || 25}m timer</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-cyan-500 dark:text-cyan-400">{quiz.subject}</p>
+          <h3 className="mt-1.5 text-base font-black text-ink-100 transition-colors group-hover:text-amber-500">{quiz.title}</h3>
+          <p className="mt-1 text-xs text-ink-400">{questionCount} questions • {quiz.timerMinutes || quiz.duration || 25}m timer</p>
         </div>
         
         {/* Progress Ring */}
@@ -386,7 +392,7 @@ function QuizCard({ quiz, attempted, onStart }) {
           <div className="shrink-0">
             <ProgressRing
               percentage={completionPercent}
-              size={60}
+              size={52}
               color={completionPercent >= 80 ? 'emerald' : completionPercent >= 60 ? 'amber' : 'cyan'}
               width={3}
             />
@@ -394,7 +400,7 @@ function QuizCard({ quiz, attempted, onStart }) {
         )}
       </div>
 
-      <div className="mt-4 flex gap-2">
+      <div className="mt-4 flex flex-wrap gap-2">
         {(quiz.dailyQuiz ?? quiz.isDaily) && (
           <Badge variant="info" animated>Daily Challenge</Badge>
         )}
@@ -402,15 +408,15 @@ function QuizCard({ quiz, attempted, onStart }) {
       </div>
       
       <Button
-        variant={attempted ? 'secondary' : 'accent'}
-        className={classNames('mt-4 w-full', attempted ? 'opacity-50' : '')}
+        variant={attempted ? 'secondary' : 'primary'}
+        className={classNames('mt-4 w-full', attempted ? 'opacity-60 cursor-not-allowed' : '')}
         disabled={attempted}
         onClick={onStart}
       >
         {attempted ? '✓ Completed' : 'Start Quiz →'}
       </Button>
       {attempted && (
-        <p className="mt-2 text-center text-[11px] text-slate-600">Reattempts disabled for fair scoring</p>
+        <p className="mt-2 text-center text-[11px] text-ink-600">Reattempts disabled for fair scoring</p>
       )}
     </motion.div>
   );
@@ -571,30 +577,33 @@ export default function Quizzes() {
       {/* Header */}
       <div className="flex items-end justify-between gap-4">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-cyan-400">Quiz Arena</p>
-          <h2 className="text-3xl font-black text-white">Subject-wise Sprints</h2>
-          <p className="mt-1 text-sm text-slate-500">{filtered.length} quiz{filtered.length !== 1 ? 'zes' : ''} available</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-cyan-500 dark:text-cyan-400">Quiz Arena</p>
+          <h2 className="font-display text-2xl font-black text-ink-100 sm:text-3xl">Subject-wise Sprints</h2>
+          <p className="mt-1 text-sm text-ink-400">{filtered.length} quiz{filtered.length !== 1 ? 'zes' : ''} available</p>
         </div>
-        <SlidersHorizontal className="text-slate-600" />
+        <SlidersHorizontal className="text-ink-400" />
       </div>
 
       {/* Subject filter chips */}
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-        {['All', ...subjects.map((item) => item.name)].map((item) => (
-          <motion.button
-            key={item}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setSubject(item)}
-            className={classNames(
-              'min-h-9 shrink-0 rounded-full px-4 text-sm font-bold transition-[background-color,color,box-shadow,transform] duration-200',
-              subject === item
-                ? 'bg-cyan-500 text-slate-950 shadow-[0_0_16px_-4px_rgba(34,211,238,0.6)]'
-                : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white',
-            )}
-          >
-            {item} <span className="ml-1.5 rounded-full bg-white/20 px-2 py-0.5 text-xs">{subjectCounts[item] || 0}</span>
-          </motion.button>
-        ))}
+        {['All', ...subjects.map((item) => item.name)].map((item) => {
+          const isSelected = subject === item;
+          return (
+            <motion.button
+              key={item}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => setSubject(item)}
+              className={classNames(
+                'min-h-9 shrink-0 rounded-full px-4 text-sm font-bold transition-all duration-200 border',
+                isSelected
+                  ? 'border-amber-500 bg-amber-500 text-amber-50 shadow-soft'
+                  : 'border-line bg-bg-surface text-ink-400 hover:border-line-strong hover:bg-bg-raised hover:text-ink-100',
+              )}
+            >
+              {item} <span className={classNames('ml-1.5 rounded-full px-2 py-0.5 text-xs', isSelected ? 'bg-black/20 text-amber-50' : 'bg-bg-raised text-ink-400')}>{subjectCounts[item] || 0}</span>
+            </motion.button>
+          );
+        })}
       </div>
 
       {/* Quiz grid */}
@@ -621,24 +630,24 @@ export default function Quizzes() {
       )}
 
       {/* Stats summary bar */}
-      <div className="grid grid-cols-2 gap-3 rounded-3xl border border-white/10 bg-slate-900/60 p-4 sm:grid-cols-4">
-        <div className="text-center">
-          <p className="text-2xl font-black text-white">{filtered.length}</p>
-          <p className="text-xs text-slate-500">Available</p>
+      <div className="hidden grid-cols-2 gap-3 rounded-2xl border border-line bg-bg-surface p-4 shadow-card sm:grid sm:grid-cols-4">
+        <div className="p-2 text-center">
+          <p className="text-2xl font-black text-ink-100">{filtered.length}</p>
+          <p className="text-xs font-semibold text-ink-400">Available</p>
         </div>
-        <div className="text-center">
-          <p className="text-2xl font-black text-cyan-300">{attemptedQuizIds.size}</p>
-          <p className="text-xs text-slate-500">Completed</p>
+        <div className="p-2 text-center">
+          <p className="text-2xl font-black text-cyan-500 dark:text-cyan-400">{attemptedQuizIds.size}</p>
+          <p className="text-xs font-semibold text-ink-400">Completed</p>
         </div>
-        <div className="text-center">
-          <p className="text-2xl font-black text-amber-300">{filtered.length - [...attemptedQuizIds].filter(id => filtered.some(q => q.id === id)).length}</p>
-          <p className="text-xs text-slate-500">Remaining</p>
+        <div className="p-2 text-center">
+          <p className="text-2xl font-black text-amber-500">{filtered.length - [...attemptedQuizIds].filter(id => filtered.some(q => q.id === id)).length}</p>
+          <p className="text-xs font-semibold text-ink-400">Remaining</p>
         </div>
-        <div className="text-center">
-          <p className="text-2xl font-black text-emerald-300">
+        <div className="p-2 text-center">
+          <p className="text-2xl font-black text-success">
             {filtered.length ? Math.round(([...attemptedQuizIds].filter(id => filtered.some(q => q.id === id)).length / filtered.length) * 100) : 0}%
           </p>
-          <p className="text-xs text-slate-500">Completion</p>
+          <p className="text-xs font-semibold text-ink-400">Completion</p>
         </div>
       </div>
     </div>

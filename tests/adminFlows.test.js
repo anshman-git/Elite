@@ -69,27 +69,6 @@ describe('Admin flows and Firestore rules', () => {
     await assertFails(subRef2.set({ name: 'Hacker' }));
   });
 
-  it('settings (examCountdown) writable by admin only and readable by signed-in users', async () => {
-    const adminToken = { sub: 'admin-3', name: 'Admin3' };
-    const admin = testEnv.authenticatedContext(adminToken.sub, adminToken).firestore();
-    await testEnv.withSecurityRulesDisabled(async (context) => {
-      await context.firestore().collection('users').doc(adminAuth.uid).set({ name: 'Admin3', role: 'admin', createdAt: Date.now() });
-    });
-
-    const settingsRef = admin.collection('settings').doc('examCountdown');
-    await assertSucceeds(settingsRef.set({ title: 'Finals', examDate: Date.now() }));
-
-    const userToken = { sub: 'user-3', name: 'User3' };
-    const user = testEnv.authenticatedContext(userToken.sub, userToken).firestore();
-    await testEnv.withSecurityRulesDisabled(async (context) => {
-      await context.firestore().collection('users').doc(userAuth.uid).set({ name: 'User3', role: 'student', createdAt: Date.now() });
-    });
-
-    await assertSucceeds(user.collection('settings').doc('examCountdown').get());
-    // user cannot write
-    await assertFails(user.collection('settings').doc('examCountdown').set({ title: 'Hack' }));
-  });
-
   it('users collection: users can update their profile but not change role; admin can change role', async () => {
     const userToken = { sub: 'owner-1', name: 'Owner' };
     const user = testEnv.authenticatedContext(userToken.sub, userToken).firestore();

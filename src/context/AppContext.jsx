@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  markAllNotificationsRead,
-  markNotificationRead,
   watchAuth,
-  watchCollection,
   watchDocument,
-  watchUserNotifications,
 } from '../firebase';
 import { AppContext } from './app-context';
 
@@ -24,8 +20,6 @@ function getStoredTheme() {
 export function AppProvider({ children }) {
   const [user, setUser]                 = useState(null);
   const [dark, setDark]                 = useState(getStoredTheme);
-  const [notifications, setNotifications] = useState([]);
-  const [announcements, setAnnouncements] = useState([]);
   const [toasts, setToasts]             = useState([]);
   const [loading, setLoading]           = useState(true);
 
@@ -54,10 +48,6 @@ export function AppProvider({ children }) {
   useEffect(() => {
     return watchAuth((sessionUser) => {
       setUser(sessionUser);
-      if (!sessionUser) {
-        setNotifications([]);
-        setAnnouncements([]);
-      }
       setLoading(false);
     });
   }, []);
@@ -74,31 +64,7 @@ export function AppProvider({ children }) {
     });
   }, [user?.uid]);
 
-  // ── Notifications + announcements ────────────────────────────────────────
-  useEffect(() => {
-    if (!user?.uid) return () => {};
-    const unsubs = [
-      watchUserNotifications(user.uid, setNotifications, {
-        take: 20,
-        onError: (err) => {
-          console.error('Failed to load notifications:', err);
-          addToast('Could not load notifications', 'error');
-        },
-      }),
-      watchCollection('announcements', setAnnouncements, {
-        take: 10,
-        onError: (err) => console.error('Failed to load announcements:', err),
-      }),
-    ];
-    return () => unsubs.forEach((u) => u?.());
-  }, [user?.uid, addToast]);
-
   // ── Derived values (stable references) ──────────────────────────────────
-  const unreadCount = useMemo(
-    () => notifications.filter((n) => !n.read).length,
-    [notifications],
-  );
-
   const isAdmin = useMemo(() => user?.role === 'admin', [user?.role]);
   const isAuthenticated = useMemo(() => !!user, [user]);
 
@@ -108,11 +74,6 @@ export function AppProvider({ children }) {
       user,
       dark,
       toggleDark,
-      notifications,
-      announcements,
-      unreadCount,
-      markNotificationRead,
-      markAllNotificationsRead,
       notify: addToast,
       toasts,
       loading,
@@ -121,7 +82,7 @@ export function AppProvider({ children }) {
       clearToasts,
     }),
     [
-      user, dark, toggleDark, notifications, announcements, unreadCount,
+      user, dark, toggleDark,
       addToast, toasts, loading, isAdmin, isAuthenticated, clearToasts,
     ],
   );

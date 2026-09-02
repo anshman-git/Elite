@@ -2,9 +2,7 @@ import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { 
   FilePlus2, 
-  Megaphone, 
   Plus, 
-  Send, 
   Upload, 
   Download,
   UsersRound, 
@@ -15,7 +13,6 @@ import {
   EyeOff, 
   Star, 
   StarOff,
-  Clock,
   Search,
   Filter,
   UserCheck,
@@ -24,11 +21,9 @@ import {
   RotateCcw,
   BarChart3,
   BookOpen,
-  Timer,
   Settings
 } from 'lucide-react';
 import { 
-  createAnnouncement, 
   createQuiz, 
   createResourceLink, 
   watchCollection, 
@@ -51,9 +46,7 @@ import {
   resetAllUserStats,
   giveWeeklyPoints,
   getUsersCount,
-  getOnlineUsersCount,
-  updateExamCountdown,
-  watchExamCountdown
+  getOnlineUsersCount
 } from '../firebase';
 import { deleteResource } from '../firebase';
 import { Button, Card, Input, Select, Textarea } from '../components/ui';
@@ -137,13 +130,11 @@ export default function Admin({ notify, user }) {
   const [resourcesLoading, setResourcesLoading] = useState(true);
   const [quizUploadProgress, setQuizUploadProgress] = useState(0);
   const [quizUploadSummary, setQuizUploadSummary] = useState({ success: 0, warnings: 0 });
-  const [announcement, setAnnouncement] = useState({ title: '', body: '', target: 'all' });
   const [busy, setBusy] = useState('');
   const [existingQuizzes, setExistingQuizzes] = useState([]);
   const [existingResources, setExistingResources] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [users, setUsers] = useState([]);
-  const [examCountdown, setExamCountdown] = useState(null);
   const [analytics, setAnalytics] = useState({
     totalUsers: 0,
     onlineUsers: 0,
@@ -157,7 +148,6 @@ export default function Admin({ notify, user }) {
   const [userSearchTerm, setUserSearchTerm] = useState('');
   const [newSubject, setNewSubject] = useState({ name: '', description: '' });
   const [editingSubject, setEditingSubject] = useState(null);
-  const [examTimer, setExamTimer] = useState({ title: '', examDate: '' });
 
   async function loadAnalytics() {
     try {
@@ -217,9 +207,6 @@ export default function Admin({ notify, user }) {
       take: 200,
       onError: (error) => console.error('Failed to load users:', error),
     }));
-
-    // Exam countdown
-    unsubscribers.push(watchExamCountdown(setExamCountdown));
 
     return () => unsubscribers.forEach(unsub => unsub?.());
   }, [user]);
@@ -447,24 +434,6 @@ export default function Admin({ notify, user }) {
     }
   }
 
-  async function submitAnnouncement(event) {
-    event.preventDefault();
-    if (!announcement.title.trim() || !announcement.body.trim()) {
-      notify('Add both announcement title and message.');
-      return;
-    }
-    setBusy('announcement');
-    try {
-      await createAnnouncement({ ...announcement, createdBy: user?.uid || null });
-      notify('Announcement saved.');
-      setAnnouncement({ title: '', body: '', target: 'all' });
-    } catch (error) {
-      notify(error.message || 'Connect Firebase to send announcements.');
-    } finally {
-      setBusy('');
-    }
-  }
-
   async function submitQuizFile(event) {
     event.preventDefault();
     if (!quizFile) {
@@ -631,28 +600,6 @@ export default function Admin({ notify, user }) {
     }
   }
 
-  async function submitExamTimer(event) {
-    event.preventDefault();
-    if (!examTimer.title.trim() || !examTimer.examDate) {
-      notify('Enter both title and exam date.');
-      return;
-    }
-
-    setBusy('exam-timer');
-    try {
-      await updateExamCountdown({
-        title: examTimer.title.trim(),
-        examDate: new Date(examTimer.examDate),
-      });
-      notify('Exam countdown updated successfully.');
-      setExamTimer({ title: '', examDate: '' });
-    } catch (error) {
-      notify('Failed to update exam countdown.');
-    } finally {
-      setBusy('');
-    }
-  }
-
   function updateQuestion(index, patch) {
     setQuiz((current) => ({
       ...current,
@@ -692,8 +639,6 @@ export default function Admin({ notify, user }) {
     { id: 'subjects', label: 'Subjects', icon: Settings },
     { id: 'users', label: 'User Management', icon: UsersRound },
     { id: 'resources', label: 'Resources', icon: Upload },
-    { id: 'announcements', label: 'Announcements', icon: Megaphone },
-    { id: 'timer', label: 'Exam Timer', icon: Timer },
   ];
 
 
@@ -966,7 +911,7 @@ export default function Admin({ notify, user }) {
                   >
                     <Plus size={17} /> Add another MCQ
                   </Button>
-                  <Button variant="accent" disabled={busy === 'quiz'}>
+                  <Button variant="primary" disabled={busy === 'quiz'}>
                     {busy === 'quiz' ? 'Saving...' : editingQuiz ? 'Update Quiz' : 'Create Quiz'}
                   </Button>
                 </div>
@@ -993,7 +938,7 @@ export default function Admin({ notify, user }) {
                   className="min-h-12 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold dark:border-white/10 dark:bg-slate-950"
                 />
               </label>
-              <Button variant="accent" disabled={busy === 'quizFile'} className="w-full">
+              <Button variant="primary" disabled={busy === 'quizFile'} className="w-full">
                 <Upload size={17} /> {busy === 'quizFile' ? 'Uploading...' : 'Upload quizzes'}
               </Button>
               <AnimatePresence mode="wait">
@@ -1084,7 +1029,7 @@ export default function Admin({ notify, user }) {
                 onChange={(value) => setNewSubject({ ...newSubject, description: value })}
                 placeholder="Brief description of the subject"
               />
-              <Button variant="accent" disabled={busy === 'subject'}>
+              <Button variant="primary" disabled={busy === 'subject'}>
                 {busy === 'subject' ? 'Saving...' : editingSubject ? 'Update Subject' : 'Create Subject'}
               </Button>
             </form>
@@ -1313,7 +1258,7 @@ export default function Admin({ notify, user }) {
                 {resourceDropHint && <p className="text-xs text-rose-500">{resourceDropHint}</p>}
               </label>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <Button type="submit" variant="accent" disabled={busy === 'resource'} className="w-full sm:w-auto">
+                <Button type="submit" variant="primary" disabled={busy === 'resource'} className="w-full sm:w-auto">
                   <Upload size={17} /> {busy === 'resource' ? 'Saving...' : 'Save resource link'}
                 </Button>
                 <AnimatePresence mode="wait">
@@ -1400,81 +1345,7 @@ export default function Admin({ notify, user }) {
         </div>
       )}
 
-      {/* Announcements Tab */}
-      {activeTab === 'announcements' && (
-        <Card>
-          <div className="flex items-center gap-3">
-            <Megaphone className="text-blue-600" />
-            <h3 className="font-black text-slate-950 dark:text-white">Send announcement</h3>
-          </div>
-          <form onSubmit={submitAnnouncement} className="mt-4 grid gap-3 sm:grid-cols-2">
-            <Input
-              label="Title"
-              value={announcement.title}
-              onChange={(value) => setAnnouncement({ ...announcement, title: value })}
-              placeholder="New quiz uploaded"
-            />
-            <Select label="Target" value={announcement.target} onChange={(value) => setAnnouncement({ ...announcement, target: value })}>
-              <option value="all">All</option>
-              <option value="students">Students</option>
-              <option value="admins">Admins</option>
-            </Select>
-            <div className="sm:col-span-2">
-              <Textarea
-                label="Message"
-                value={announcement.body}
-                onChange={(value) => setAnnouncement({ ...announcement, body: value })}
-                placeholder="Tell students what changed"
-              />
-            </div>
-            <Button variant="accent" disabled={busy === 'announcement'} className="sm:col-span-2">
-              <Send size={17} /> {busy === 'announcement' ? 'Sending...' : 'Save announcement'}
-            </Button>
-          </form>
-        </Card>
-      )}
-
-      {/* Exam Timer Tab */}
-      {activeTab === 'timer' && (
-        <div className="space-y-6">
-          <Card>
-            <div className="flex items-center gap-3">
-              <Clock className="text-blue-600" />
-              <h3 className="font-black text-slate-950 dark:text-white">Exam Countdown Manager</h3>
-            </div>
-            <form onSubmit={submitExamTimer} className="mt-4 grid gap-3">
-              <Input
-                label="Countdown Title"
-                value={examTimer.title}
-                onChange={(value) => setExamTimer({ ...examTimer, title: value })}
-                placeholder="Final Exam 2025"
-              />
-              <Input
-                label="Exam Date & Time"
-                type="datetime-local"
-                value={examTimer.examDate}
-                onChange={(value) => setExamTimer({ ...examTimer, examDate: value })}
-              />
-              <Button variant="accent" disabled={busy === 'exam-timer'}>
-                <Clock size={17} /> {busy === 'exam-timer' ? 'Updating...' : 'Set Countdown'}
-              </Button>
-            </form>
-          </Card>
-
-          {examCountdown && (
-            <Card>
-              <h3 className="font-black text-slate-950 dark:text-white">Current Countdown</h3>
-              <div className="mt-4 rounded-2xl bg-slate-50 p-4 dark:bg-white/5">
-                <p className="font-bold text-slate-950 dark:text-white">{examCountdown.title}</p>
-                <p className="text-sm text-slate-500">
-                  Exam Date: {examCountdown.examDate?.toDate?.()?.toLocaleString() || 'Not set'}
-                </p>
-              </div>
-            </Card>
-          )}
-        </div>
-      )}
-    </div>
+      </div>
   );
 }
 

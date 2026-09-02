@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { GraduationCap, KeyRound, Mail, UserRound } from 'lucide-react';
+import { Bot, GraduationCap, KeyRound, Mail, Sparkles, UserRound } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { firebaseEnabled, getFriendlyFirebaseError, loginWithEmail, resetPassword, signupWithEmail } from '../firebase';
-import { Button, Card, Input, Toast } from '../components/ui';
+import { Button, Card, Input } from '../components/ui';
 import { AnimatedCheckbox } from '../components/InteractiveElements';
 
 export default function Auth({ notify, onBack }) {
@@ -83,75 +83,85 @@ export default function Auth({ notify, onBack }) {
   }
 
   return (
-    <main className="grid min-h-screen place-items-center bg-gradient-to-br from-bg-surface/95 via-bg-base to-bg-surface/95 p-4">
+    <main className="grid min-h-screen place-items-center bg-bg-base p-4">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.4 }}
+        className="w-full max-w-md"
       >
-        <Card className="w-full max-w-md overflow-hidden border border-amber-500/20">
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-cyan-500/5 pointer-events-none" />
-          <div className="relative p-5 sm:p-7">
-            <motion.div 
-              className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-glow-amber"
-              whileHover={{ scale: 1.05 }}
-            >
-              <GraduationCap size={28} />
-            </motion.div>
+        <Card className="w-full overflow-hidden border border-line shadow-card p-0">
+          <div className="relative p-6 sm:p-8">
+            <div className="flex items-center justify-between">
+              <motion.div 
+                className="grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 text-amber-50 shadow-glow-amber"
+                whileHover={{ scale: 1.05 }}
+              >
+                <GraduationCap size={24} />
+              </motion.div>
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-cyan-400 text-xs font-bold">
+                <Bot className="h-3.5 w-3.5" />
+                <span>AI Powered</span>
+              </div>
+            </div>
             
-            <h1 className="mt-5 text-3xl font-black tracking-tight text-ink-100 font-display">
-              EliteStudy
+            <h1 className="mt-5 text-2xl font-black tracking-tight text-ink-100 font-display">
+              {mode === 'signup' ? 'Create Account' : mode === 'forgot' ? 'Reset Password' : 'Sign in to EliteStudy'}
             </h1>
-            <p className="mt-2 text-sm leading-6 text-ink-400">
-              Premium prep space for MCQs, notes, rankings, and exam mastery.
+            <p className="mt-1.5 text-sm leading-relaxed text-ink-400">
+              Premium prep space for BCA MCQs, notes, rankings, and exam mastery.
             </p>
 
             <form onSubmit={submit} className="mt-6 space-y-4">
               {mode === 'signup' && (
-                <Input
-                  label="Full Name"
-                  placeholder="Enter your name"
-                  icon={UserRound}
-                  value={form.name}
-                  onChange={(value) => setForm({ ...form, name: value })}
-                  onBlur={() => handleBlur('name')}
-                  error={touched.name && !!errors.name}
-                  success={touched.name && !errors.name && form.name}
-                />
-              )}
-              {touched.name && errors.name && mode === 'signup' && (
-                <motion.p
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-xs font-semibold text-red-500"
-                >
-                  {errors.name}
-                </motion.p>
+                <div>
+                  <Input
+                    label="Full Name"
+                    placeholder="Enter your name"
+                    icon={UserRound}
+                    value={form.name}
+                    onChange={(value) => setForm({ ...form, name: value })}
+                    onBlur={() => handleBlur('name')}
+                    error={touched.name && !!errors.name}
+                    success={touched.name && !errors.name && form.name}
+                  />
+                  {touched.name && errors.name && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-1 text-xs font-semibold text-danger"
+                    >
+                      {errors.name}
+                    </motion.p>
+                  )}
+                </div>
               )}
 
-              <Input
-                label="Email Address"
-                type="email"
-                placeholder="you@example.com"
-                icon={Mail}
-                value={form.email}
-                onChange={(value) => setForm({ ...form, email: value })}
-                onBlur={() => handleBlur('email')}
-                error={touched.email && !!errors.email}
-                success={touched.email && !errors.email && form.email}
-              />
-              {touched.email && errors.email && (
-                <motion.p
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-xs font-semibold text-red-500"
-                >
-                  {errors.email}
-                </motion.p>
-              )}
+              <div>
+                <Input
+                  label="Email Address"
+                  type="email"
+                  placeholder="you@example.com"
+                  icon={Mail}
+                  value={form.email}
+                  onChange={(value) => setForm({ ...form, email: value })}
+                  onBlur={() => handleBlur('email')}
+                  error={touched.email && !!errors.email}
+                  success={touched.email && !errors.email && form.email}
+                />
+                {touched.email && errors.email && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-1 text-xs font-semibold text-danger"
+                  >
+                    {errors.email}
+                  </motion.p>
+                )}
+              </div>
 
               {mode !== 'forgot' && (
-                <>
+                <div>
                   <Input
                     label="Password"
                     type="password"
@@ -165,36 +175,38 @@ export default function Auth({ notify, onBack }) {
                   />
                   {touched.password && errors.password && (
                     <motion.p
-                      initial={{ opacity: 0, y: -5 }}
+                      initial={{ opacity: 0, y: -4 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="text-xs font-semibold text-red-500"
+                      className="mt-1 text-xs font-semibold text-danger"
                     >
                       {errors.password}
                     </motion.p>
                   )}
-                </>
+                </div>
               )}
 
               {mode === 'login' && (
-                <AnimatedCheckbox
-                  checked={form.rememberMe}
-                  onChange={(value) => setForm({ ...form, rememberMe: value })}
-                  label="Remember me"
-                />
+                <div className="pt-1">
+                  <AnimatedCheckbox
+                    checked={form.rememberMe}
+                    onChange={(value) => setForm({ ...form, rememberMe: value })}
+                    label="Remember me"
+                  />
+                </div>
               )}
 
               <Button 
                 type="submit" 
                 variant="primary" 
                 disabled={loading} 
-                className="w-full mt-6"
+                className="w-full mt-4"
               >
                 {loading ? (
                   <>
                     <motion.div 
                       animate={{ rotate: 360 }} 
                       transition={{ duration: 1, repeat: Infinity }} 
-                      className="w-4 h-4 border-2 border-ink-100/30 border-t-ink-100 rounded-full"
+                      className="w-4 h-4 border-2 border-amber-50/30 border-t-amber-50 rounded-full"
                     />
                     {mode === 'signup' ? 'Creating account...' : mode === 'forgot' ? 'Sending...' : 'Signing in...'}
                   </>
@@ -206,42 +218,39 @@ export default function Auth({ notify, onBack }) {
               </Button>
             </form>
 
-            <div className="mt-6 space-y-3 text-center text-sm font-semibold">
-              <motion.button 
-                className="block text-amber-500 hover:text-amber-400 transition-colors w-full"
+            <div className="mt-6 space-y-2 text-center text-sm font-semibold border-t border-line pt-4">
+              <button 
+                type="button"
+                className="block text-amber-500 hover:text-amber-400 transition-colors w-full py-1 text-xs sm:text-sm"
                 onClick={() => {
                   setMode(mode === 'signup' ? 'login' : 'signup');
                   setErrors({});
                   setTouched({});
                 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
               >
                 {mode === 'signup' ? '← Already have an account? Login' : 'New here? Create an account'}
-              </motion.button>
+              </button>
               
-              <motion.button 
-                className="block text-ink-500 hover:text-ink-300 transition-colors w-full"
+              <button 
+                type="button"
+                className="block text-ink-400 hover:text-ink-200 transition-colors w-full py-1 text-xs sm:text-sm"
                 onClick={() => {
                   setMode(mode === 'forgot' ? 'login' : 'forgot');
                   setErrors({});
                   setTouched({});
                 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
               >
                 {mode === 'forgot' ? '← Back to login' : 'Forgot password?'}
-              </motion.button>
+              </button>
 
               {onBack && (
-                <motion.button 
-                  className="block text-xs text-ink-600 hover:text-ink-500 transition-colors w-full mt-4"
+                <button 
+                  type="button"
+                  className="block text-xs text-ink-400 hover:text-ink-200 transition-colors w-full pt-2"
                   onClick={onBack}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
                 >
                   ← Back to Landing Page
-                </motion.button>
+                </button>
               )}
             </div>
           </div>

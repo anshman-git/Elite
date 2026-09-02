@@ -1,0 +1,17 @@
+{
+  "name": "EliteStudy",
+  "short_name": "EliteStudy",
+  "description": "The gamified study platform for BCA & college students. Daily MCQs, smart notes, streaks, leaderboards, and performance analytics.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "32x32",
+      "type": "image/x-icon"
+    }
+  ]
+}

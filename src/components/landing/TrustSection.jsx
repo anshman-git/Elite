@@ -78,7 +78,7 @@ function StatCard({ stat }) {
   return (
     <div
       ref={ref}
-      className="flex flex-col items-center text-center p-4 rounded-2xl border border-line bg-bg-surface/50 shadow-soft hover:shadow-glow transition-all duration-300"
+      className="flex flex-col items-center text-center p-4 rounded-xl border border-line bg-bg-surface/50 shadow-card hover:shadow-card-hover hover:border-line-strong transition-all duration-200"
     >
       <div className={`h-10 w-10 rounded-xl flex items-center justify-center mb-3 ${stat.color}`}>
         <Icon className="h-5.5 w-5.5" />
