@@ -32,7 +32,7 @@ export default function Navbar({ onGetStarted }) {
           : 'bg-transparent border-b border-transparent'
       }`}
     >
-      <div className="mx-auto max-w-6xl px-6 h-20 flex items-center justify-between">
+      <div className="mx-auto flex h-20 max-w-6xl items-center justify-between px-4 sm:px-6">
         {/* Logo */}
         <a href="#" className="flex items-center gap-2 outline-none group">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 shadow-glow-amber transition-transform duration-300 group-hover:scale-110">

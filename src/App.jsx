@@ -1,4 +1,5 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useCallback, useState } from 'react';
+import { BrowserRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { BottomNav, Sidebar } from './components/navigation';
 import { LoadingState, Toast, TopBar } from './components/ui';
@@ -6,7 +7,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { OnboardingTour } from './components/OnboardingTour';
 import { AppProvider } from './context/AppContext';
 import { useApp } from './context/useApp';
-import { navigateHome, navigateToProfile, parseRoute } from './routing';
+import { useQuizGuard } from './routing';
 import { confirmLeaveQuiz } from './utils';
 
 // Lazy-loaded screens — each is code-split into its own chunk and loaded on demand.
@@ -23,67 +24,32 @@ const Admin = lazy(() => import('./screens/Admin'));
 const PublicProfile = lazy(() => import('./screens/PublicProfile'));
 const NotFound = lazy(() => import('./screens/NotFound'));
 
-function AppContent() {
-  const {
-    user, dark, toggleDark,
-    notify, toasts, isAdmin, loading,
-  } = useApp();
+// Map clean URL paths to the components that live behind the authenticated shell.
+const ROUTE_COMPONENTS = {
+  '/': Dashboard,
+  '/quizzes': Quizzes,
+  '/performance': Performance,
+  '/leaderboard': Leaderboard,
+  '/community': Community,
+  '/profile': Profile,
+  '/admin': Admin,
+};
 
-  const [active, setActive] = useState('dashboard');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
-  const [route, setRoute] = useState(() => parseRoute());
-  const [showOnboarding, setShowOnboarding] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return localStorage.getItem('elitestudy-onboarding-seen') !== 'true';
-  });
-  const [showAuth, setShowAuth] = useState(false);
+// Bootstrap wrapper: providers first, then the router (hooks need both).
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <AppProvider>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </AppProvider>
+    </ErrorBoundary>
+  );
+}
 
-  useEffect(() => {
-    const syncRoute = () => setRoute(parseRoute());
-    window.addEventListener('popstate', syncRoute);
-    return () => window.removeEventListener('popstate', syncRoute);
-  }, []);
-
-  const guardedSetActive = useCallback((next) => {
-    if (!confirmLeaveQuiz()) return;
-    setActive(next);
-    setSidebarOpen(false); // close mobile drawer on navigate
-  }, []);
-
-  const openProfile = useCallback((userId) => {
-    if (!confirmLeaveQuiz()) return;
-    navigateToProfile(userId);
-    setRoute({ view: 'public-profile', profileUserId: userId });
-  }, []);
-
-  const closePublicProfile = () => {
-    if (!confirmLeaveQuiz()) return;
-    navigateHome();
-    setRoute(parseRoute('/'));
-  };
-
-  const completeOnboarding = () => {
-    localStorage.setItem('elitestudy-onboarding-seen', 'true');
-    setShowOnboarding(false);
-  };
-
-  const safeActive = active === 'admin' && user?.role !== 'admin' ? 'dashboard' : active;
-  const showingPublicProfile = Boolean(route.profileUserId);
-  const showingNotFound = route.view === 'not-found';
-
-  const page = useMemo(() => {
-    const props = { setActive: guardedSetActive, user, notify, openProfile };
-    return {
-      dashboard:   <Dashboard {...props} />,
-      quizzes:     <Quizzes {...props} />,
-      community:   <Community {...props} />,
-      leaderboard: <Leaderboard {...props} />,
-      performance: <Performance {...props} />,
-      profile:     <Profile {...props} />,
-      admin:       isAdmin ? <Admin {...props} /> : <Dashboard {...props} />,
-    }[safeActive];
-  }, [safeActive, user, isAdmin, notify, openProfile, guardedSetActive]);
+function AppRoutes() {
+  const { user, loading } = useApp();
 
   if (loading) {
     return (
@@ -96,14 +62,64 @@ function AppContent() {
   if (!user) {
     return (
       <Suspense fallback={<LoadingState />}>
-        {showAuth ? (
-          <Auth notify={notify} onBack={() => setShowAuth(false)} />
-        ) : (
-          <LandingPage onGetStarted={() => setShowAuth(true)} />
-        )}
+        <Routes>
+          <Route path="*" element={<PublicEntry />} />
+        </Routes>
       </Suspense>
     );
   }
+
+  return <AppShell />;
+}
+
+/** Unauthenticated entry: shows the landing page with an auth toggle. */
+function PublicEntry() {
+  const { notify } = useApp();
+  const [showAuth, setShowAuth] = useState(false);
+
+  if (showAuth) {
+    return <Auth notify={notify} onBack={() => setShowAuth(false)} />;
+  }
+  return <LandingPage onGetStarted={() => setShowAuth(true)} />;
+}
+
+/** Authenticated app shell wiring the current URL to the rendered screen. */
+function AppShell() {
+  const {
+    user, dark, toggleDark,
+    notify, toasts, isAdmin,
+  } = useApp();
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('elitestudy-onboarding-seen') !== 'true';
+  });
+
+  const location = useLocation();
+  const navigate = useNavigate();
+  const currentPath = location.pathname;
+
+  // Block browser back/forward while a quiz is in progress.
+  useQuizGuard();
+
+  const guardedSetActive = useCallback((next) => {
+    if (!confirmLeaveQuiz()) return;
+    const target = ROUTE_COMPONENTS[next] ? next : '/';
+    navigate(target);
+    setSidebarOpen(false); // close mobile drawer on navigate
+  }, [navigate]);
+
+  const openProfile = useCallback((userId) => {
+    if (!confirmLeaveQuiz()) return;
+    navigate(userId ? `/profile/${userId}` : '/profile');
+  }, [navigate]);
+
+  const frameProps = { setActive: guardedSetActive, user, notify, openProfile };
+  const activeKey = currentPath === '/' ? 'dashboard' : currentPath.slice(1);
+  // Hide the bottom nav only on public profiles and the 404 page.
+  const bottomNavVisible = !currentPath.startsWith('/profile/') && currentPath !== '*';
 
   return (
     <div className="app-shell h-screen overflow-hidden bg-[rgb(var(--color-bg-base))] text-ink-200 transition-colors duration-300 flex flex-col">
@@ -118,7 +134,7 @@ function AppContent() {
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
         <Sidebar
-          active={showingPublicProfile ? 'leaderboard' : safeActive}
+          active={activeKey}
           setActive={guardedSetActive}
           isAdmin={isAdmin}
           isOpen={sidebarOpen}
@@ -134,30 +150,34 @@ function AppContent() {
           <div className="mx-auto max-w-7xl">
             <AnimatePresence mode="wait">
               <motion.div
-                key={
-                  showingNotFound
-                    ? 'not-found'
-                    : showingPublicProfile
-                    ? `profile-${route.profileUserId}`
-                    : safeActive
-                }
+                key={currentPath}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.12, ease: 'easeOut' }}
               >
                 <Suspense fallback={<LoadingState />}>
-                  {showingNotFound ? (
-                    <NotFound />
-                  ) : showingPublicProfile ? (
-                    <PublicProfile
-                      profileUserId={route.profileUserId}
-                      onBack={closePublicProfile}
-                      notify={notify}
+                  <Routes>
+                    {Object.entries(ROUTE_COMPONENTS).map(([path, Component]) => {
+                      // Non-admins hitting /admin are redirected to the dashboard.
+                      const Screen =
+                        path === '/admin' && !isAdmin ? Dashboard : Component;
+                      return (
+                        <Route
+                          key={path}
+                          path={path}
+                          element={
+                            <Screen {...frameProps} isAdmin={isAdmin} />
+                          }
+                        />
+                      );
+                    })}
+                    <Route
+                      path="/profile/:userId"
+                      element={<PublicProfile notify={notify} />}
                     />
-                  ) : (
-                    page
-                  )}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
                 </Suspense>
               </motion.div>
             </AnimatePresence>
@@ -165,27 +185,17 @@ function AppContent() {
         </main>
       </div>
 
-      {!showingPublicProfile && !showingNotFound ? (
+      {bottomNavVisible ? (
         <BottomNav
-          active={safeActive}
+          active={activeKey}
           setActive={guardedSetActive}
           onMore={() => setSidebarOpen(true)}
         />
       ) : null}
 
-      <OnboardingTour open={!showingNotFound && showOnboarding} onDone={completeOnboarding} />
+      <OnboardingTour open={currentPath !== '*' && showOnboarding} onDone={() => setShowOnboarding(false)} />
 
       <Toast toasts={toasts} />
     </div>
-  );
-}
-
-export default function App() {
-  return (
-    <ErrorBoundary>
-      <AppProvider>
-        <AppContent />
-      </AppProvider>
-    </ErrorBoundary>
   );
 }

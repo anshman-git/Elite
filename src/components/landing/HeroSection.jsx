@@ -19,7 +19,7 @@ export default function HeroSection({ onGetStarted }) {
   };
 
   return (
-    <section className="relative min-h-[92vh] flex items-center pt-32 pb-20 px-6 overflow-hidden bg-amber-radial dark:bg-cyan-radial">
+    <section className="relative flex min-h-[92vh] items-center overflow-hidden bg-amber-radial px-4 pb-16 pt-28 dark:bg-cyan-radial sm:px-6 sm:pb-20 sm:pt-32">
       {/* Decorative Orbs */}
       <div className="absolute top-1/4 left-10 w-72 h-72 rounded-full bg-amber-500/10 blur-3xl -z-10 animate-drift" />
       <div className="absolute bottom-1/4 right-10 w-96 h-96 rounded-full bg-cyan-500/10 blur-3xl -z-10 animate-drift" style={{ animationDelay: '2s' }} />
@@ -93,15 +93,15 @@ export default function HeroSection({ onGetStarted }) {
           className="lg:col-span-6 relative flex justify-center lg:justify-end"
         >
           {/* Main Mockup Card */}
-          <div className="w-full max-w-[480px] cmd-card cmd-card-clip grid-bg p-6 border border-line shadow-card backdrop-blur-md rounded-2xl relative">
+          <div className="relative w-full max-w-[480px] rounded-2xl border border-line p-4 shadow-card backdrop-blur-md cmd-card cmd-card-clip grid-bg sm:p-6">
             <div className="flex items-center justify-between border-b border-line pb-4 mb-4">
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-danger/80" />
                 <span className="w-3 h-3 rounded-full bg-warn/80" />
                 <span className="w-3 h-3 rounded-full bg-success/80" />
-                <span className="text-xs text-ink-400 font-mono ml-2">elitestudy-dashboard.app</span>
+                <span className="ml-2 hidden truncate font-mono text-xs text-ink-400 sm:inline">elitestudy-dashboard.app</span>
               </div>
-              <div className="px-2.5 py-0.5 rounded-full bg-bg-raised text-[10px] font-bold text-ink-400 border border-line">
+              <div className="shrink-0 rounded-full border border-line bg-bg-raised px-2 py-0.5 text-[10px] font-bold text-ink-400 sm:px-2.5">
                 Level 12
               </div>
             </div>
@@ -118,18 +118,18 @@ export default function HeroSection({ onGetStarted }) {
             </div>
 
             {/* Quick Stats Grid */}
-            <div className="grid grid-cols-3 gap-3 mb-6">
-              <div className="p-3 rounded-xl bg-bg-raised/60 border border-line flex flex-col items-center">
+            <div className="grid grid-cols-3 gap-2 mb-6 sm:gap-3">
+              <div className="flex min-w-0 flex-col items-center rounded-xl border border-line bg-bg-raised/60 p-2 sm:p-3">
                 <Flame className="h-5 w-5 text-amber-500 mb-1" />
                 <span className="text-base font-black text-ink-100 font-display">12 Days</span>
                 <span className="text-[10px] text-ink-400">Streak</span>
               </div>
-              <div className="p-3 rounded-xl bg-bg-raised/60 border border-line flex flex-col items-center">
+              <div className="flex min-w-0 flex-col items-center rounded-xl border border-line bg-bg-raised/60 p-2 sm:p-3">
                 <Trophy className="h-5 w-5 text-amber-500 mb-1" />
                 <span className="text-base font-black text-ink-100 font-display">#4</span>
                 <span className="text-[10px] text-ink-400">Rank</span>
               </div>
-              <div className="p-3 rounded-xl bg-bg-raised/60 border border-line flex flex-col items-center">
+              <div className="flex min-w-0 flex-col items-center rounded-xl border border-line bg-bg-raised/60 p-2 sm:p-3">
                 <Zap className="h-5 w-5 text-cyan-500 mb-1" />
                 <span className="text-base font-black text-ink-100 font-display">2,450</span>
                 <span className="text-[10px] text-ink-400">XP</span>
@@ -166,7 +166,7 @@ export default function HeroSection({ onGetStarted }) {
           <motion.div
             animate={{ y: [0, -6, 0] }}
             transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-            className="absolute top-8 -right-6 md:-right-8 p-3 rounded-xl bg-bg-surface/90 border border-line shadow-card flex items-center gap-3 backdrop-blur-md"
+            className="absolute right-0 top-8 flex items-center gap-3 rounded-xl border border-line bg-bg-surface/90 p-3 shadow-card backdrop-blur-md sm:-right-6 md:-right-8"
           >
             <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
               <Award className="h-4.5 w-4.5" />
@@ -180,7 +180,7 @@ export default function HeroSection({ onGetStarted }) {
           <motion.div
             animate={{ y: [0, 6, 0] }}
             transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-            className="absolute bottom-6 -left-6 md:-left-8 p-3 rounded-xl bg-bg-surface/90 border border-line shadow-card flex items-center gap-3 backdrop-blur-md"
+            className="absolute bottom-6 left-0 flex items-center gap-3 rounded-xl border border-line bg-bg-surface/90 p-3 shadow-card backdrop-blur-md sm:-left-6 md:-left-8"
           >
             <div className="h-8 w-8 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400">
               <BookOpen className="h-4.5 w-4.5" />

@@ -34,7 +34,7 @@ export default function DashboardPreview() {
   ];
 
   return (
-    <section className="py-24 px-6 relative overflow-hidden bg-bg-surface/10 border-y border-line-subtle">
+    <section className="relative overflow-hidden border-y border-line-subtle bg-bg-surface/10 px-4 py-16 sm:px-6 sm:py-24">
       {/* Decorative gradients */}
       <div className="absolute top-1/2 left-0 w-[400px] h-[400px] rounded-full bg-amber-500/5 blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full bg-cyan-500/5 blur-3xl pointer-events-none" />
@@ -56,19 +56,19 @@ export default function DashboardPreview() {
           whileInView={{ opacity: 1, y: 0, scale: 1 }}
           viewport={{ once: true, margin: '-80px' }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          className="relative max-w-5xl mx-auto border border-line-strong rounded-3xl bg-bg-surface/80 dark:bg-bg-surface/50 p-6 md:p-8 shadow-card grid-bg backdrop-blur-md"
+          className="relative mx-auto max-w-5xl rounded-3xl border border-line-strong bg-bg-surface/80 p-4 shadow-card backdrop-blur-md grid-bg dark:bg-bg-surface/50 sm:p-6 md:p-8"
         >
           {/* Mock Window Controls */}
           <div className="flex items-center justify-between border-b border-line pb-5 mb-6">
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 items-center gap-2">
               <span className="w-3.5 h-3.5 rounded-full bg-danger/80" />
               <span className="w-3.5 h-3.5 rounded-full bg-warn/80" />
               <span className="w-3.5 h-3.5 rounded-full bg-success/80" />
-              <span className="text-xs text-ink-400 font-mono ml-3">dashboard.elitestudy.app/home</span>
+              <span className="ml-3 hidden truncate font-mono text-xs text-ink-400 sm:inline">dashboard.elitestudy.app/home</span>
             </div>
-            <div className="flex items-center gap-2 text-xs font-bold text-ink-400 bg-bg-raised border border-line px-3 py-1.5 rounded-lg">
+            <div className="flex shrink-0 items-center gap-2 rounded-lg border border-line bg-bg-raised px-2 py-1.5 text-xs font-bold text-ink-400 sm:px-3">
               <Calendar className="h-3.5 w-3.5" />
-              Exam Prep
+              <span className="hidden sm:inline">Exam Prep</span>
             </div>
           </div>
 
@@ -126,8 +126,8 @@ export default function DashboardPreview() {
                 <div className="space-y-4">
                   {subjects.map((sub, idx) => (
                     <div key={idx} className="space-y-1.5">
-                      <div className="flex justify-between text-xs font-bold">
-                        <span className="text-ink-200">{sub.name}</span>
+                      <div className="flex justify-between gap-2 text-xs font-bold">
+                        <span className="min-w-0 truncate text-ink-200">{sub.name}</span>
                         <span className={sub.text}>{sub.progress}%</span>
                       </div>
                       <div className="w-full h-2 rounded-full bg-bg-inset border border-line-subtle overflow-hidden">
@@ -153,12 +153,12 @@ export default function DashboardPreview() {
                   {activities.map((act, idx) => {
                     const ActIcon = act.icon;
                     return (
-                      <div key={idx} className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-2.5">
+                      <div key={idx} className="flex items-center justify-between gap-2 text-xs">
+                        <div className="flex min-w-0 items-center gap-2.5">
                           <div className="h-7 w-7 rounded-lg border border-line flex items-center justify-center text-ink-200 bg-bg-raised">
                             <ActIcon className="h-4 w-4" />
                           </div>
-                          <span className="font-semibold text-ink-200">{act.text}</span>
+                          <span className="truncate font-semibold text-ink-200">{act.text}</span>
                         </div>
                         <span className="text-[10px] text-ink-600 font-bold">{act.time}</span>
                       </div>

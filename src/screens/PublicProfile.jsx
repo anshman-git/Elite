@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, Copy, Flame, Globe2, Trophy, UserCheck, UserPlus, UsersRound, Zap } from 'lucide-react';
 import { followUser, unfollowUser, watchCollection, watchDocument, watchUserAttempts } from '../firebase';
 import { useApp } from '../context/useApp';
-import { navigateToProfile } from '../routing';
 import { formatPercent, getDicebearAvatar, getDisplayName, getLevelFromXp, getXpProgress } from '../utils';
 import { Button, Card, EmptyState, LoadingState, ProgressBar } from '../components/ui';
 
@@ -13,8 +13,10 @@ const bannerGradients = {
   aurora: 'radial-gradient(circle at center, rgba(168,85,247,0.18), transparent 30%), radial-gradient(circle at 90% 20%, rgba(34,211,238,0.14), transparent 28%), linear-gradient(135deg, rgba(168,85,247,0.1), rgba(6,182,212,0.06))',
 };
 
-export default function PublicProfile({ profileUserId, onBack, notify }) {
+export default function PublicProfile({ notify }) {
+  const { userId: profileUserId } = useParams();
   const { user } = useApp();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
   const [attempts, setAttempts] = useState([]);
@@ -119,7 +121,7 @@ export default function PublicProfile({ profileUserId, onBack, notify }) {
     return (
       <Card>
         <p className="font-bold text-ink-100">Profile not found.</p>
-        <Button variant="secondary" className="mt-4" onClick={onBack}>
+        <Button variant="secondary" className="mt-4" onClick={() => navigate(-1)}>
           <ArrowLeft size={17} /> Back
         </Button>
       </Card>
@@ -131,7 +133,7 @@ export default function PublicProfile({ profileUserId, onBack, notify }) {
 
   return (
     <div className="space-y-5">
-      <Button variant="secondary" onClick={onBack}>
+      <Button variant="secondary" onClick={() => navigate(-1)}>
         <ArrowLeft size={17} /> Back
       </Button>
 
@@ -291,7 +293,7 @@ export default function PublicProfile({ profileUserId, onBack, notify }) {
                   <button
                     key={person.id}
                     type="button"
-                    onClick={() => navigateToProfile(person.id)}
+                    onClick={() => navigate(`/profile/${person.id}`)}
                     className="flex w-full items-center gap-3 rounded-xl border border-line bg-bg-surface/80 p-3 text-left transition-all duration-200 hover:border-cyan-500/50 hover:bg-bg-raised shadow-soft"
                   >
                     <img src={getDicebearAvatar(person.id, person.avatarStyle)} alt="" className="h-10 w-10 rounded-lg border border-line bg-bg-raised object-cover" />

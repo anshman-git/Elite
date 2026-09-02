@@ -1,17 +1,13 @@
 import { BarChart3, BookOpen, Home, MoreHorizontal, UserRound } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { classNames, confirmLeaveQuiz } from '../utils';
 import { Sidebar as LayoutSidebar } from './layout/Sidebar';
 
-function navigate(setActive, target) {
-  if (!confirmLeaveQuiz()) return;
-  setActive(target);
-}
-
 const mobileItems = [
-  { id: 'dashboard', label: 'Today', icon: Home },
-  { id: 'quizzes', label: 'Practice', icon: BookOpen },
-  { id: 'performance', label: 'Progress', icon: BarChart3 },
-  { id: 'profile', label: 'Profile', icon: UserRound },
+  { id: 'dashboard', path: '/', label: 'Today', icon: Home },
+  { id: 'quizzes', path: '/quizzes', label: 'Practice', icon: BookOpen },
+  { id: 'performance', path: '/performance', label: 'Progress', icon: BarChart3 },
+  { id: 'profile', path: '/profile', label: 'Profile', icon: UserRound },
 ];
 
 export function BottomNav({ active, setActive, onMore }) {
@@ -22,10 +18,16 @@ export function BottomNav({ active, setActive, onMore }) {
           const Icon = item.icon;
           const isActive = active === item.id;
           return (
-            <button
+            <Link
               key={item.id}
-              type="button"
-              onClick={() => navigate(setActive, item.id)}
+              to={item.path}
+              onClick={(e) => {
+                if (!confirmLeaveQuiz()) {
+                  e.preventDefault();
+                  return;
+                }
+                setActive?.(item.id);
+              }}
               aria-current={isActive ? 'page' : undefined}
               className={classNames(
                 'ledger-focus-ring flex min-h-11 min-w-0 flex-col items-center justify-center gap-1 rounded-md text-[10px] font-semibold transition-colors duration-150',
@@ -34,7 +36,7 @@ export function BottomNav({ active, setActive, onMore }) {
             >
               <Icon className="h-[18px] w-[18px] stroke-[1.8]" aria-hidden="true" />
               <span className="truncate">{item.label}</span>
-            </button>
+            </Link>
           );
         })}
         <button

@@ -1,9 +1,10 @@
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Bot, Home } from 'lucide-react';
 import { Button } from '../components/ui';
-import { navigateHome } from '../routing';
 
 export default function NotFound() {
+  const navigate = useNavigate();
   return (
     <div className="grid min-h-[70vh] place-items-center px-4">
       <div className="relative w-full max-w-xl overflow-hidden rounded-2xl border border-line bg-bg-surface p-8 text-center shadow-card">
@@ -23,7 +24,7 @@ export default function NotFound() {
         <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-ink-400">
           This signal does not map to an EliteStudy route. Return to base and pick up your sprint from there.
         </p>
-        <Button variant="primary" className="mt-6" onClick={navigateHome}>
+        <Button variant="primary" className="mt-6" onClick={() => navigate('/')}>
           <Home size={16} /> Return to base
         </Button>
       </div>

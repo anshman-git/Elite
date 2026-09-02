@@ -1,15 +1,16 @@
 import { BarChart3, BookOpen, ChevronLeft, ChevronRight, Home, Shield, Trophy, User, Users } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { classNames, getDisplayName, getDicebearAvatar } from '../../utils';
+import { NavLink } from 'react-router-dom';
+import { classNames, confirmLeaveQuiz, getDisplayName, getDicebearAvatar } from '../../utils';
 
 const nav = [
-  { id: 'dashboard', label: 'Today', icon: Home, testId: 'nav-home-btn' },
-  { id: 'quizzes', label: 'Practice', icon: BookOpen, testId: 'nav-quiz-btn' },
-  { id: 'performance', label: 'Progress', icon: BarChart3, testId: 'nav-perf-btn' },
-  { id: 'leaderboard', label: 'Rankings', icon: Trophy, testId: 'nav-ranks-btn' },
-  { id: 'community', label: 'Community', icon: Users, testId: 'nav-social-btn' },
-  { id: 'profile', label: 'Profile', icon: User, testId: 'nav-profile-btn' },
-  { id: 'admin', label: 'Admin', icon: Shield, testId: 'nav-admin-btn' },
+  { id: 'dashboard', path: '/', label: 'Today', icon: Home, testId: 'nav-home-btn' },
+  { id: 'quizzes', path: '/quizzes', label: 'Practice', icon: BookOpen, testId: 'nav-quiz-btn' },
+  { id: 'performance', path: '/performance', label: 'Progress', icon: BarChart3, testId: 'nav-perf-btn' },
+  { id: 'leaderboard', path: '/leaderboard', label: 'Rankings', icon: Trophy, testId: 'nav-ranks-btn' },
+  { id: 'community', path: '/community', label: 'Community', icon: Users, testId: 'nav-social-btn' },
+  { id: 'profile', path: '/profile', label: 'Profile', icon: User, testId: 'nav-profile-btn' },
+  { id: 'admin', path: '/admin', label: 'Admin', icon: Shield, testId: 'nav-admin-btn' },
 ];
 
 function NavList({ items, active, handler, collapsed = false }) {
@@ -19,10 +20,10 @@ function NavList({ items, active, handler, collapsed = false }) {
         const Icon = item.icon;
         const isActive = active === item.id;
         return (
-          <button
+          <NavLink
             key={item.id}
-            type="button"
-            onClick={() => handler(item.id)}
+            to={item.path}
+            onClick={(e) => handler(e, item.id)}
             data-testid={item.testId}
             aria-current={isActive ? 'page' : undefined}
             title={collapsed ? item.label : undefined}
@@ -42,7 +43,7 @@ function NavList({ items, active, handler, collapsed = false }) {
               aria-hidden="true"
             />
             {!collapsed ? <span className="truncate text-sm font-semibold">{item.label}</span> : null}
-          </button>
+          </NavLink>
         );
       })}
     </nav>
@@ -52,25 +53,32 @@ function NavList({ items, active, handler, collapsed = false }) {
 function ProfileCard({ user, collapsed, onClick }) {
   const displayName = getDisplayName(user);
   const avatar = user?.photoURL || getDicebearAvatar(user?.uid);
+  const handleClick = (e) => {
+    if (e && !confirmLeaveQuiz()) {
+      e.preventDefault();
+      return;
+    }
+    onClick?.('profile');
+  };
 
   if (collapsed) {
     return (
-      <button
-        type="button"
-        onClick={onClick}
+      <NavLink
+        to="/profile"
+        onClick={handleClick}
         className="ledger-focus-ring mx-auto grid h-11 w-11 place-items-center overflow-hidden rounded-full border border-line bg-bg-surface transition-colors hover:border-line-strong"
         title={displayName}
         aria-label="Open profile"
       >
         <img src={avatar} alt={displayName} className="h-8 w-8 rounded-full object-cover" loading="lazy" />
-      </button>
+      </NavLink>
     );
   }
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <NavLink
+      to="/profile"
+      onClick={handleClick}
       className="ledger-focus-ring flex min-h-11 w-full items-center gap-3 rounded-md px-2 text-left transition-colors hover:bg-bg-raised"
       aria-label="Open profile"
     >
@@ -79,14 +87,18 @@ function ProfileCard({ user, collapsed, onClick }) {
         <p className="truncate text-sm font-semibold text-ink-100">{displayName}</p>
         {user?.email ? <p className="mt-0.5 truncate text-[11px] text-ink-400">{user.email}</p> : null}
       </div>
-    </button>
+    </NavLink>
   );
 }
 
 /** Desktop compact rail and mobile overflow drawer. */
 export function Sidebar({ active, onSelect, setActive, isAdmin = false, isOpen = false, onClose, collapsed = true, onToggleCollapse, user }) {
   const navigate = onSelect || setActive || (() => {});
-  const handler = (id) => {
+  const handler = (e, id) => {
+    if (e && !confirmLeaveQuiz()) {
+      e.preventDefault(); // block NavLink navigation while a quiz is active
+      return;
+    }
     navigate(id);
     onClose?.();
   };
@@ -125,7 +137,7 @@ export function Sidebar({ active, onSelect, setActive, isAdmin = false, isOpen =
         </div>
 
         <div className="mt-4 border-t border-line pt-4">
-          <ProfileCard user={user} collapsed={collapsed} onClick={() => handler('profile')} />
+          <ProfileCard user={user} collapsed={collapsed} onClick={handler} />
         </div>
       </aside>
 
@@ -170,7 +182,7 @@ export function Sidebar({ active, onSelect, setActive, isAdmin = false, isOpen =
                 <NavList items={visibleNav} active={active} handler={handler} />
               </div>
               <div className="mt-4 border-t border-line pt-4">
-                <ProfileCard user={user} collapsed={false} onClick={() => handler('profile')} />
+                <ProfileCard user={user} collapsed={false} onClick={handler} />
               </div>
             </motion.aside>
           </>
